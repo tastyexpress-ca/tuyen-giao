@@ -1506,11 +1506,14 @@
           bar.setAttribute("aria-valuemax", String(total));
         }
 
+        function isWixStop(stop) {
+          return !!(stop.label && stop.label.indexOf("Wix") === 0);
+        }
         function stopTitle(stop) {
-          if (stop.name) return stop.name;
-          if (stop.label && stop.label.indexOf("Wix") === 0 && stop.phone) {
-            return stop.label + " · " + last4(stop.phone);
+          if (isWixStop(stop)) {
+            return stop.phone ? stop.label + " · " + last4(stop.phone) : stop.label;
           }
+          if (stop.name) return stop.name;
           return stop.label || "";
         }
 
@@ -1523,6 +1526,9 @@
           head.appendChild(el("div", "badge", stop.badge || String.fromCharCode(65 + index)));
           var title = el("div", "stop-title");
           title.appendChild(el("div", "customer", stopTitle(stop)));
+          if (isWixStop(stop) && stop.name) {
+            title.appendChild(el("div", "k-name", stop.name));
+          }
           head.appendChild(title);
           card.appendChild(head);
 
