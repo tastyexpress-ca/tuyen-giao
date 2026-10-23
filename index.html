@@ -527,14 +527,19 @@
         color: var(--ink);
         overflow-wrap: anywhere;
       }
-      .btn-dir {
-        display: inline-flex;
+      /* Per-stop directions button: sits as the first, full-width button
+         of the stop card's action block (above ĐÃ LẤY FOOD), keeping the
+         orange accent look of the old pill but matching the block's
+         full width and 12px corner radius. */
+      .btn-dir-block {
+        flex: 0 0 100%;
+        display: flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
-        margin-top: 8px;
-        min-height: 46px;
-        padding: 8px 16px;
-        border-radius: 999px;
+        min-height: 58px;
+        padding: 10px 8px;
+        border-radius: 12px;
         font-size: 15.5px;
         font-weight: 800;
         text-decoration: none;
@@ -542,7 +547,7 @@
         color: var(--accent-strong);
         border: 1.5px solid var(--line);
       }
-      .btn-dir:active { background: var(--line); }
+      .btn-dir-block:active { background: var(--line); }
       .items {
         margin-top: 12px;
         font-size: 17.5px;
@@ -578,6 +583,7 @@
       }
       .actions {
         display: flex;
+        flex-wrap: wrap;
         gap: 10px;
         margin-top: 14px;
       }
@@ -1025,7 +1031,7 @@
 
       <div class="wrap">
         <main id="stopList">
-          <div class="hint-line">💡 Bấm nút 📍 Chỉ đường dưới mỗi địa chỉ để mở Google Maps dẫn tới điểm giao.</div>
+          <div class="hint-line">💡 Bấm 📍 Chỉ đường trong cụm nút của mỗi điểm giao để mở Google Maps.</div>
         </main>
 
         <footer>
@@ -1557,13 +1563,10 @@
           head.appendChild(title);
           card.appendChild(head);
 
+          var dirUrl = null;
           if (stop.address) {
             card.appendChild(el("div", "addr-line", stop.address));
-            var dir = el("a", "btn-dir", "📍 Chỉ đường");
-            dir.href = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(stop.address);
-            dir.target = "_blank";
-            dir.rel = "noopener";
-            card.appendChild(dir);
+            dirUrl = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(stop.address);
           }
 
           if (stop.phone) {
@@ -1581,6 +1584,13 @@
           }
 
           var actions = el("div", "actions");
+          if (dirUrl) {
+            var dir = el("a", "btn-dir-block", "📍 Chỉ đường");
+            dir.href = dirUrl;
+            dir.target = "_blank";
+            dir.rel = "noopener";
+            actions.appendChild(dir);
+          }
           var foodBtn = el("button", "btn-food-toggle", "☐ ĐÃ LẤY FOOD");
           foodBtn.type = "button";
           foodBtn.setAttribute("aria-pressed", "false");
