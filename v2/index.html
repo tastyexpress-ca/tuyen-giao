@@ -135,6 +135,29 @@
         color: var(--header-muted);
       }
       .origin strong { color: var(--header-ink); font-weight: 600; }
+      /* Full-route directions button (driver day view only): same orange
+         primary style as .btn-login / .btn-retry, full width, sitting
+         directly under the "Xuất phát: ..." origin line. */
+      .btn-route-all {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        width: 100%;
+        margin-top: 8px;
+        min-height: 52px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 17.5px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        background: var(--accent);
+        color: #fff;
+        border: 2px solid var(--accent);
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .btn-route-all:active { transform: scale(0.99); }
       .chips {
         display: flex;
         flex-wrap: wrap;
@@ -989,6 +1012,7 @@
           <div class="brand">Tasty Express <span class="route-name">· Tuyến giao sáng</span></div>
           <div class="dayline" id="routeDayline"></div>
           <div class="origin">Xuất phát: <strong>14131 Roxanne Dr, Westminster, CA 92683</strong></div>
+          <a class="btn-route-all" id="routeAllBtn" href="#" target="_blank" rel="noopener" hidden>🗺 Chỉ đường cả tuyến</a>
           <div class="chips" id="routeChips"></div>
           <div class="progress-row">
             <div class="progress-track" role="progressbar" aria-label="Tiến độ giao hàng" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="progressBar">
@@ -1097,6 +1121,7 @@
         var dayList = document.getElementById("dayList");
         var stopList = document.getElementById("stopList");
         var routeDayline = document.getElementById("routeDayline");
+        var routeAllBtn = document.getElementById("routeAllBtn");
         var routeChips = document.getElementById("routeChips");
         var fill = document.getElementById("progressFill");
         var progressText = document.getElementById("progressText");
@@ -1590,11 +1615,42 @@
           return { card: card, stop: stop, order: index, foodBtn: foodBtn, doneBtn: doneBtn, cashBtn: cashBtn };
         }
 
+        /* Full-route directions URL for one day's stops (already in seq
+           order from the Supabase fetch): origin is the shop, destination
+           is the LAST stop, and every earlier stop becomes a waypoint.
+           With 1–2 stops there are no waypoints — the destination alone
+           carries the route. Addresses are URL-encoded Google-Maps style
+           (spaces as "+", commas kept readable). */
+        var ROUTE_ORIGIN = "14131 Roxanne Dr, Westminster, CA 92683";
+        function mapsEncode(s) {
+          return encodeURIComponent(String(s)).replace(/%20/g, "+").replace(/%2C/g, ",");
+        }
+        function fullRouteUrl(stops) {
+          var addrs = [];
+          stops.forEach(function (s) { if (s.address) addrs.push(s.address); });
+          if (!addrs.length) return null;
+          var url = "https://www.google.com/maps/dir/?api=1&origin=" + mapsEncode(ROUTE_ORIGIN);
+          url += "&destination=" + mapsEncode(addrs[addrs.length - 1]);
+          if (addrs.length > 2) {
+            url += "&waypoints=" + addrs.slice(0, addrs.length - 1).map(mapsEncode).join("|");
+          }
+          url += "&travelmode=driving";
+          return url;
+        }
+
         function openDay(rd) {
           currentRouteDay = rd;
           routeDayline.textContent = routeDayLabel(rd);
           routeChips.innerHTML = "";
           var stops = stopsByDay[rd.day] || [];
+          var routeUrl = fullRouteUrl(stops);
+          if (routeUrl) {
+            routeAllBtn.href = routeUrl;
+            routeAllBtn.hidden = false;
+          } else {
+            routeAllBtn.hidden = true;
+            routeAllBtn.removeAttribute("href");
+          }
           routeChips.appendChild(el("span", "chip", stops.length + " điểm giao"));
           var miles = fmtMiles(rd.miles);
           if (miles) routeChips.appendChild(el("span", "chip", miles));
