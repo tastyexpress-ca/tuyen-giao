@@ -507,14 +507,94 @@
         user-select: text;
         -webkit-touch-callout: default;
       }
-      /* Shop-return summary line in the route (driver day) header,
-         under the chips row. A plain readable line, not a button. */
-      .shop-return {
-        margin-top: 6px;
-        font-size: 15.5px;
-        font-weight: 800;
+      /* Small pill button in the route (driver day) header, under the
+         chips row, opening the day's totals view. Deliberately compact
+         and secondary — it must not compete with the route button. */
+      .btn-totals {
+        display: inline-block;
+        margin-top: 7px;
+        background: var(--chip-bg);
         color: var(--header-ink);
-        letter-spacing: 0.01em;
+        border: 1px solid rgba(255, 247, 236, 0.3);
+        border-radius: 999px;
+        padding: 5px 13px;
+        font-size: 13.5px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .btn-totals:active { background: rgba(255, 247, 236, 0.28); }
+
+      /* ---------- Totals view ---------- */
+      .totals-card {
+        background: var(--card);
+        border: 1.5px solid var(--line);
+        border-radius: 18px;
+        padding: 20px 16px;
+        box-shadow: var(--shadow);
+      }
+      .totals-label {
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .totals-items {
+        margin-top: 6px;
+        font-size: 19px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+      .totals-row {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1.5px solid var(--line);
+      }
+      .totals-big {
+        font-size: 23px;
+        font-weight: 900;
+        line-height: 1.35;
+      }
+      .totals-sub {
+        margin-top: 3px;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .totals-meta {
+        margin-top: 18px;
+        font-size: 15.5px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      /* Per-stop lines inside the "Cần thu khi giao" section: badge +
+         label on the left, that stop's amount on the right, then the
+         section total as the last line. */
+      .totals-collect-list {
+        margin-top: 8px;
+      }
+      .totals-collect-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        padding: 7px 0;
+        font-size: 19px;
+        font-weight: 700;
+        border-top: 1px dashed var(--line);
+      }
+      .totals-collect-line:first-child { border-top: none; }
+      .totals-collect-amt { font-weight: 900; white-space: nowrap; }
+      .totals-collect-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-top: 10px;
+        padding-top: 12px;
+        border-top: 1.5px solid var(--line);
+        font-size: 21px;
+        font-weight: 900;
       }
       /* Plain-text fallback: phone + identifier stay selectable so a
          long-press opens the phone's native copy / call menu even when
@@ -1041,7 +1121,7 @@
           <div class="origin">Xuất phát: <strong>14131 Roxanne Dr, Westminster, CA 92683</strong></div>
           <a class="btn-route-all" id="routeAllBtn" href="#" target="_blank" rel="noopener" hidden>🗺 Chỉ đường cả tuyến</a>
           <div class="chips" id="routeChips"></div>
-          <div class="shop-return" id="routeShopReturn" hidden></div>
+          <button type="button" class="btn-totals" id="totalsBtn">💵 Thanh toán với tiệm</button>
           <div class="progress-row">
             <div class="progress-track" role="progressbar" aria-label="Tiến độ giao hàng" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="progressBar">
               <div class="progress-fill" id="progressFill"></div>
@@ -1059,6 +1139,43 @@
         <footer>
           <p class="fineprint">Đánh dấu đã lấy food / đã giao / trả cash được lưu vào hệ thống, xem được trên mọi máy.</p>
         </footer>
+      </div>
+    </div>
+
+    <!-- ================= TOTALS VIEW (driver day) ================= -->
+    <div id="totalsView" hidden>
+      <header>
+        <div class="wrap">
+          <button type="button" class="back-btn" id="totalsBackBtn">← Quay lại tuyến</button>
+          <div class="brand">Tasty Express <span class="route-name">· Thanh toán với tiệm</span></div>
+          <div class="dayline" id="totalsDayline"></div>
+          <div class="origin">Tính từ các điểm giao của ngày này</div>
+        </div>
+      </header>
+      <div class="wrap">
+        <main>
+          <div class="totals-card">
+            <div class="totals-label">Chi tiết phần ăn</div>
+            <div class="totals-items" id="totalsItems"></div>
+            <div class="totals-row">
+              <div class="totals-big" id="totalsFood"></div>
+            </div>
+            <div class="totals-row">
+              <div class="totals-big" id="totalsShop"></div>
+              <div class="totals-sub">Tài xế gửi lại cho tiệm sau tuyến giao</div>
+            </div>
+            <div class="totals-row">
+              <div class="totals-big">💰 Cần thu khi giao</div>
+              <div class="totals-collect-list" id="totalsCollectList"></div>
+              <div class="totals-collect-total">
+                <span>Tổng cần thu</span>
+                <span id="totalsCollect"></span>
+              </div>
+              <div class="totals-sub">Tổng tiền thu tại các điểm giao chưa trả trước</div>
+            </div>
+            <div class="totals-meta" id="totalsMeta"></div>
+          </div>
+        </main>
       </div>
     </div>
 
@@ -1144,6 +1261,14 @@
         var homeView = document.getElementById("homeView");
         var driverView = document.getElementById("driverView");
         var routeView = document.getElementById("routeView");
+        var totalsView = document.getElementById("totalsView");
+        var totalsDayline = document.getElementById("totalsDayline");
+        var totalsItems = document.getElementById("totalsItems");
+        var totalsFood = document.getElementById("totalsFood");
+        var totalsShop = document.getElementById("totalsShop");
+        var totalsCollect = document.getElementById("totalsCollect");
+        var totalsCollectList = document.getElementById("totalsCollectList");
+        var totalsMeta = document.getElementById("totalsMeta");
         var kitchenListView = document.getElementById("kitchenListView");
         var kitchenView = document.getElementById("kitchenView");
         var dayList = document.getElementById("dayList");
@@ -1151,7 +1276,6 @@
         var routeDayline = document.getElementById("routeDayline");
         var routeAllBtn = document.getElementById("routeAllBtn");
         var routeChips = document.getElementById("routeChips");
-        var routeShopReturn = document.getElementById("routeShopReturn");
         var fill = document.getElementById("progressFill");
         var progressText = document.getElementById("progressText");
         var bar = document.getElementById("progressBar");
@@ -1166,7 +1290,7 @@
         var toast = document.getElementById("copyToast");
         var toastTimer = null;
 
-        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, kitchenListView, kitchenView];
+        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenListView, kitchenView];
         function showView(v) {
           ALL_VIEWS.forEach(function (x) { x.hidden = x !== v; });
           window.scrollTo(0, 0);
@@ -1443,6 +1567,39 @@
             }
           });
           return n;
+        }
+        /* Total still to collect on delivery for a driver day: the sum
+           of the amounts on stops whose money line is a collect amount
+           ("THU $…" — the dollar figure right after "THU $"). Paid lines
+           ("Đã trả Zelle $… · Không thu tiền") carry no "THU $" and are
+           never counted. */
+        function collectTotal(dayStr) {
+          var sum = 0;
+          collectStops(dayStr).forEach(function (c) { sum += c.amount; });
+          return sum;
+        }
+        /* The individual stops behind collectTotal: every stop whose
+           money line carries a "THU $…" amount, in route order, with
+           the badge + label the stop shows on its card and the parsed
+           amount. The totals view lists these above the section total. */
+        function collectStops(dayStr) {
+          var stops = stopsByDay[dayStr] || [];
+          var out = [];
+          stops.forEach(function (s, i) {
+            var m = /thu\s*\$\s*([\d,]+(?:\.\d+)?)/i.exec(String(s.money || ""));
+            if (m) {
+              out.push({
+                badge: s.badge || String.fromCharCode(65 + i),
+                label: s.label || stopTitle(s),
+                amount: parseFloat(m[1].replace(/,/g, ""))
+              });
+            }
+          });
+          return out;
+        }
+        function fmtDollar(n) {
+          var r = Math.round(n * 100) / 100;
+          return "$" + (r % 1 === 0 ? String(r) : r.toFixed(2));
         }
         /* Money line styling follows the text the shop writes: amounts to
            collect stand out red, paid lines green, anything else amber. */
@@ -1747,19 +1904,10 @@
           routeChips.appendChild(el("span", "chip", stops.length + " điểm giao"));
           var miles = fmtMiles(rd.miles);
           if (miles) routeChips.appendChild(el("span", "chip", miles));
-          var summary = portionsSummary(rd.day);
-          if (summary) routeChips.appendChild(el("span", "chip", summary));
           if (rd.driver_name) routeChips.appendChild(el("span", "chip", "Tài xế: " + rd.driver_name));
-          /* Shop-return line (driver pays the shop $8 per food portion):
-             shown under the chips only when the day has food portions. */
-          var foodPortions = foodPortionsCount(rd.day);
-          if (foodPortions > 0) {
-            routeShopReturn.textContent = "💵 Gửi lại tiệm: $" + (foodPortions * 8) + " (" + foodPortions + " phần × $8)";
-            routeShopReturn.hidden = false;
-          } else {
-            routeShopReturn.textContent = "";
-            routeShopReturn.hidden = true;
-          }
+          /* Portions totals and the shop-return amount no longer live in
+             this header — they are on the totals view (💵 button below
+             the chips), computed there from the same day's stops. */
           /* Remove previously rendered stop cards (keep the hint line). */
           Array.prototype.slice.call(stopList.querySelectorAll(".stop-card")).forEach(function (n) {
             n.parentNode.removeChild(n);
@@ -1771,6 +1919,35 @@
           });
           renderRouteProgress();
           showView(routeView);
+        }
+
+        /* ================================================================
+           DRIVER — totals view for the currently open route day.
+           Every figure is computed live from that day's own stops
+           (the same aggregation as the day-list card summary), so it
+           works for every day, past and future.
+           ================================================================ */
+        function openTotals() {
+          var rd = currentRouteDay;
+          if (!rd) return;
+          totalsDayline.textContent = routeDayLabel(rd);
+          var summary = portionsSummary(rd.day);
+          totalsItems.textContent = summary || "Chưa có món nào trong ngày này.";
+          var food = foodPortionsCount(rd.day);
+          totalsFood.textContent = "Tổng số phần đồ ăn: " + food + " phần";
+          totalsShop.textContent = "💵 Gửi lại tiệm: " + fmtDollar(food * 8) + " (" + food + " phần × $8)";
+          totalsCollectList.innerHTML = "";
+          collectStops(rd.day).forEach(function (c) {
+            var line = el("div", "totals-collect-line");
+            line.appendChild(el("span", "", c.badge + " · " + c.label));
+            line.appendChild(el("span", "totals-collect-amt", fmtDollar(c.amount)));
+            totalsCollectList.appendChild(line);
+          });
+          totalsCollect.textContent = fmtDollar(collectTotal(rd.day));
+          var stops = stopsByDay[rd.day] || [];
+          var miles = fmtMiles(rd.miles);
+          totalsMeta.textContent = stops.length + " điểm giao" + (miles ? " · " + miles : "");
+          showView(totalsView);
         }
 
         /* ================================================================
@@ -2033,6 +2210,12 @@
         document.getElementById("backBtn").addEventListener("click", function () {
           renderDayList();
           showView(driverView);
+        });
+        document.getElementById("totalsBtn").addEventListener("click", function () {
+          openTotals();
+        });
+        document.getElementById("totalsBackBtn").addEventListener("click", function () {
+          showView(routeView);
         });
         document.getElementById("openKitchenBtn").addEventListener("click", function () {
           renderKitchenList();
