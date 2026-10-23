@@ -1077,6 +1077,22 @@
         cursor: pointer;
       }
       .btn-print:active { background: var(--line); }
+      /* "🖨 In tất cả" in the kitchen day header: prints every order
+         of the open day, one label each, in a single print job. */
+      .btn-print-all {
+        display: block;
+        width: 100%;
+        margin-top: 8px;
+        min-height: 44px;
+        border-radius: 12px;
+        font-size: 15.5px;
+        font-weight: 800;
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+        border: 1.5px solid var(--line);
+        cursor: pointer;
+      }
+      .btn-print-all:active { background: var(--line); }
 
       /* Print-only label area: filled with the one tapped kitchen
          order, then window.print() shows only it. Sized to the shop's
@@ -1096,7 +1112,12 @@
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      #printArea .pl-body { padding: 0.08in 0.1in 0; }
+      #printArea .pl-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 0.07in 0.1in 0;
+      }
       #printArea .pl-tag {
         display: inline-block;
         background: #000;
@@ -1134,31 +1155,63 @@
         line-height: 1.32;
         padding: 0.012in 0;
       }
+      /* Footer block (note + thanks/online lines) is pinned to the
+         bottom of the label: whichever of note/foot comes first in
+         the block takes margin-top: auto, the other keeps its small
+         gap, so the block always ends flush with the cut line. */
       #printArea .pl-note {
-        margin-top: 0.08in;
+        margin-top: auto;
+        padding-top: 0.07in;
         text-align: center;
         font-size: 11.5pt;
         font-weight: 800;
         line-height: 1.3;
       }
-      #printArea .pl-foot { margin-top: 0.11in; text-align: center; }
+      #printArea .pl-foot { margin-top: auto; padding-top: 0.09in; text-align: center; }
+      #printArea .pl-note + .pl-foot { margin-top: 0; }
       #printArea .pl-foot-1 { font-size: 11pt; font-weight: 800; }
       #printArea .pl-foot-2 { margin-top: 0.02in; font-size: 8.5pt; font-weight: 600; }
-      #printArea .pl-foot-3 { margin-top: 0.01in; font-size: 15.5pt; font-weight: 900; letter-spacing: 0.01em; }
+      #printArea .pl-foot-3 { margin-top: 0.01in; font-size: 13pt; font-weight: 900; letter-spacing: 0; white-space: nowrap; }
       #printArea .pl-cut {
-        margin: auto 0.1in 0.07in;
+        margin: 0.05in 0.1in 0.06in;
         border-top: 2px dashed #000;
+      }
+      /* One printed label: exactly the 2.4in × 3.9in stock, its own
+         page. "🖨 In tất cả" stacks several of these in #printArea;
+         the single-order print uses exactly one. */
+      #printArea .pl-label {
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        width: 2.4in;
+        height: 3.9in;
+        padding: 0 4px;
+        overflow: hidden;
+        background: #fff;
+        color: #000;
+        page-break-after: always;
+        break-after: page;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      #printArea .pl-label:last-child {
+        page-break-after: auto;
+        break-after: auto;
       }
       @page { size: 2.4in 3.9in; margin: 0; }
       @media print {
-        html, body { background: #fff !important; }
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #fff !important;
+        }
         body > *:not(#printArea) { display: none !important; }
         #printArea {
-          display: flex;
-          flex-direction: column;
+          position: static;
+          margin: 0;
+          padding: 0;
+          display: block;
           width: 2.4in;
-          height: 3.9in;
-          overflow: hidden;
           background: #fff;
           color: #000;
           font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -1435,6 +1488,7 @@
           <div class="brand">Tasty Express <span class="route-name">· Nhà bếp</span></div>
           <div class="dayline" id="kitchenDayline"></div>
           <div class="chips" id="kitchenChips"></div>
+          <button type="button" class="btn-print-all" id="printAllBtn">🖨 In tất cả</button>
           <div class="progress-row">
             <div class="progress-track" role="progressbar" aria-label="Tiến độ nấu order" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="kProgressBar">
               <div class="progress-fill" id="kProgressFill"></div>
@@ -2320,6 +2374,9 @@
            ================================================================ */
         var currentKitchenDay = null;
         var currentKitchenEntries = [];
+        /* Orders of the open kitchen day in display order — the list
+           "🖨 In tất cả" prints (all of them, search filter aside). */
+        var currentPrintOrders = [];
         var currentKitchenHeads = [];
         var kitchenDoneDivider = null;
 
@@ -2461,18 +2518,18 @@
           return { card: card, order: order, isDone: isDone, searchText: searchText, headEl: null };
         }
 
-        /* Fill the print-only area with this one order, laid out like
-           the shop's food label (2.4in × 3.9in), and open the system
-           print dialog. Nothing in the app is touched, so when the
-           dialog closes or is cancelled the kitchen view is exactly
-           as it was — scroll, search and toggles included. */
-        function printKitchenOrder(kd, order) {
-          printArea.innerHTML = "";
+        /* Build one complete printed label (2.4in × 3.9in) for an
+           order, laid out exactly like the shop's food label: header
+           band, tag pill, name, place, SĐT, dishes, note, footer and
+           the dashed cut line. Shared by the single-order print and
+           "🖨 In tất cả" so both always render identically. */
+        function buildPrintLabel(kd, order) {
+          var label = el("div", "pl-label");
 
           var head = el("div", "pl-head");
           head.appendChild(el("span", null, "TASTY EXPRESS"));
           head.appendChild(el("span", null, kitchenDayLabel(kd).toUpperCase()));
-          printArea.appendChild(head);
+          label.appendChild(head);
 
           var bodyBox = el("div", "pl-body");
           var tagText = order.tag || grpInfo(order.grp).heading;
@@ -2504,10 +2561,35 @@
           foot.appendChild(el("div", "pl-foot-2", "Order online"));
           foot.appendChild(el("div", "pl-foot-3", "CREAMERYACE.COM"));
           bodyBox.appendChild(foot);
-          printArea.appendChild(bodyBox);
+          label.appendChild(bodyBox);
 
-          printArea.appendChild(el("div", "pl-cut"));
+          label.appendChild(el("div", "pl-cut"));
+          return label;
+        }
 
+        /* Fill the print-only area with this one order's label and
+           open the system print dialog. Nothing in the app is
+           touched, so when the dialog closes or is cancelled the
+           kitchen view is exactly as it was — scroll, search and
+           toggles included. */
+        function printKitchenOrder(kd, order) {
+          printArea.innerHTML = "";
+          printArea.appendChild(buildPrintLabel(kd, order));
+          window.print();
+        }
+
+        /* "🖨 In tất cả": fill the print area with one label per
+           order of the open kitchen day (display order, every order
+           — the search filter does not narrow it) and print them all
+           in a single job; each .pl-label is its own 2.4in × 3.9in
+           page via page-break-after. */
+        function printAllKitchenOrders() {
+          var kd = currentKitchenDay;
+          if (!kd || !currentPrintOrders.length) return;
+          printArea.innerHTML = "";
+          currentPrintOrders.forEach(function (order) {
+            printArea.appendChild(buildPrintLabel(kd, order));
+          });
           window.print();
         }
 
@@ -2522,6 +2604,7 @@
           decorated.sort(function (a, b) {
             return (a.info.rank - b.info.rank) || (a.idx - b.idx);
           });
+          currentPrintOrders = decorated.map(function (d) { return d.order; });
 
           kitchenDayline.textContent = kitchenDayLabel(kd);
           kitchenChips.innerHTML = "";
@@ -2611,6 +2694,9 @@
         });
         document.getElementById("kvBackHomeBtn").addEventListener("click", function () {
           showView(homeView);
+        });
+        document.getElementById("printAllBtn").addEventListener("click", function () {
+          printAllKitchenOrders();
         });
         document.getElementById("logoutBtn").addEventListener("click", function () {
           teardownRealtime();
