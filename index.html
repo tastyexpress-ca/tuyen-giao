@@ -655,6 +655,21 @@
       .totals-row-collect .totals-collect-line { border-top-color: var(--paid-line); }
       .totals-row-collect .totals-collect-total { border-top-color: var(--paid-line); }
       #totalsCollect { color: var(--paid-ink); }
+      /* Kitchen settlement panel: the pink/red counterpart of the
+         green collect panel above — same shape, collect palette. */
+      .totals-row.totals-row-shop {
+        background: var(--collect-bg);
+        border: 1.5px solid var(--collect-line);
+        border-radius: 14px;
+        padding: 14px 14px 16px;
+      }
+      .totals-shop-total {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1.5px solid var(--collect-line);
+      }
+      /* Right-hand amount on kitchen settlement per-order lines. */
+      .kt-amt { font-weight: 900; white-space: nowrap; }
       /* Plain-text fallback: phone + identifier stay selectable so a
          long-press opens the phone's native copy / call menu even when
          every button and link is blocked by an in-app WebView. */
@@ -1489,6 +1504,39 @@
       </div>
     </div>
 
+    <!-- ================= KITCHEN TOTALS VIEW (settlement) ================= -->
+    <div id="kitchenTotalsView" hidden>
+      <header>
+        <div class="wrap">
+          <button type="button" class="back-btn" id="kitchenTotalsBackBtn">← Quay lại bếp</button>
+          <div class="brand">Tasty Express <span class="route-name">· Thanh toán với tiệm</span></div>
+          <div class="dayline" id="ktDayline"></div>
+          <div class="origin">Tính từ các order bếp của ngày này</div>
+        </div>
+      </header>
+      <div class="wrap">
+        <main>
+          <div class="totals-card">
+            <div class="totals-label">Chi tiết phần ăn</div>
+            <div class="totals-items" id="ktItems"></div>
+            <div class="totals-row">
+              <div class="totals-big" id="ktFood"></div>
+            </div>
+            <div class="totals-row totals-row-shop">
+              <div class="totals-big" id="ktShop"></div>
+              <div class="totals-sub" id="ktMonLe" hidden></div>
+              <div class="totals-big totals-shop-total" id="ktTotal"></div>
+            </div>
+            <div class="totals-meta" id="ktMeta"></div>
+            <div class="totals-row">
+              <div class="totals-label">Từng order</div>
+              <div class="totals-collect-list" id="ktOrderList"></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
     <!-- ================= KITCHEN DAY LIST VIEW ================= -->
     <div id="kitchenListView" hidden>
       <header>
@@ -1515,6 +1563,7 @@
           <div class="brand">Tasty Express <span class="route-name">· Nhà bếp</span></div>
           <div class="dayline" id="kitchenDayline"></div>
           <div class="chips" id="kitchenChips"></div>
+          <button type="button" class="btn-totals" id="kitchenTotalsBtn">💰 Thanh toán với tiệm</button>
           <button type="button" class="btn-print-all" id="printAllBtn">🖨 In tất cả</button>
           <div class="progress-row">
             <div class="progress-track" role="progressbar" aria-label="Tiến độ nấu order" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="kProgressBar">
@@ -1590,6 +1639,15 @@
         var totalsCollect = document.getElementById("totalsCollect");
         var totalsCollectList = document.getElementById("totalsCollectList");
         var totalsMeta = document.getElementById("totalsMeta");
+        var kitchenTotalsView = document.getElementById("kitchenTotalsView");
+        var ktDayline = document.getElementById("ktDayline");
+        var ktItems = document.getElementById("ktItems");
+        var ktFood = document.getElementById("ktFood");
+        var ktShop = document.getElementById("ktShop");
+        var ktMonLe = document.getElementById("ktMonLe");
+        var ktTotal = document.getElementById("ktTotal");
+        var ktMeta = document.getElementById("ktMeta");
+        var ktOrderList = document.getElementById("ktOrderList");
         var kitchenListView = document.getElementById("kitchenListView");
         var kitchenView = document.getElementById("kitchenView");
         var entryView = document.getElementById("entryView");
@@ -1614,7 +1672,7 @@
         var dynamicPageStyle = document.getElementById("dynamicPageStyle");
         var toastTimer = null;
 
-        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenListView, kitchenView, entryView];
+        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenTotalsView, kitchenListView, kitchenView, entryView];
         var currentView = null;
         function showView(v) {
           currentView = v;
@@ -2355,6 +2413,132 @@
         }
 
         /* ================================================================
+           KITCHEN — shop settlement for the currently open kitchen day.
+           Every figure is computed live from that day's kitchen_orders
+           dish lines, mirroring the owner's daily settlement math:
+           - a dish line carrying a $ price ("1x cánh gà … $15") is a
+             MÓN LẺ line: it never counts as a food portion; its money
+             is qty × price, and the shop gets 80% of it ($4 of $5).
+           - a line mentioning "kem" (ice cream) is excluded entirely.
+           - every other line counts qty food portions, paid to the
+             shop at $8 per portion.
+           ================================================================ */
+        /* Clean money format for the settlement view: no trailing
+           ".00" on whole dollars, one decimal when that is all the
+           value needs ("$7.5"), two decimals at most. */
+        function fmtMoney(n) {
+          var r = Math.round(n * 100) / 100;
+          if (r % 1 === 0) return "$" + String(r);
+          return "$" + r.toFixed(2).replace(/0$/, "");
+        }
+        /* Display name for the portions breakdown: the dish name with
+           its parenthetical modifiers removed ("cơm phần (cá kho tộ,
+           …)" → "cơm phần") and any "Thứ N" day marker dropped, so
+           identical dishes group together. */
+        function kitchenDishName(raw) {
+          var s = String(raw || "").replace(/\([^)]*\)/g, " ");
+          s = s.replace(/thứ\s*\d+/gi, " ");
+          s = s.replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "").replace(/[\s,;·]+$/, "");
+          return s || "phần ăn";
+        }
+        /* Parse one kitchen dish line into its settlement kind:
+           { type: "monle", money } / { type: "kem" } /
+           { type: "food", qty, name }. */
+        function parseKitchenDish(line) {
+          var s = String(line == null ? "" : line).replace(/^\s*[•·\-]\s*/, "").replace(/^\s+|\s+$/g, "");
+          var qty = 1;
+          var m = /^(\d+)\s*x\s*/i.exec(s);
+          var name = s;
+          if (m) {
+            qty = parseInt(m[1], 10) || 1;
+            name = s.slice(m[0].length);
+          }
+          var priceM = /\$\s*([\d]+(?:[.,]\d+)?)/.exec(name);
+          if (priceM) {
+            return { type: "monle", money: qty * parseFloat(priceM[1].replace(",", ".")) };
+          }
+          if (name.toLowerCase().indexOf("kem") !== -1) {
+            return { type: "kem" };
+          }
+          return { type: "food", qty: qty, name: kitchenDishName(name) };
+        }
+        /* Aggregate one kitchen day: total food portions, the grouped
+           portions breakdown string, the món lẻ total, and a per-order
+           breakdown (portions + món lẻ) in the day's stored order. */
+        function kitchenSettlement(dayStr) {
+          var orders = kitchenOrdersByDay[dayStr] || [];
+          var rows = [];
+          var totalPortions = 0;
+          var totalMonLe = 0;
+          var nameOrder = [];
+          var nameTotals = {};
+          orders.forEach(function (o) {
+            var portions = 0;
+            var monLe = 0;
+            var dishes = Array.isArray(o.dishes) ? o.dishes : [];
+            dishes.forEach(function (d) {
+              var p = parseKitchenDish(d);
+              if (p.type === "monle") {
+                monLe += p.money;
+              } else if (p.type === "food") {
+                portions += p.qty;
+                var key = p.name.toLowerCase();
+                if (!nameTotals[key]) {
+                  nameTotals[key] = { qty: 0, name: p.name };
+                  nameOrder.push(key);
+                }
+                nameTotals[key].qty += p.qty;
+              }
+            });
+            totalPortions += portions;
+            totalMonLe += monLe;
+            rows.push({ label: o.label || o.name || "", portions: portions, monLe: monLe });
+          });
+          var breakdown = nameOrder.map(function (k) {
+            return nameTotals[k].qty + " " + nameTotals[k].name;
+          }).join(" + ");
+          return { rows: rows, portions: totalPortions, monLe: totalMonLe, breakdown: breakdown, count: orders.length };
+        }
+
+        function renderKitchenTotals() {
+          var kd = currentKitchenDay;
+          if (!kd) return;
+          ktDayline.textContent = kitchenDayLabel(kd);
+          var s = kitchenSettlement(kd.day);
+          ktItems.textContent = s.breakdown || "Chưa có món nào trong ngày này.";
+          ktFood.textContent = "Tổng số phần đồ ăn: " + s.portions + " phần";
+          var foodMoney = s.portions * 8;
+          ktShop.textContent = "💵 Tiền món trả tiệm: " + fmtMoney(foodMoney) + " (" + s.portions + " phần × $8)";
+          var monLePay = Math.round(s.monLe * 0.8 * 100) / 100;
+          if (s.monLe > 0) {
+            var monLeKeep = Math.round((s.monLe - monLePay) * 100) / 100;
+            ktMonLe.textContent = "Món lẻ: " + fmtMoney(s.monLe) + " — trả tiệm " + fmtMoney(monLePay) + " (giữ lại " + fmtMoney(monLeKeep) + ")";
+            ktMonLe.hidden = false;
+          } else {
+            ktMonLe.textContent = "";
+            ktMonLe.hidden = true;
+          }
+          ktTotal.textContent = "Tổng trả tiệm: " + fmtMoney(foodMoney + monLePay);
+          ktMeta.textContent = "Số order trong ngày: " + s.count;
+          ktOrderList.innerHTML = "";
+          s.rows.forEach(function (row) {
+            var line = el("div", "totals-collect-line");
+            line.appendChild(el("span", "", row.label));
+            var parts = [];
+            if (row.portions > 0) parts.push(row.portions + " phần");
+            if (row.monLe > 0) parts.push("+ món lẻ " + fmtMoney(row.monLe));
+            line.appendChild(el("span", "kt-amt", parts.length ? parts.join(" ") : "—"));
+            ktOrderList.appendChild(line);
+          });
+        }
+
+        function openKitchenTotals() {
+          if (!currentKitchenDay) return;
+          renderKitchenTotals();
+          showView(kitchenTotalsView);
+        }
+
+        /* ================================================================
            KITCHEN — day list (home section)
            ================================================================ */
         function renderKitchenList() {
@@ -2784,6 +2968,12 @@
         document.getElementById("printAllBtn").addEventListener("click", function () {
           printAllKitchenOrders();
         });
+        document.getElementById("kitchenTotalsBtn").addEventListener("click", function () {
+          openKitchenTotals();
+        });
+        document.getElementById("kitchenTotalsBackBtn").addEventListener("click", function () {
+          showView(kitchenView);
+        });
         document.getElementById("logoutBtn").addEventListener("click", function () {
           teardownRealtime();
           clearSession();
@@ -2999,6 +3189,10 @@
             var kd = findKitchenDay(currentKitchenDay.day);
             if (kd) currentKitchenDay = kd;
             renderKitchenDay();
+          } else if (currentView === kitchenTotalsView && currentKitchenDay) {
+            var kd3 = findKitchenDay(currentKitchenDay.day);
+            if (kd3) currentKitchenDay = kd3;
+            renderKitchenTotals();
           }
           if (y) window.scrollTo(0, y);
         }
