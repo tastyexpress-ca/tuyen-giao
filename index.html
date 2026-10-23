@@ -1099,6 +1099,20 @@
          exactly 2.4in; the height is automatic — each label grows
          to fit all of its order's content on the thermal roll. */
       #printArea { display: none; }
+      /* Measurement mode: JS adds this class briefly right before
+         a print so the filled print area is rendered — off-screen
+         and invisible, but fully laid out at the true 2.4in width —
+         letting JS measure its total height and set a dynamic
+         @page height that fits every label on ONE page (see
+         prepareDynamicPage in the script). */
+      #printArea.measuring {
+        display: block;
+        position: absolute;
+        left: -10000px;
+        top: 0;
+        width: 2.4in;
+        visibility: hidden;
+      }
       #printArea .pl-head {
         display: flex;
         justify-content: space-between;
@@ -1180,10 +1194,15 @@
          to fit the whole order — nothing is ever clipped. There is
          NO page separation between labels in either print mode:
          labels flow one after another on ONE continuous 2.4in-wide
-         page whose height (via @page size auto below) grows to
-         hold them all, and each label ends with its own dashed
-         cut line. The single-order print ("🖨 In order") uses the
-         identical treatment — its one page simply holds one label. */
+         page, and each label ends with its own dashed cut line.
+         The page height itself is set dynamically by JS before
+         every print (prepareDynamicPage measures the filled print
+         area and injects "@page { size: 2.4in <height>in }" into
+         #dynamicPageStyle, which overrides the static fallback
+         below) so the printer never paginates at its own paper
+         height and splits a label. The single-order print
+         ("🖨 In order") uses the identical treatment — its one
+         page simply holds one label. */
       #printArea .pl-label {
         display: flex;
         flex-direction: column;
@@ -1223,6 +1242,14 @@
         .spinner { animation: none; }
       }
     </style>
+    <!-- Dynamic @page size for kitchen printing: JS fills this
+         right before each print with "@page { size: 2.4in
+         <measured>in; margin: 0; }" — one page tall enough for
+         every label — and clears it again after printing. While
+         empty, the static "@page { size: 2.4in auto; }" fallback
+         in the stylesheet above applies. It sits after that
+         stylesheet so its @page rule wins while it is filled. -->
+    <style id="dynamicPageStyle"></style>
   </head>
   <body>
     <!-- ================= LOADING VIEW ================= -->
@@ -1584,6 +1611,7 @@
         var kBar = document.getElementById("kProgressBar");
         var toast = document.getElementById("copyToast");
         var printArea = document.getElementById("printArea");
+        var dynamicPageStyle = document.getElementById("dynamicPageStyle");
         var toastTimer = null;
 
         var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenListView, kitchenView, entryView];
@@ -2567,6 +2595,59 @@
           return label;
         }
 
+        /* ---------- Dynamic print page height ----------
+           A static "@page { size: 2.4in auto; }" is not enough:
+           the browser/driver still paginates at the selected
+           paper height (2.4in × 3.9in), splitting taller labels
+           and starting each print-all label on a fresh page.
+           So before every kitchen print, the filled print area
+           is measured and a dynamic @page rule sized to the
+           measured total height is injected into
+           #dynamicPageStyle — the print job then emits exactly
+           ONE page tall enough for every label, and no label or
+           footer can be split onto another page. The rule is
+           cleared again once printing finishes (afterprint,
+           with a fallback timeout). If measurement fails or
+           returns 0, nothing is injected and the static fallback
+           applies, exactly as before. */
+        var dynamicPageTimer = null;
+
+        function clearDynamicPage() {
+          if (dynamicPageTimer) {
+            clearTimeout(dynamicPageTimer);
+            dynamicPageTimer = null;
+          }
+          if (dynamicPageStyle) dynamicPageStyle.textContent = "";
+        }
+
+        function prepareDynamicPage() {
+          clearDynamicPage();
+          var px = 0;
+          try {
+            /* Render the filled print area off-screen at the
+               true 2.4in width (see #printArea.measuring) so
+               wrapped text heights are accurate, then read its
+               total rendered height. Reading scrollHeight forces
+               the layout synchronously. */
+            printArea.classList.add("measuring");
+            px = Math.max(printArea.scrollHeight || 0, printArea.offsetHeight || 0);
+            printArea.classList.remove("measuring");
+          } catch (e) {
+            try { printArea.classList.remove("measuring"); } catch (e2) {}
+            px = 0;
+          }
+          if (!px || px <= 0 || !dynamicPageStyle) return;
+          /* 96 CSS px = 1in; round UP to the next 0.1in and add
+             a ~0.1in epsilon so the content always fits; capped
+             at a sane 200in maximum. */
+          var heightIn = Math.ceil((px / 96) * 10) / 10 + 0.1;
+          if (heightIn > 200) heightIn = 200;
+          dynamicPageStyle.textContent =
+            "@page { size: 2.4in " + heightIn.toFixed(2) + "in; margin: 0; }";
+          window.addEventListener("afterprint", clearDynamicPage);
+          dynamicPageTimer = setTimeout(clearDynamicPage, 120000);
+        }
+
         /* Fill the print-only area with this one order's label and
            open the system print dialog. Nothing in the app is
            touched, so when the dialog closes or is cancelled the
@@ -2575,6 +2656,7 @@
         function printKitchenOrder(kd, order) {
           printArea.innerHTML = "";
           printArea.appendChild(buildPrintLabel(kd, order));
+          prepareDynamicPage();
           window.print();
         }
 
@@ -2582,10 +2664,10 @@
            order of the open kitchen day (display order, every order
            — the search filter does not narrow it) and print them all
            in a single job. Both print modes share the same label
-           CSS: no page breaks anywhere, so the labels flow on ONE
-           continuous 2.4in-wide page whose auto height grows to
-           hold them all; each label still ends with its dashed
-           cut line. */
+           CSS (no page breaks anywhere) AND the same dynamic @page
+           height: prepareDynamicPage measures the whole strip and
+           sizes the one page to hold every label, each still ending
+           with its dashed cut line. */
         function printAllKitchenOrders() {
           var kd = currentKitchenDay;
           if (!kd || !currentPrintOrders.length) return;
@@ -2593,6 +2675,7 @@
           currentPrintOrders.forEach(function (order) {
             printArea.appendChild(buildPrintLabel(kd, order));
           });
+          prepareDynamicPage();
           window.print();
         }
 
