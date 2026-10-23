@@ -1177,9 +1177,13 @@
         border-top: 2px dashed #000;
       }
       /* One printed label: 2.4in wide, height automatic so it grows
-         to fit the whole order — nothing is ever clipped. Each label
-         is its own page/section: "🖨 In tất cả" stacks several of
-         these in #printArea; the single-order print uses exactly one. */
+         to fit the whole order — nothing is ever clipped. There is
+         NO page separation between labels in either print mode:
+         labels flow one after another on ONE continuous 2.4in-wide
+         page whose height (via @page size auto below) grows to
+         hold them all, and each label ends with its own dashed
+         cut line. The single-order print ("🖨 In order") uses the
+         identical treatment — its one page simply holds one label. */
       #printArea .pl-label {
         display: flex;
         flex-direction: column;
@@ -1189,14 +1193,10 @@
         padding: 0 4px;
         background: #fff;
         color: #000;
-        page-break-after: always;
-        break-after: page;
-        page-break-inside: avoid;
-        break-inside: avoid;
-      }
-      #printArea .pl-label:last-child {
         page-break-after: auto;
         break-after: auto;
+        page-break-inside: auto;
+        break-inside: auto;
       }
       @page { size: 2.4in auto; margin: 0; }
       @media print {
@@ -2581,8 +2581,11 @@
         /* "🖨 In tất cả": fill the print area with one label per
            order of the open kitchen day (display order, every order
            — the search filter does not narrow it) and print them all
-           in a single job; each .pl-label is its own 2.4in-wide,
-           auto-height page via page-break-after. */
+           in a single job. Both print modes share the same label
+           CSS: no page breaks anywhere, so the labels flow on ONE
+           continuous 2.4in-wide page whose auto height grows to
+           hold them all; each label still ends with its dashed
+           cut line. */
         function printAllKitchenOrders() {
           var kd = currentKitchenDay;
           if (!kd || !currentPrintOrders.length) return;
