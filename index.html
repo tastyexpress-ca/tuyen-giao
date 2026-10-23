@@ -1522,10 +1522,6 @@
             <div class="totals-row">
               <div class="totals-big" id="totalsFood"></div>
             </div>
-            <div class="totals-row">
-              <div class="totals-big" id="totalsShop"></div>
-              <div class="totals-sub">Tài xế gửi lại cho tiệm sau tuyến giao</div>
-            </div>
             <div class="totals-row totals-row-collect">
               <div class="totals-big">💰 Cần thu khi giao</div>
               <div class="totals-collect-list" id="totalsCollectList"></div>
@@ -1658,7 +1654,6 @@
         var totalsDayline = document.getElementById("totalsDayline");
         var totalsItems = document.getElementById("totalsItems");
         var totalsFood = document.getElementById("totalsFood");
-        var totalsShop = document.getElementById("totalsShop");
         var totalsCollect = document.getElementById("totalsCollect");
         var totalsCollectList = document.getElementById("totalsCollectList");
         var totalsMeta = document.getElementById("totalsMeta");
@@ -2409,7 +2404,6 @@
           totalsItems.textContent = summary || "Chưa có món nào trong ngày này.";
           var food = foodPortionsCount(rd.day);
           totalsFood.textContent = "Tổng số phần đồ ăn: " + food + " phần";
-          totalsShop.textContent = "💵 Gửi lại tiệm: " + fmtDollar(food * 8) + " (" + food + " phần × $8)";
           totalsCollectList.innerHTML = "";
           collectStops(rd.day).forEach(function (c) {
             var line = el("div", "totals-collect-line");
