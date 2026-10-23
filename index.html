@@ -1064,6 +1064,107 @@
         color: #fff;
       }
 
+      /* ---------- Kitchen print label (🖨 In order) ---------- */
+      .btn-print {
+        flex: 1;
+        min-height: 52px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 800;
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+        border: 1.5px solid var(--line);
+        cursor: pointer;
+      }
+      .btn-print:active { background: var(--line); }
+
+      /* Print-only label area: filled with the one tapped kitchen
+         order, then window.print() shows only it. Sized to the shop's
+         label stock — exactly 2.44in × 3in (62mm × 3in). */
+      #printArea { display: none; }
+      #printArea .pl-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 6px;
+        background: #000;
+        color: #fff;
+        padding: 0.07in 0.1in;
+        font-size: 10.5pt;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      #printArea .pl-body { padding: 0.08in 0.1in 0; }
+      #printArea .pl-tag {
+        display: inline-block;
+        background: #000;
+        color: #fff;
+        border-radius: 999px;
+        padding: 0.028in 0.11in;
+        font-size: 10pt;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      #printArea .pl-name {
+        margin-top: 0.07in;
+        font-size: 19pt;
+        font-weight: 800;
+        line-height: 1.15;
+      }
+      #printArea .pl-place {
+        margin-top: 0.035in;
+        font-size: 11pt;
+        font-weight: 600;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+      }
+      #printArea .pl-phone {
+        margin-top: 0.03in;
+        font-size: 11.5pt;
+        font-weight: 700;
+      }
+      #printArea .pl-dishes { margin-top: 0.07in; }
+      #printArea .pl-dish {
+        font-size: 12pt;
+        font-weight: 600;
+        line-height: 1.32;
+        padding: 0.012in 0;
+      }
+      #printArea .pl-note {
+        margin-top: 0.08in;
+        text-align: center;
+        font-size: 11.5pt;
+        font-weight: 800;
+        line-height: 1.3;
+      }
+      #printArea .pl-foot { margin-top: 0.11in; text-align: center; }
+      #printArea .pl-foot-1 { font-size: 11pt; font-weight: 800; }
+      #printArea .pl-foot-2 { margin-top: 0.02in; font-size: 8.5pt; font-weight: 600; }
+      #printArea .pl-foot-3 { margin-top: 0.01in; font-size: 15.5pt; font-weight: 900; letter-spacing: 0.01em; }
+      #printArea .pl-cut {
+        margin: auto 0.1in 0.07in;
+        border-top: 2px dashed #000;
+      }
+      @page { size: 2.44in 3in; margin: 0; }
+      @media print {
+        html, body { background: #fff !important; }
+        body > *:not(#printArea) { display: none !important; }
+        #printArea {
+          display: flex;
+          flex-direction: column;
+          width: 2.44in;
+          height: 3in;
+          overflow: hidden;
+          background: #fff;
+          color: #000;
+          font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .progress-fill, .stop-card { transition: none; }
         .spinner { animation: none; }
@@ -1368,6 +1469,10 @@
 
     <div class="copy-toast" id="copyToast" role="status" aria-live="polite"></div>
 
+    <!-- Print-only area: filled with one kitchen order when its
+         "🖨 In order" button is tapped; shown only while printing. -->
+    <div id="printArea" aria-hidden="true"></div>
+
     <!-- Supabase JS (classic UMD build) — used ONLY for Realtime
          postgres_changes subscriptions; all data reads/writes keep
          going through the fetch-based PostgREST calls below. If this
@@ -1424,6 +1529,7 @@
         var kText = document.getElementById("kProgressText");
         var kBar = document.getElementById("kProgressBar");
         var toast = document.getElementById("copyToast");
+        var printArea = document.getElementById("printArea");
         var toastTimer = null;
 
         var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenListView, kitchenView, entryView];
@@ -2342,8 +2448,67 @@
           actions.appendChild(cashBtn);
           card.appendChild(actions);
 
+          var printRow = el("div", "k-actions");
+          var printBtn = el("button", "btn-print", "🖨 In order");
+          printBtn.type = "button";
+          printBtn.addEventListener("click", function () {
+            printKitchenOrder(kd, order);
+          });
+          printRow.appendChild(printBtn);
+          card.appendChild(printRow);
+
           var searchText = ((order.label || "") + " " + (order.name || "") + " " + (order.phone || "")).toLowerCase();
           return { card: card, order: order, isDone: isDone, searchText: searchText, headEl: null };
+        }
+
+        /* Fill the print-only area with this one order, laid out like
+           the shop's food label (2.44in × 3in), and open the system
+           print dialog. Nothing in the app is touched, so when the
+           dialog closes or is cancelled the kitchen view is exactly
+           as it was — scroll, search and toggles included. */
+        function printKitchenOrder(kd, order) {
+          printArea.innerHTML = "";
+
+          var head = el("div", "pl-head");
+          head.appendChild(el("span", null, "TASTY EXPRESS"));
+          head.appendChild(el("span", null, kitchenDayLabel(kd).toUpperCase()));
+          printArea.appendChild(head);
+
+          var bodyBox = el("div", "pl-body");
+          var tagText = order.tag || grpInfo(order.grp).heading;
+          var tagRow = el("div", null);
+          tagRow.appendChild(el("span", "pl-tag", tagText));
+          bodyBox.appendChild(tagRow);
+
+          bodyBox.appendChild(el("div", "pl-name", order.name || order.label || ""));
+          if (order.place) {
+            bodyBox.appendChild(el("div", "pl-place", order.place));
+          }
+          bodyBox.appendChild(el("div", "pl-phone", "SĐT: " + (order.phone ? order.phone : "chưa có")));
+
+          var dishList = Array.isArray(order.dishes) ? order.dishes : [];
+          if (dishList.length) {
+            var dishBox = el("div", "pl-dishes");
+            dishList.forEach(function (d) {
+              dishBox.appendChild(el("div", "pl-dish", "• " + d));
+            });
+            bodyBox.appendChild(dishBox);
+          }
+
+          if (order.note) {
+            bodyBox.appendChild(el("div", "pl-note", order.note));
+          }
+
+          var foot = el("div", "pl-foot");
+          foot.appendChild(el("div", "pl-foot-1", "CHÚC QUÝ KHÁCH NGON MIỆNG!"));
+          foot.appendChild(el("div", "pl-foot-2", "Order online"));
+          foot.appendChild(el("div", "pl-foot-3", "CREAMERYACE.COM"));
+          bodyBox.appendChild(foot);
+          printArea.appendChild(bodyBox);
+
+          printArea.appendChild(el("div", "pl-cut"));
+
+          window.print();
         }
 
         function renderKitchenDay() {
