@@ -1428,15 +1428,17 @@
           }).join(" + ");
         }
         /* Total FOOD portions for a driver day, from the same items
-           aggregation as the day summary: only "phần" items count
-           (cơm, nui, bún, mì portions) — ice-cream boxes ("box kem")
-           and anything mentioning kem are excluded. */
+           aggregation as the day summary: every aggregated item group
+           counts, including phrases written without the word "phần"
+           ("1 nui xào bò", "1 bún bò huế") — only ice-cream items
+           (any phrase mentioning "kem", e.g. "4 box kem") are
+           excluded. */
         function foodPortionsCount(dayStr) {
           var agg = aggregateItems(dayStr);
           var n = 0;
           agg.order.forEach(function (k) {
             var phrase = agg.totals[k].phrase.toLowerCase();
-            if (phrase.indexOf("phần") !== -1 && phrase.indexOf("kem") === -1) {
+            if (phrase.indexOf("kem") === -1) {
               n += agg.totals[k].qty;
             }
           });
