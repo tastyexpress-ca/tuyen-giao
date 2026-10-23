@@ -339,6 +339,54 @@
         line-height: 1.45;
       }
 
+      /* ---------- Photo import (top of the entry form) ---------- */
+      .import-block { margin-bottom: 16px; }
+      .btn-import {
+        width: 100%;
+        min-height: 58px;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        background: var(--accent);
+        color: #fff;
+        border: 2px solid var(--accent);
+        cursor: pointer;
+      }
+      .btn-import:active { transform: scale(0.99); }
+      .btn-import:disabled { opacity: 0.65; cursor: default; }
+      .import-preview {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .import-thumb {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1.5px solid var(--line);
+        flex: 0 0 auto;
+        background: var(--accent-soft);
+      }
+      .import-status {
+        font-size: 15.5px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .import-ok {
+        margin-top: 12px;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 15.5px;
+        font-weight: 700;
+        background: var(--paid-bg);
+        color: var(--paid-ink);
+        border: 1.5px solid var(--paid-line);
+      }
+      .import-err { margin-top: 12px; margin-bottom: 0; }
+
       /* ---------- Loading / error ---------- */
       .status-wrap {
         padding: 60px 20px 40px;
@@ -1419,6 +1467,16 @@
       <div class="wrap">
         <div class="login-wrap">
           <form class="login-card" id="entryForm" novalidate>
+            <div class="import-block">
+              <button type="button" class="btn-import" id="importPhotoBtn">📷 Nhập từ hình order</button>
+              <input type="file" id="importPhotoInput" accept="image/*" hidden />
+              <div class="import-preview" id="importPreview" hidden>
+                <img id="importThumb" class="import-thumb" alt="Hình order đã chọn" />
+                <div class="import-status" id="importStatus"></div>
+              </div>
+              <div class="import-ok" id="importOk" hidden>✅ Đã đọc hình xong — xem lại rồi bấm Lưu order</div>
+              <div class="login-error import-err" id="importErrorBox" hidden>Chưa đọc được hình này — nhập tay giúp em nhé</div>
+            </div>
             <label class="login-label" for="entryDate">Ngày
               <input type="date" id="entryDate" class="login-input" required />
             </label>
@@ -3204,6 +3262,7 @@
           entryNote.value = "";
           entryError.hidden = true;
           setEntryGrp("sang");
+          resetImportUI();
         }
         document.getElementById("openEntryBtn").addEventListener("click", function () {
           resetEntryForm();
@@ -3280,6 +3339,159 @@
             showEntryError("⚠️ Chưa lưu được — kiểm tra mạng rồi bấm Lưu order lại nhé.");
           });
         });
+
+        /* ================================================================
+           PHOTO IMPORT — "📷 Nhập từ hình order" at the top of the entry
+           form. The chosen photo is downscaled in the browser (max
+           dimension ~1600px, JPEG ~0.85) and sent to the
+           import-order-photo edge function with the signed-in user's
+           session token. The returned fields only FILL this form for
+           human review — nothing is ever saved automatically; the user
+           checks everything and presses "Lưu order" themselves. Any
+           failure shows a friendly in-form error and leaves manual
+           entry untouched.
+           ================================================================ */
+        var importPhotoBtn = document.getElementById("importPhotoBtn");
+        var importPhotoInput = document.getElementById("importPhotoInput");
+        var importPreview = document.getElementById("importPreview");
+        var importThumb = document.getElementById("importThumb");
+        var importStatus = document.getElementById("importStatus");
+        var importOk = document.getElementById("importOk");
+        var importErrorBox = document.getElementById("importErrorBox");
+        var importBusy = false;
+
+        function setImportBusy(busy) {
+          importBusy = busy;
+          importPhotoBtn.disabled = busy;
+          importPhotoBtn.textContent = busy ? "⏳ Đang đọc hình…" : "📷 Nhập từ hình order";
+          importStatus.textContent = busy ? "Đang đọc hình…" : "";
+        }
+        function resetImportUI() {
+          setImportBusy(false);
+          importOk.hidden = true;
+          importErrorBox.hidden = true;
+          importPreview.hidden = true;
+          importThumb.removeAttribute("src");
+          importPhotoInput.value = "";
+        }
+
+        importPhotoBtn.addEventListener("click", function () {
+          if (importBusy) return;
+          importPhotoInput.click();
+        });
+        importPhotoInput.addEventListener("change", function () {
+          var file = importPhotoInput.files && importPhotoInput.files[0];
+          importPhotoInput.value = "";
+          if (file) importOrderPhoto(file);
+        });
+
+        /* Load the picked file, shrink it to ~1600px on its longest
+           side and re-encode as JPEG (~0.85). Resolves with the bare
+           base64 (no data: prefix) plus the data URL for the preview
+           thumbnail. */
+        function downscaleImage(file) {
+          return new Promise(function (resolve, reject) {
+            var url = URL.createObjectURL(file);
+            var img = new Image();
+            img.onload = function () {
+              try {
+                var MAX = 1600;
+                var w = img.naturalWidth || img.width;
+                var h = img.naturalHeight || img.height;
+                if (!w || !h) throw new Error("bad-image");
+                var scale = Math.min(1, MAX / Math.max(w, h));
+                var canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, Math.round(w * scale));
+                canvas.height = Math.max(1, Math.round(h * scale));
+                var ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(url);
+                var dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                var b64 = dataUrl.split(",")[1];
+                if (!b64) throw new Error("encode-failed");
+                resolve({ base64: b64, dataUrl: dataUrl });
+              } catch (e) {
+                try { URL.revokeObjectURL(url); } catch (e2) { /* ignore */ }
+                reject(e);
+              }
+            };
+            img.onerror = function () {
+              try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
+              reject(new Error("image-load-failed"));
+            };
+            img.src = url;
+          });
+        }
+
+        /* The endpoint needs the signed-in user's access token; reuse
+           the stored session, refreshing it first when it is about to
+           expire (same rule as boot). */
+        function importToken() {
+          if (session && session.access_token && session.expires_at && session.expires_at > Date.now() + 30000) {
+            return Promise.resolve(session.access_token);
+          }
+          if (session && session.refresh_token) {
+            return refreshSession().then(function () { return session.access_token; });
+          }
+          return Promise.reject(new Error("no-session"));
+        }
+
+        /* Fill the entry form from the import result for review.
+           Only values actually returned overwrite the form, so a
+           half-read photo never wipes something typed by hand. The
+           endpoint's grp vocabulary ("giaosang" / "pickup" /
+           "bepgiao") maps onto the form's ("sang" / "pickup" /
+           "bep"). For pick up with no address in the photo, the
+           shop-address prefill applied by setEntryGrp stays. */
+        function fillEntryFromImport(d) {
+          var date = new Date();
+          date.setDate(date.getDate() + (Number(d.day_offset) === 1 ? 1 : 0));
+          entryDate.value = localDayStr(date);
+          var g = String(d.grp || "").toLowerCase();
+          var mapped = "sang";
+          if (g.indexOf("pick") !== -1) mapped = "pickup";
+          else if (g.indexOf("bep") !== -1 || g.indexOf("bếp") !== -1) mapped = "bep";
+          setEntryGrp(mapped);
+          if (trimStr(d.name)) entryName.value = String(d.name);
+          if (trimStr(d.phone)) entryPhone.value = String(d.phone);
+          if (trimStr(d.address)) entryPlace.value = String(d.address);
+          if (trimStr(d.time)) entryTime.value = String(d.time);
+          if (Array.isArray(d.dishes) && d.dishes.length) {
+            entryDishes.value = d.dishes.map(function (x) { return String(x); }).join("\n");
+          }
+          if (trimStr(d.note)) entryNote.value = String(d.note);
+        }
+
+        function importOrderPhoto(file) {
+          importOk.hidden = true;
+          importErrorBox.hidden = true;
+          entryError.hidden = true;
+          setImportBusy(true);
+          downscaleImage(file).then(function (img) {
+            importThumb.src = img.dataUrl;
+            importPreview.hidden = false;
+            return importToken().then(function (token) {
+              return fetch(SUPABASE_URL + "/functions/v1/import-order-photo", {
+                method: "POST",
+                headers: {
+                  "Authorization": "Bearer " + token,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ image: img.base64 })
+              });
+            }).then(function (r) {
+              if (!r.ok) throw new Error("http-" + r.status);
+              return r.json();
+            }).then(function (data) {
+              fillEntryFromImport(data || {});
+              setImportBusy(false);
+              importOk.hidden = false;
+            });
+          }).catch(function () {
+            setImportBusy(false);
+            importErrorBox.hidden = false;
+          });
+        }
 
         /* ================================================================
            AUTO-REFRESH — an already-open app picks up new Supabase data
