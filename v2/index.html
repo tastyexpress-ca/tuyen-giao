@@ -1080,7 +1080,7 @@
 
       /* Print-only label area: filled with the one tapped kitchen
          order, then window.print() shows only it. Sized to the shop's
-         label stock — exactly 2.44in × 3in (62mm × 3in). */
+         label stock — exactly 2.4in × 3.9in. */
       #printArea { display: none; }
       #printArea .pl-head {
         display: flex;
@@ -1149,15 +1149,15 @@
         margin: auto 0.1in 0.07in;
         border-top: 2px dashed #000;
       }
-      @page { size: 2.44in 3in; margin: 0; }
+      @page { size: 2.4in 3.9in; margin: 0; }
       @media print {
         html, body { background: #fff !important; }
         body > *:not(#printArea) { display: none !important; }
         #printArea {
           display: flex;
           flex-direction: column;
-          width: 2.44in;
-          height: 3in;
+          width: 2.4in;
+          height: 3.9in;
           overflow: hidden;
           background: #fff;
           color: #000;
@@ -2462,7 +2462,7 @@
         }
 
         /* Fill the print-only area with this one order, laid out like
-           the shop's food label (2.44in × 3in), and open the system
+           the shop's food label (2.4in × 3.9in), and open the system
            print dialog. Nothing in the app is touched, so when the
            dialog closes or is cancelled the kitchen view is exactly
            as it was — scroll, search and toggles included. */
