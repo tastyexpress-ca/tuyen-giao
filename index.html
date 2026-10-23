@@ -1262,6 +1262,12 @@
 
     <div class="copy-toast" id="copyToast" role="status" aria-live="polite"></div>
 
+    <!-- Supabase JS (classic UMD build) — used ONLY for Realtime
+         postgres_changes subscriptions; all data reads/writes keep
+         going through the fetch-based PostgREST calls below. If this
+         CDN script fails to load, the app still auto-refreshes via the
+         foreground + 30s polling fallback. -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script>
       (function () {
         "use strict";
@@ -1314,7 +1320,9 @@
         var toastTimer = null;
 
         var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenListView, kitchenView];
+        var currentView = null;
         function showView(v) {
+          currentView = v;
           ALL_VIEWS.forEach(function (x) { x.hidden = x !== v; });
           window.scrollTo(0, 0);
         }
@@ -1359,6 +1367,13 @@
           } catch (e) {
             /* storage unavailable — session lasts for this page load */
           }
+          /* Keep the Realtime socket authenticated with the freshest
+             token so postgres_changes events pass Row Level Security. */
+          try {
+            if (rtClient && rtClient.realtime && rtClient.realtime.setAuth) {
+              rtClient.realtime.setAuth(s.access_token);
+            }
+          } catch (e) { /* realtime is best-effort */ }
         }
         function clearSession() {
           session = null;
@@ -1442,6 +1457,11 @@
         var stopsByDay = {};
         var kitchenOrdersByDay = {};
         var stateMap = {};
+        /* Toggle writes made on THIS device that a background refetch
+           must not clobber before the server copy has caught up:
+           stateKey -> value. Entries clear a few seconds after the
+           write succeeds (or immediately when it fails). */
+        var pendingStates = {};
 
         function stateKey(day, cardKey, toggle) {
           return day + "|" + cardKey + "|" + toggle;
@@ -1473,6 +1493,13 @@
             (res[4] || []).forEach(function (st) {
               stateMap[stateKey(st.day, st.card_key, st.toggle)] = st.value === true;
             });
+            /* A toggle the user just set on this device wins over a
+               refetch that raced its write — never reset it back. */
+            for (var pk in pendingStates) {
+              if (Object.prototype.hasOwnProperty.call(pendingStates, pk)) {
+                stateMap[pk] = pendingStates[pk];
+              }
+            }
           });
         }
 
@@ -1495,7 +1522,16 @@
           var key = stateKey(day, cardKey, toggle);
           var prev = stateMap[key] === true;
           stateMap[key] = value;
-          postState(day, cardKey, toggle, value).catch(function () {
+          pendingStates[key] = value;
+          postState(day, cardKey, toggle, value).then(function () {
+            /* Keep shielding this key from background refetches a few
+               seconds past the write, so a refresh that started before
+               the write landed cannot flip the toggle back. */
+            window.setTimeout(function () {
+              if (pendingStates[key] === value) delete pendingStates[key];
+            }, 4000);
+          }, function () {
+            delete pendingStates[key];
             stateMap[key] = prev;
             showToast("⚠️ Chưa lưu được — kiểm tra mạng rồi bấm lại nhé");
             if (rerender) rerender();
@@ -1928,8 +1964,13 @@
           return url;
         }
 
-        function openDay(rd) {
-          currentRouteDay = rd;
+        /* Paints the route view from currentRouteDay + the in-memory
+           data WITHOUT touching navigation or scroll — used both when
+           opening a day and when a background refresh re-renders the
+           day that is already open. */
+        function renderRouteDay() {
+          var rd = currentRouteDay;
+          if (!rd) return;
           routeDayline.textContent = routeDayLabel(rd);
           routeChips.innerHTML = "";
           var stops = stopsByDay[rd.day] || [];
@@ -1960,6 +2001,11 @@
             return entry;
           });
           renderRouteProgress();
+        }
+
+        function openDay(rd) {
+          currentRouteDay = rd;
+          renderRouteDay();
           showView(routeView);
         }
 
@@ -1969,7 +2015,7 @@
            (the same aggregation as the day-list card summary), so it
            works for every day, past and future.
            ================================================================ */
-        function openTotals() {
+        function renderTotals() {
           var rd = currentRouteDay;
           if (!rd) return;
           totalsDayline.textContent = routeDayLabel(rd);
@@ -1989,6 +2035,11 @@
           var stops = stopsByDay[rd.day] || [];
           var miles = fmtMiles(rd.miles);
           totalsMeta.textContent = stops.length + " điểm giao" + (miles ? " · " + miles : "");
+        }
+
+        function openTotals() {
+          if (!currentRouteDay) return;
+          renderTotals();
           showView(totalsView);
         }
 
@@ -2274,6 +2325,7 @@
           showView(homeView);
         });
         document.getElementById("logoutBtn").addEventListener("click", function () {
+          teardownRealtime();
           clearSession();
           routeDays = [];
           kitchenDays = [];
@@ -2285,6 +2337,131 @@
         document.getElementById("retryBtn").addEventListener("click", function () {
           startApp();
         });
+
+        /* ================================================================
+           AUTO-REFRESH — an already-open app picks up new Supabase data
+           on its own, with no close/reopen:
+           1) Supabase Realtime postgres_changes on every data table
+              (kitchen_orders, stops, route_days, kitchen_days, states)
+              triggers a debounced refetch the moment a row changes.
+           2) Regardless of Realtime, the app refetches whenever it
+              returns to the foreground (visibilitychange / focus) and
+              on a light ~30s interval while visible.
+           A refresh re-renders ONLY the view currently on screen, from
+           the freshly fetched data: the open view stays open, the
+           kitchen search text is untouched (renderKitchenDay re-applies
+           it as the filter), scroll position is restored, and toggle
+           states come from the states table as they are — shielded by
+           pendingStates so a just-set toggle is never flipped back.
+           ================================================================ */
+        var rtClient = null;
+        var rtChannel = null;
+        var refreshing = false;
+        var refreshQueued = false;
+        var refreshTimer = null;
+
+        function findRouteDay(dayStr) {
+          var found = null;
+          routeDays.forEach(function (rd) { if (rd.day === dayStr) found = rd; });
+          return found;
+        }
+        function findKitchenDay(dayStr) {
+          var found = null;
+          kitchenDays.forEach(function (kd) { if (kd.day === dayStr) found = kd; });
+          return found;
+        }
+
+        function rerenderCurrent() {
+          var y = window.scrollY || window.pageYOffset || 0;
+          if (currentView === driverView) {
+            renderDayList();
+          } else if (currentView === kitchenListView) {
+            renderKitchenList();
+          } else if (currentView === routeView && currentRouteDay) {
+            var rd = findRouteDay(currentRouteDay.day);
+            if (rd) currentRouteDay = rd;
+            renderRouteDay();
+          } else if (currentView === totalsView && currentRouteDay) {
+            var rd2 = findRouteDay(currentRouteDay.day);
+            if (rd2) currentRouteDay = rd2;
+            renderTotals();
+          } else if (currentView === kitchenView && currentKitchenDay) {
+            var kd = findKitchenDay(currentKitchenDay.day);
+            if (kd) currentKitchenDay = kd;
+            renderKitchenDay();
+          }
+          if (y) window.scrollTo(0, y);
+        }
+
+        function refreshData() {
+          if (!session || !session.access_token) return;
+          if (!currentView || currentView === loadingView || currentView === loginView || currentView === errorView) return;
+          if (refreshing) { refreshQueued = true; return; }
+          refreshing = true;
+          loadData().then(function () {
+            rerenderCurrent();
+          }, function () {
+            /* Transient failure (e.g. a network blip): keep showing
+               the data already on screen; the next trigger retries. */
+          }).then(function () {
+            refreshing = false;
+            if (refreshQueued) {
+              refreshQueued = false;
+              refreshData();
+            }
+          });
+        }
+        function scheduleRefresh(delay) {
+          if (refreshTimer) window.clearTimeout(refreshTimer);
+          refreshTimer = window.setTimeout(function () {
+            refreshTimer = null;
+            refreshData();
+          }, delay == null ? 700 : delay);
+        }
+
+        function setupRealtime() {
+          if (rtChannel) return;
+          try {
+            if (typeof window.supabase === "undefined" || !window.supabase.createClient) return;
+            rtClient = window.supabase.createClient(SUPABASE_URL, ANON_KEY, {
+              auth: { persistSession: false, autoRefreshToken: false }
+            });
+            if (session && session.access_token && rtClient.realtime && rtClient.realtime.setAuth) {
+              rtClient.realtime.setAuth(session.access_token);
+            }
+            var ch = rtClient.channel("tasty-express-live");
+            ["kitchen_orders", "stops", "route_days", "kitchen_days", "states"].forEach(function (tbl) {
+              ch.on("postgres_changes", { event: "*", schema: "public", table: tbl }, function () {
+                scheduleRefresh(700);
+              });
+            });
+            ch.subscribe();
+            rtChannel = ch;
+          } catch (e) {
+            /* Realtime unavailable (CDN blocked or tables not in the
+               realtime publication): foreground + interval refetch
+               below still keep the app current. */
+            rtClient = null;
+            rtChannel = null;
+          }
+        }
+        function teardownRealtime() {
+          try {
+            if (rtClient && rtChannel) rtClient.removeChannel(rtChannel);
+          } catch (e) { /* ignore */ }
+          rtClient = null;
+          rtChannel = null;
+        }
+
+        document.addEventListener("visibilitychange", function () {
+          if (!document.hidden) scheduleRefresh(0);
+        });
+        window.addEventListener("focus", function () {
+          scheduleRefresh(0);
+        });
+        window.setInterval(function () {
+          if (!document.hidden) refreshData();
+        }, 30000);
 
         /* ================================================================
            LOGIN + BOOT
@@ -2318,6 +2495,7 @@
           showView(loadingView);
           loadData().then(function () {
             showView(homeView);
+            setupRealtime();
           }, function (err) {
             if (err && err.status === 401) {
               clearSession();
