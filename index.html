@@ -293,6 +293,52 @@
       .btn-login:active { transform: scale(0.99); }
       .btn-login:disabled { opacity: 0.6; cursor: default; }
 
+      /* ---------- Order entry form (reuses the login card/inputs) ---------- */
+      .entry-chips {
+        display: flex;
+        gap: 8px;
+        margin: -8px 0 14px;
+      }
+      .entry-chip {
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+        border: 1.5px solid var(--line);
+        border-radius: 999px;
+        padding: 7px 14px;
+        font-size: 14.5px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .entry-chip:active { background: var(--line); }
+      .grp-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 5px;
+      }
+      .grp-btn {
+        flex: 1;
+        min-height: 52px;
+        padding: 8px 4px;
+        border-radius: 12px;
+        font-size: 15.5px;
+        font-weight: 800;
+        background: var(--card);
+        color: var(--ink);
+        border: 2px solid var(--line);
+        cursor: pointer;
+      }
+      .grp-btn:active { transform: scale(0.99); }
+      .grp-btn.on {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .entry-area {
+        min-height: 118px;
+        resize: vertical;
+        line-height: 1.45;
+      }
+
       /* ---------- Loading / error ---------- */
       .status-wrap {
         padding: 60px 20px 40px;
@@ -1115,6 +1161,66 @@
             </span>
             <span class="section-arrow" aria-hidden="true">→</span>
           </button>
+          <button type="button" class="section-card" id="openEntryBtn">
+            <span class="section-icon" aria-hidden="true">✏️</span>
+            <span>
+              <span class="section-title">＋ Nhập order</span>
+              <span class="section-sub">Tự nhập order mới cho nhà bếp</span>
+            </span>
+            <span class="section-arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= ORDER ENTRY VIEW ================= -->
+    <div id="entryView" hidden>
+      <header>
+        <div class="wrap">
+          <button type="button" class="back-btn" id="entryBackBtn">← Trang chủ</button>
+          <div class="brand">Tasty Express <span class="route-name">· Nhập order</span></div>
+          <div class="dayline">Nhập order mới</div>
+          <div class="origin">Order sẽ hiện ngay trong mục Order Nhà Bếp của ngày đã chọn</div>
+        </div>
+      </header>
+      <div class="wrap">
+        <div class="login-wrap">
+          <form class="login-card" id="entryForm" novalidate>
+            <label class="login-label" for="entryDate">Ngày
+              <input type="date" id="entryDate" class="login-input" required />
+            </label>
+            <div class="entry-chips">
+              <button type="button" class="entry-chip" id="chipToday">Hôm nay</button>
+              <button type="button" class="entry-chip" id="chipTomorrow">Ngày mai</button>
+            </div>
+            <div class="login-label">Loại đơn
+              <div class="grp-row" role="group" aria-label="Loại đơn">
+                <button type="button" class="grp-btn on" data-grp="sang">Giao sáng</button>
+                <button type="button" class="grp-btn" data-grp="pickup">Pick up</button>
+                <button type="button" class="grp-btn" data-grp="bep">Bếp giao</button>
+              </div>
+            </div>
+            <label class="login-label" for="entryName">Tên khách
+              <input type="text" id="entryName" class="login-input" autocomplete="off" placeholder="VD: 8175 hoặc Lam Doan" />
+            </label>
+            <label class="login-label" for="entryPhone">Số điện thoại
+              <input type="text" id="entryPhone" class="login-input" inputmode="tel" autocomplete="tel" placeholder="Không bắt buộc" />
+            </label>
+            <label class="login-label" for="entryPlace">Địa chỉ giao / nơi pick up
+              <input type="text" id="entryPlace" class="login-input" autocomplete="off" />
+            </label>
+            <label class="login-label" for="entryTime">Giờ
+              <input type="text" id="entryTime" class="login-input" autocomplete="off" placeholder="VD: 4:00 PM, 8:30 AM, ngay bây giờ" />
+            </label>
+            <label class="login-label" for="entryDishes">Món (mỗi món 1 dòng)
+              <textarea id="entryDishes" class="login-input entry-area" rows="4" placeholder="1x cơm phần (cá kho tộ, bắp cải xào, canh chua)"></textarea>
+            </label>
+            <label class="login-label" for="entryNote">Ghi chú
+              <input type="text" id="entryNote" class="login-input" autocomplete="off" placeholder="VD: Đã Zelle cho anh $10" />
+            </label>
+            <div class="login-error" id="entryError" hidden></div>
+            <button type="submit" class="btn-login" id="entrySaveBtn">Lưu order</button>
+          </form>
         </div>
       </div>
     </div>
@@ -1300,6 +1406,7 @@
         var totalsMeta = document.getElementById("totalsMeta");
         var kitchenListView = document.getElementById("kitchenListView");
         var kitchenView = document.getElementById("kitchenView");
+        var entryView = document.getElementById("entryView");
         var dayList = document.getElementById("dayList");
         var stopList = document.getElementById("stopList");
         var routeDayline = document.getElementById("routeDayline");
@@ -1319,7 +1426,7 @@
         var toast = document.getElementById("copyToast");
         var toastTimer = null;
 
-        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenListView, kitchenView];
+        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenListView, kitchenView, entryView];
         var currentView = null;
         function showView(v) {
           currentView = v;
@@ -1444,6 +1551,22 @@
               throw e;
             }
             return r.json();
+          });
+        }
+        function dataPost(path, body, prefer) {
+          return apiFetch(path, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Prefer": prefer || "return=minimal"
+            },
+            body: JSON.stringify(body)
+          }).then(function (r) {
+            if (!r.ok) {
+              var e = new Error("http-" + r.status);
+              e.status = r.status;
+              throw e;
+            }
           });
         }
 
@@ -2339,6 +2462,156 @@
         });
 
         /* ================================================================
+           ORDER ENTRY — manual order form opened from the home screen.
+           Saving inserts one kitchen_orders row for the chosen day
+           (creating the kitchen_days row first when the day is new),
+           then returns home with the fresh data already reloaded so the
+           order is visible right away.
+           ================================================================ */
+        var entryForm = document.getElementById("entryForm");
+        var entryDate = document.getElementById("entryDate");
+        var entryName = document.getElementById("entryName");
+        var entryPhone = document.getElementById("entryPhone");
+        var entryPlace = document.getElementById("entryPlace");
+        var entryTime = document.getElementById("entryTime");
+        var entryDishes = document.getElementById("entryDishes");
+        var entryNote = document.getElementById("entryNote");
+        var entryError = document.getElementById("entryError");
+        var entrySaveBtn = document.getElementById("entrySaveBtn");
+        var grpBtns = Array.prototype.slice.call(entryForm.querySelectorAll(".grp-btn"));
+        var ENTRY_GRP_LABELS = { sang: "GIAO SÁNG", pickup: "PICK UP", bep: "BẾP GIAO" };
+        var PICKUP_PLACE = "Pick up: 14131 Roxanne Dr, Westminster";
+        var entryGrp = "sang";
+
+        function trimStr(s) {
+          return String(s == null ? "" : s).replace(/^\s+|\s+$/g, "");
+        }
+        function localDayStr(d) {
+          var m = String(d.getMonth() + 1);
+          var day = String(d.getDate());
+          return d.getFullYear() + "-" + (m.length < 2 ? "0" + m : m) + "-" + (day.length < 2 ? "0" + day : day);
+        }
+        function setEntryGrp(g) {
+          entryGrp = g;
+          grpBtns.forEach(function (b) {
+            b.classList.toggle("on", b.getAttribute("data-grp") === g);
+          });
+          /* Pick up prefills the shop address; switching away clears it
+             again only while it still holds that untouched prefill, so a
+             hand-typed address is never thrown away. */
+          if (g === "pickup") {
+            if (!trimStr(entryPlace.value) || entryPlace.value === PICKUP_PLACE) {
+              entryPlace.value = PICKUP_PLACE;
+            }
+          } else if (entryPlace.value === PICKUP_PLACE) {
+            entryPlace.value = "";
+          }
+        }
+        grpBtns.forEach(function (b) {
+          b.addEventListener("click", function () {
+            setEntryGrp(b.getAttribute("data-grp"));
+          });
+        });
+        document.getElementById("chipToday").addEventListener("click", function () {
+          entryDate.value = localDayStr(new Date());
+        });
+        document.getElementById("chipTomorrow").addEventListener("click", function () {
+          var d = new Date();
+          d.setDate(d.getDate() + 1);
+          entryDate.value = localDayStr(d);
+        });
+        function showEntryError(msg) {
+          entryError.textContent = msg;
+          entryError.hidden = false;
+        }
+        function resetEntryForm() {
+          entryDate.value = localDayStr(new Date());
+          entryName.value = "";
+          entryPhone.value = "";
+          entryPlace.value = "";
+          entryTime.value = "";
+          entryDishes.value = "";
+          entryNote.value = "";
+          entryError.hidden = true;
+          setEntryGrp("sang");
+        }
+        document.getElementById("openEntryBtn").addEventListener("click", function () {
+          resetEntryForm();
+          showView(entryView);
+        });
+        document.getElementById("entryBackBtn").addEventListener("click", function () {
+          showView(homeView);
+        });
+
+        entryForm.addEventListener("submit", function (ev) {
+          ev.preventDefault();
+          entryError.hidden = true;
+          var day = entryDate.value;
+          var name = trimStr(entryName.value);
+          var dishLines = entryDishes.value.split(/\r?\n/).map(trimStr).filter(function (s) { return s !== ""; });
+          if (!day) {
+            showEntryError("Vui lòng chọn ngày cho order nhé.");
+            return;
+          }
+          if (!name || !dishLines.length) {
+            showEntryError("Vui lòng nhập tên khách và ít nhất 1 món nhé.");
+            return;
+          }
+          var gio = trimStr(entryTime.value);
+          var grpLabel = ENTRY_GRP_LABELS[entryGrp];
+          var tag = gio ? grpLabel + " · " + gio : grpLabel;
+          var orderRow = {
+            day: day,
+            grp: grpLabel,
+            tag: tag,
+            label: name,
+            name: name,
+            phone: trimStr(entryPhone.value) || null,
+            place: trimStr(entryPlace.value) || null,
+            dishes: dishLines,
+            note: trimStr(entryNote.value) || null
+          };
+          entrySaveBtn.disabled = true;
+          entrySaveBtn.textContent = "Đang lưu…";
+          /* Look up the day fresh (not from the in-memory copy): whether
+             a kitchen_days row already exists, and the day's current
+             max seq, so the new order lands last. */
+          Promise.all([
+            dataGet("/rest/v1/kitchen_days?select=day&day=eq." + encodeURIComponent(day)),
+            dataGet("/rest/v1/kitchen_orders?select=seq&day=eq." + encodeURIComponent(day) + "&order=seq.desc&limit=1")
+          ]).then(function (res) {
+            var dayExists = (res[0] || []).length > 0;
+            var maxSeq = (res[1] && res[1][0]) ? Number(res[1][0].seq) || 0 : 0;
+            orderRow.seq = maxSeq + 1;
+            var chain = Promise.resolve();
+            if (!dayExists) {
+              chain = dataPost("/rest/v1/kitchen_days", {
+                day: day,
+                summary: "🍱 " + dishLines.join(" + ")
+              }, "resolution=ignore-duplicates,return=minimal");
+            }
+            return chain.then(function () {
+              return dataPost("/rest/v1/kitchen_orders", orderRow);
+            });
+          }).then(function () {
+            entrySaveBtn.disabled = false;
+            entrySaveBtn.textContent = "Lưu order";
+            showToast("✅ Đã lưu order của " + name + "!");
+            /* Reload so the home / day views already show the new order
+               when we land back on them. */
+            loadData().then(function () {
+              showView(homeView);
+            }, function () {
+              showView(homeView);
+            });
+          }, function () {
+            entrySaveBtn.disabled = false;
+            entrySaveBtn.textContent = "Lưu order";
+            showEntryError("⚠️ Chưa lưu được — kiểm tra mạng rồi bấm Lưu order lại nhé.");
+          });
+        });
+
+        /* ================================================================
            AUTO-REFRESH — an already-open app picks up new Supabase data
            on its own, with no close/reopen:
            1) Supabase Realtime postgres_changes on every data table
@@ -2395,7 +2668,7 @@
 
         function refreshData() {
           if (!session || !session.access_token) return;
-          if (!currentView || currentView === loadingView || currentView === loginView || currentView === errorView) return;
+          if (!currentView || currentView === loadingView || currentView === loginView || currentView === errorView || currentView === entryView) return;
           if (refreshing) { refreshQueued = true; return; }
           refreshing = true;
           loadData().then(function () {
