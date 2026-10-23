@@ -670,6 +670,43 @@
       }
       /* Right-hand amount on kitchen settlement per-order lines. */
       .kt-amt { font-weight: 900; white-space: nowrap; }
+      /* Kitchen settlement: three per-group tables + net day summary. */
+      .kt-block { margin-top: 26px; }
+      .kt-block:first-child { margin-top: 0; }
+      .kt-breakdown { margin-top: 5px; font-size: 16px; font-weight: 700; line-height: 1.45; }
+      .kt-empty { margin-top: 8px; font-size: 16px; font-weight: 700; color: var(--muted); }
+      .kt-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14.5px; }
+      .kt-table th {
+        text-align: left;
+        font-size: 11.5px;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 0 4px 6px;
+        vertical-align: bottom;
+      }
+      .kt-table td {
+        padding: 7px 4px;
+        border-top: 1px solid var(--line);
+        font-weight: 600;
+        vertical-align: top;
+      }
+      .kt-table th.num, .kt-table td.num { text-align: right; white-space: nowrap; }
+      .kt-table td.kt-fee { white-space: normal; }
+      .kt-table td.kt-name { font-weight: 700; overflow-wrap: anywhere; }
+      .kt-table tfoot td { border-top: 2px solid var(--line); font-weight: 900; }
+      .kt-fee-total { margin-top: 10px; }
+      /* Net day summary panel: highlighted green, like the collect panel. */
+      .kt-net {
+        margin-top: 26px;
+        background: var(--paid-bg);
+        border: 1.5px solid var(--paid-line);
+        border-radius: 14px;
+        padding: 16px 14px;
+      }
+      .kt-net .totals-big { margin-top: 8px; font-size: 20px; }
+      .kt-net-line { margin-top: 12px; font-size: 21px; font-weight: 900; color: var(--paid-ink); }
       /* Plain-text fallback: phone + identifier stay selectable so a
          long-press opens the phone's native copy / call menu even when
          every button and link is blocked by an in-app WebView. */
@@ -1517,21 +1554,7 @@
       <div class="wrap">
         <main>
           <div class="totals-card">
-            <div class="totals-label">Chi tiết phần ăn</div>
-            <div class="totals-items" id="ktItems"></div>
-            <div class="totals-row">
-              <div class="totals-big" id="ktFood"></div>
-            </div>
-            <div class="totals-row totals-row-shop">
-              <div class="totals-big" id="ktShop"></div>
-              <div class="totals-sub" id="ktMonLe" hidden></div>
-              <div class="totals-big totals-shop-total" id="ktTotal"></div>
-            </div>
-            <div class="totals-meta" id="ktMeta"></div>
-            <div class="totals-row">
-              <div class="totals-label">Từng order</div>
-              <div class="totals-collect-list" id="ktOrderList"></div>
-            </div>
+            <div id="ktBody"></div>
           </div>
         </main>
       </div>
@@ -1641,13 +1664,7 @@
         var totalsMeta = document.getElementById("totalsMeta");
         var kitchenTotalsView = document.getElementById("kitchenTotalsView");
         var ktDayline = document.getElementById("ktDayline");
-        var ktItems = document.getElementById("ktItems");
-        var ktFood = document.getElementById("ktFood");
-        var ktShop = document.getElementById("ktShop");
-        var ktMonLe = document.getElementById("ktMonLe");
-        var ktTotal = document.getElementById("ktTotal");
-        var ktMeta = document.getElementById("ktMeta");
-        var ktOrderList = document.getElementById("ktOrderList");
+        var ktBody = document.getElementById("ktBody");
         var kitchenListView = document.getElementById("kitchenListView");
         var kitchenView = document.getElementById("kitchenView");
         var entryView = document.getElementById("entryView");
@@ -2413,15 +2430,19 @@
         }
 
         /* ================================================================
-           KITCHEN — shop settlement for the currently open kitchen day.
-           Every figure is computed live from that day's kitchen_orders
-           dish lines, mirroring the owner's daily settlement math:
+           KITCHEN — shop settlement for the currently open kitchen day,
+           in THREE tables (giao hàng / pick up / bếp giao) plus a net
+           day summary. Every figure is computed live from that day's
+           kitchen_orders dish lines and notes:
            - a dish line carrying a $ price ("1x cánh gà … $15") is a
              MÓN LẺ line: it never counts as a food portion; its money
-             is qty × price, and the shop gets 80% of it ($4 of $5).
+             is qty × price; the shop's share is 80% ($4 of $5) and
+             the owner's profit share is 20%.
            - a line mentioning "kem" (ice cream) is excluded entirely.
-           - every other line counts qty food portions, paid to the
-             shop at $8 per portion.
+           - every other line counts qty food portions at $8 each to
+             the shop.
+           Who the customer paid is read from the order note (see
+           detectPayee); group defaults apply when the note is silent.
            ================================================================ */
         /* Clean money format for the settlement view: no trailing
            ".00" on whole dollars, one decimal when that is all the
@@ -2462,74 +2483,202 @@
           }
           return { type: "food", qty: qty, name: kitchenDishName(name) };
         }
-        /* Aggregate one kitchen day: total food portions, the grouped
-           portions breakdown string, the món lẻ total, and a per-order
-           breakdown (portions + món lẻ) in the day's stored order. */
+        /* $12-class dish for per-portion profit: the dish name
+           (lowercased, parenthetical already stripped by
+           kitchenDishName) mentioning one of these earns $4 profit
+           per portion instead of the flat $2. */
+        function isPremiumDish(name) {
+          var n = String(name || "").toLowerCase();
+          return n.indexOf("bánh canh") !== -1 || n.indexOf("riêu") !== -1 ||
+            n.indexOf("bún bò") !== -1 || n.indexOf("hải sản") !== -1;
+        }
+        /* Who the customer paid, from the order note (case-insensitive):
+           "trả tiệm" → the SHOP; "zelle" / "venmo" / "cho anh" /
+           "qua web" → CHRIS (the owner). With no signal in the note:
+           giao sáng → CHRIS, pick up → SHOP, bếp giao → CHRIS. */
+        function detectPayee(note, grpKey) {
+          var n = String(note || "").toLowerCase();
+          if (n.indexOf("trả tiệm") !== -1) return "shop";
+          if (n.indexOf("zelle") !== -1 || n.indexOf("venmo") !== -1 ||
+              n.indexOf("cho anh") !== -1 || n.indexOf("qua web") !== -1) return "chris";
+          return grpKey === "pickup" ? "shop" : "chris";
+        }
+        /* Delivery fee written in a bếp giao note: a $ amount sitting
+           next to "phí" or "ship" ("phí ship $5", "$3 phí giao"…). */
+        function parseShipFee(note) {
+          var n = String(note || "").toLowerCase();
+          var m = /(?:phí|ship)[^$\d]{0,24}\$\s*([\d]+(?:[.,]\d+)?)/.exec(n) ||
+            /\$\s*([\d]+(?:[.,]\d+)?)[^$\d]{0,24}(?:phí|ship)/.exec(n);
+          return m ? (parseFloat(m[1].replace(",", ".")) || 0) : 0;
+        }
+        /* Aggregate one kitchen day into the three settlement groups.
+           Each group carries its per-order rows, total portions, total
+           món lẻ, the grouped portions breakdown string (that group
+           only), total "anh trả tiệm", total "tiệm nợ anh" and — for
+           bếp giao — the total delivery fees handed back to the shop. */
         function kitchenSettlement(dayStr) {
           var orders = kitchenOrdersByDay[dayStr] || [];
-          var rows = [];
-          var totalPortions = 0;
-          var totalMonLe = 0;
-          var nameOrder = [];
-          var nameTotals = {};
+          var groups = {};
+          ["sang", "pickup", "bep"].forEach(function (k) {
+            groups[k] = { rows: [], portions: 0, monLe: 0, anhTra: 0, tiemNo: 0, feesReturned: 0, nameOrder: [], nameTotals: {}, breakdown: "" };
+          });
           orders.forEach(function (o) {
+            var gkey = grpInfo(o.grp).key;
+            var g = groups[gkey];
             var portions = 0;
             var monLe = 0;
-            var dishes = Array.isArray(o.dishes) ? o.dishes : [];
-            dishes.forEach(function (d) {
+            var profit = 0;
+            (Array.isArray(o.dishes) ? o.dishes : []).forEach(function (d) {
               var p = parseKitchenDish(d);
               if (p.type === "monle") {
                 monLe += p.money;
               } else if (p.type === "food") {
                 portions += p.qty;
+                profit += p.qty * (isPremiumDish(p.name) ? 4 : 2);
                 var key = p.name.toLowerCase();
-                if (!nameTotals[key]) {
-                  nameTotals[key] = { qty: 0, name: p.name };
-                  nameOrder.push(key);
+                if (!g.nameTotals[key]) {
+                  g.nameTotals[key] = { qty: 0, name: p.name };
+                  g.nameOrder.push(key);
                 }
-                nameTotals[key].qty += p.qty;
+                g.nameTotals[key].qty += p.qty;
               }
             });
-            totalPortions += portions;
-            totalMonLe += monLe;
-            rows.push({ label: o.label || o.name || "", portions: portions, monLe: monLe });
+            var payee = detectPayee(o.note, gkey);
+            var fee = gkey === "bep" ? parseShipFee(o.note) : 0;
+            var anhTra = 0;
+            var tiemNo = 0;
+            if (gkey === "sang") {
+              /* Giao hàng: the owner collected everything himself —
+                 he owes the shop portions × $8 + 80% of món lẻ. */
+              anhTra = portions * 8 + monLe * 0.8;
+            } else if (payee === "chris") {
+              anhTra = portions * 8 + monLe * 0.8 + fee;
+              g.feesReturned += fee;
+            } else if (gkey === "bep") {
+              /* Bếp giao paid to the shop: the shop already holds the
+                 $8/portion food money (and any fee); it owes back the
+                 per-portion profit by price class + 20% of món lẻ. */
+              tiemNo = profit + monLe * 0.2;
+            } else {
+              /* Pick up paid to the shop: flat $2/portion profit back. */
+              tiemNo = portions * 2 + monLe * 0.2;
+            }
+            g.rows.push({
+              label: o.label || o.name || "",
+              portions: portions, monLe: monLe, payee: payee,
+              fee: fee, anhTra: anhTra, tiemNo: tiemNo
+            });
+            g.portions += portions;
+            g.monLe += monLe;
+            g.anhTra += anhTra;
+            g.tiemNo += tiemNo;
           });
-          var breakdown = nameOrder.map(function (k) {
-            return nameTotals[k].qty + " " + nameTotals[k].name;
-          }).join(" + ");
-          return { rows: rows, portions: totalPortions, monLe: totalMonLe, breakdown: breakdown, count: orders.length };
+          ["sang", "pickup", "bep"].forEach(function (k) {
+            var g = groups[k];
+            g.breakdown = g.nameOrder.map(function (key) {
+              return g.nameTotals[key].qty + " " + g.nameTotals[key].name;
+            }).join(" + ");
+          });
+          return groups;
+        }
+
+        /* One settlement table (title + that group's portions
+           breakdown + per-order rows + footer totals). The món lẻ
+           column appears only when the group has món lẻ money; the
+           phí giao column only when a bếp giao note carries a fee.
+           An empty group still renders, with "Không có order". */
+        function buildSettleTable(title, g, kind) {
+          var block = el("div", "kt-block");
+          block.appendChild(el("div", "totals-label", title));
+          if (g.breakdown) block.appendChild(el("div", "kt-breakdown", g.breakdown));
+          if (!g.rows.length) {
+            block.appendChild(el("div", "kt-empty", "Không có order"));
+            return block;
+          }
+          var showML = g.monLe > 0;
+          var showFee = kind === "bep" && g.rows.some(function (r) { return r.fee > 0; });
+          var table = el("table", "kt-table");
+          var thead = el("thead");
+          var htr = el("tr");
+          function head(text, num) { htr.appendChild(el("th", num ? "num" : "", text)); }
+          head("Order", false);
+          head("Phần", true);
+          if (showML) head("Món lẻ", true);
+          if (showFee) head("Phí giao", true);
+          if (kind !== "sang") {
+            head("Trả", false);
+            head("Anh trả tiệm", true);
+            head("Tiệm nợ anh", true);
+          } else {
+            head("Trả tiệm", true);
+          }
+          thead.appendChild(htr);
+          table.appendChild(thead);
+          var tbody = el("tbody");
+          g.rows.forEach(function (r) {
+            var tr = el("tr");
+            tr.appendChild(el("td", "kt-name", r.label));
+            tr.appendChild(el("td", "num", r.portions > 0 ? String(r.portions) : "—"));
+            if (showML) tr.appendChild(el("td", "num", r.monLe > 0 ? fmtMoney(r.monLe) : "—"));
+            if (showFee) {
+              var feeTxt = "—";
+              if (r.fee > 0) feeTxt = fmtMoney(r.fee) + (r.payee === "shop" ? " (tiệm giữ)" : "");
+              tr.appendChild(el("td", "num kt-fee", feeTxt));
+            }
+            if (kind !== "sang") {
+              tr.appendChild(el("td", "", r.payee === "chris" ? "Anh" : "Tiệm"));
+              tr.appendChild(el("td", "num", r.payee === "chris" ? fmtMoney(r.anhTra) : "—"));
+              tr.appendChild(el("td", "num", r.payee === "shop" ? fmtMoney(r.tiemNo) : "—"));
+            } else {
+              tr.appendChild(el("td", "num", fmtMoney(r.anhTra)));
+            }
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          var tfoot = el("tfoot");
+          var ftr = el("tr");
+          ftr.appendChild(el("td", "kt-name", "Tổng · " + g.rows.length + " order"));
+          ftr.appendChild(el("td", "num", String(g.portions)));
+          if (showML) ftr.appendChild(el("td", "num", kind === "sang" ? fmtMoney(g.monLe) : "—"));
+          if (showFee) ftr.appendChild(el("td", "num", "—"));
+          if (kind !== "sang") {
+            ftr.appendChild(el("td", "", ""));
+            ftr.appendChild(el("td", "num", fmtMoney(g.anhTra)));
+            ftr.appendChild(el("td", "num", fmtMoney(g.tiemNo)));
+          } else {
+            ftr.appendChild(el("td", "num", fmtMoney(g.anhTra)));
+          }
+          tfoot.appendChild(ftr);
+          table.appendChild(tfoot);
+          block.appendChild(table);
+          if (kind === "bep" && g.feesReturned > 0) {
+            block.appendChild(el("div", "totals-sub kt-fee-total", "Tổng phí giao trả tiệm: " + fmtMoney(g.feesReturned)));
+          }
+          return block;
         }
 
         function renderKitchenTotals() {
           var kd = currentKitchenDay;
           if (!kd) return;
           ktDayline.textContent = kitchenDayLabel(kd);
-          var s = kitchenSettlement(kd.day);
-          ktItems.textContent = s.breakdown || "Chưa có món nào trong ngày này.";
-          ktFood.textContent = "Tổng số phần đồ ăn: " + s.portions + " phần";
-          var foodMoney = s.portions * 8;
-          ktShop.textContent = "💵 Tiền món trả tiệm: " + fmtMoney(foodMoney) + " (" + s.portions + " phần × $8)";
-          var monLePay = Math.round(s.monLe * 0.8 * 100) / 100;
-          if (s.monLe > 0) {
-            var monLeKeep = Math.round((s.monLe - monLePay) * 100) / 100;
-            ktMonLe.textContent = "Món lẻ: " + fmtMoney(s.monLe) + " — trả tiệm " + fmtMoney(monLePay) + " (giữ lại " + fmtMoney(monLeKeep) + ")";
-            ktMonLe.hidden = false;
-          } else {
-            ktMonLe.textContent = "";
-            ktMonLe.hidden = true;
-          }
-          ktTotal.textContent = "Tổng trả tiệm: " + fmtMoney(foodMoney + monLePay);
-          ktMeta.textContent = "Số order trong ngày: " + s.count;
-          ktOrderList.innerHTML = "";
-          s.rows.forEach(function (row) {
-            var line = el("div", "totals-collect-line");
-            line.appendChild(el("span", "", row.label));
-            var parts = [];
-            if (row.portions > 0) parts.push(row.portions + " phần");
-            if (row.monLe > 0) parts.push("+ món lẻ " + fmtMoney(row.monLe));
-            line.appendChild(el("span", "kt-amt", parts.length ? parts.join(" ") : "—"));
-            ktOrderList.appendChild(line);
-          });
+          var groups = kitchenSettlement(kd.day);
+          ktBody.innerHTML = "";
+          ktBody.appendChild(buildSettleTable("Bảng 1 — Giao hàng", groups.sang, "sang"));
+          ktBody.appendChild(buildSettleTable("Bảng 2 — Pick up", groups.pickup, "pickup"));
+          ktBody.appendChild(buildSettleTable("Bảng 3 — Bếp giao", groups.bep, "bep"));
+          var a = groups.sang.anhTra + groups.pickup.anhTra + groups.bep.anhTra;
+          var b = groups.pickup.tiemNo + groups.bep.tiemNo;
+          var net = el("div", "kt-net");
+          net.appendChild(el("div", "totals-label", "Tổng kết ngày"));
+          net.appendChild(el("div", "totals-big", "Tổng anh trả tiệm: " + fmtMoney(a)));
+          net.appendChild(el("div", "totals-big", "Tổng tiệm nợ anh: " + fmtMoney(b)));
+          var aC = Math.round(a * 100);
+          var bC = Math.round(b * 100);
+          var netText = aC > bC ? "→ Anh gửi tiệm " + fmtMoney(a - b)
+            : bC > aC ? "→ Tiệm gửi lại anh " + fmtMoney(b - a)
+            : "→ Huề — không ai nợ ai";
+          net.appendChild(el("div", "kt-net-line", netText));
+          ktBody.appendChild(net);
         }
 
         function openKitchenTotals() {
