@@ -584,7 +584,7 @@
         border-top: 1px dashed var(--line);
       }
       .totals-collect-line:first-child { border-top: none; }
-      .totals-collect-amt { font-weight: 900; white-space: nowrap; }
+      .totals-collect-amt { font-weight: 900; white-space: nowrap; color: var(--paid-ink); }
       .totals-collect-total {
         display: flex;
         justify-content: space-between;
@@ -596,6 +596,19 @@
         font-size: 21px;
         font-weight: 900;
       }
+      /* The "Cần thu khi giao" section sits in its own light-green
+         tinted panel (the green counterpart of the red/pink collect
+         tint used elsewhere); its amounts render in a strong green
+         while the section label and stop names keep the normal ink. */
+      .totals-row.totals-row-collect {
+        background: var(--paid-bg);
+        border: 1.5px solid var(--paid-line);
+        border-radius: 14px;
+        padding: 14px 14px 16px;
+      }
+      .totals-row-collect .totals-collect-line { border-top-color: var(--paid-line); }
+      .totals-row-collect .totals-collect-total { border-top-color: var(--paid-line); }
+      #totalsCollect { color: var(--paid-ink); }
       /* Plain-text fallback: phone + identifier stay selectable so a
          long-press opens the phone's native copy / call menu even when
          every button and link is blocked by an in-app WebView. */
@@ -674,6 +687,16 @@
         background: var(--collect-bg);
         color: var(--collect-ink);
         border-color: var(--collect-line);
+        font-size: 19px;
+        font-weight: 800;
+      }
+      /* Collect-on-delivery ("THU $… khi giao"): attention green so the
+         driver spots the stops where money must be taken — the green
+         palette with the same stand-out size/weight as .collect. */
+      .money.due {
+        background: var(--paid-bg);
+        color: var(--paid-ink);
+        border-color: var(--paid-line);
         font-size: 19px;
         font-weight: 800;
       }
@@ -1164,7 +1187,7 @@
               <div class="totals-big" id="totalsShop"></div>
               <div class="totals-sub">Tài xế gửi lại cho tiệm sau tuyến giao</div>
             </div>
-            <div class="totals-row">
+            <div class="totals-row totals-row-collect">
               <div class="totals-big">💰 Cần thu khi giao</div>
               <div class="totals-collect-list" id="totalsCollectList"></div>
               <div class="totals-collect-total">
@@ -1508,6 +1531,18 @@
           var s = String(m);
           return /mi$/.test(s) ? s : s + " mi";
         }
+        /* Estimated route completion time for the header chip: the day's
+           pure driving minutes (route_days.drive_mins) plus 5 minutes of
+           stop time per delivery stop, in Vietnamese. */
+        function fmtEta(driveMins, stopCount) {
+          if (driveMins == null || driveMins === "") return null;
+          var total = Math.round(Number(driveMins) + 5 * stopCount);
+          if (isNaN(total)) return null;
+          if (total < 60) return "⏱ ~" + total + " phút";
+          var h = Math.floor(total / 60);
+          var r = total % 60;
+          return r === 0 ? "⏱ ~" + h + " giờ" : "⏱ ~" + h + " giờ " + r + " phút";
+        }
         function last4(phone) {
           var digits = String(phone || "").replace(/\D/g, "");
           return digits.slice(-4);
@@ -1601,10 +1636,15 @@
           var r = Math.round(n * 100) / 100;
           return "$" + (r % 1 === 0 ? String(r) : r.toFixed(2));
         }
-        /* Money line styling follows the text the shop writes: amounts to
-           collect stand out red, paid lines green, anything else amber. */
+        /* Money line styling follows the text the shop writes: a genuine
+           collect-on-delivery line ("THU $… khi giao", never worded as
+           already paid) gets the attention-green "due" box; prepaid lines
+           ("Đã trả … · Không thu tiền") keep the red/pink "collect" box
+           they have always had; paid lines without a collect note are
+           green; anything else is amber. */
         function moneyClass(money) {
           var m = String(money || "").toLowerCase();
+          if (/thu\s*\$/.test(m) && m.indexOf("đã trả") === -1 && m.indexOf("đã thanh toán") === -1) return "due";
           if (m.indexOf("💵") !== -1 || m.indexOf("thu $") !== -1 || m.indexOf("thu tiền") !== -1) return "collect";
           if (m.indexOf("đã trả") !== -1 || m.indexOf("đã thanh toán") !== -1) return "paid";
           return "unknown";
@@ -1904,6 +1944,8 @@
           routeChips.appendChild(el("span", "chip", stops.length + " điểm giao"));
           var miles = fmtMiles(rd.miles);
           if (miles) routeChips.appendChild(el("span", "chip", miles));
+          var eta = fmtEta(rd.drive_mins, stops.length);
+          if (eta) routeChips.appendChild(el("span", "chip", eta));
           if (rd.driver_name) routeChips.appendChild(el("span", "chip", "Tài xế: " + rd.driver_name));
           /* Portions totals and the shop-return amount no longer live in
              this header — they are on the totals view (💵 button below
