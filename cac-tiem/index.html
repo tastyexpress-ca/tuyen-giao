@@ -8,6 +8,12 @@
     <meta name="description" content="Hệ Thống Các Tiệm — Think's Kitchen: cơm phần, cơm tháng, đặc tiệc và kem. Đặt cơm online hoặc gọi 626-283-9994." />
     <link rel="icon" type="image/png" href="https://tastyexpress-ca.github.io/tuyen-giao/assets/favicon.png" />
 <link rel="apple-touch-icon" href="https://tastyexpress-ca.github.io/tuyen-giao/assets/apple-touch-icon.png" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Tasty Express" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#54301a" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="Hệ Thống Các Tiệm" />
 <meta property="og:description" content="Think's Kitchen — Đặt cơm online. Order: 626-283-9994" />
@@ -171,5 +177,26 @@
         </article>
       </main>
     </div>
+      <div id="installBar" style="display:none;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:999;background:#54301a;color:#fdf3e0;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.28);align-items:center;gap:10px;font-size:14px;line-height:1.45">
+      <span style="flex:1">📲 <b>Cài app Tasty Express:</b> bấm nút <b>Chia sẻ</b> rồi chọn <b>“Thêm vào Màn hình chính”</b></span>
+      <button id="installBarX" type="button" aria-label="Đóng" style="background:rgba(255,250,241,.15);border:1px solid rgba(253,243,224,.4);color:#fdf3e0;border-radius:8px;padding:4px 9px;font-size:14px;cursor:pointer">✕</button>
+    </div>
+    <script>
+      (function () {
+        try {
+          var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+          var standalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+          if (!ios || standalone) return;
+          if (localStorage.getItem("te_install_dismissed")) return;
+          var b = document.getElementById("installBar");
+          if (!b) return;
+          b.style.display = "flex";
+          document.getElementById("installBarX").addEventListener("click", function () {
+            b.style.display = "none";
+            localStorage.setItem("te_install_dismissed", "1");
+          });
+        } catch (e) {}
+      })();
+    </script>
   </body>
 </html>
