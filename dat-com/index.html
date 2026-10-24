@@ -174,6 +174,9 @@
       .comphan .cp-price small { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
       .comphan p { margin: 8px 0 0; font-size: 13.5px; color: var(--ink-soft); }
       .comphan .cp-parts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+      .cp-dishes { margin-top: 12px; display: grid; gap: 5px; }
+      .cp-dish { font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+      .cp-dish b { color: var(--ink); }
       .cp-parts span {
         font-size: 12px; font-weight: 700; color: var(--brown-dark);
         background: var(--surface-2); border: 1px solid var(--line);
@@ -1037,10 +1040,14 @@
         }
 
         /* (a) Cơm phần */
+        var cpDishes = "";
+        [["Mặn", day.man], ["Xào", day.xao], ["Canh", day.canh]].forEach(function (g) {
+          if (g[1] && g[1].length) cpDishes += '<div class="cp-dish"><b>' + g[0] + ":</b> " + g[1].join(" · ") + "</div>";
+        });
         html += '<section class="menu-section"><div class="sec-head"><h2>CƠM PHẦN</h2><div class="rule"></div></div>' +
           '<div class="card comphan">' + dishImg("Cơm phần", "cp-img") + '<div class="cp-top"><h3>Cơm phần</h3><span class="cp-price">$10 <small>/ phần</small></span></div>' +
           '<p>Một phần gồm cơm trắng kèm 1 món mặn, 1 món xào và 1 món canh — bạn tự chọn theo menu ' + day.wd + ' ' + day.dm + '.</p>' +
-          '<div class="cp-parts"><span>1 Món mặn</span><span>1 Món xào</span><span>1 Món canh</span></div>' +
+          '<div class="cp-dishes">' + cpDishes + '</div>' +
           '<button class="btn accent block" type="button" id="openCp">Chọn món cho cơm phần</button></div></section>';
 
         /* (b) Mì / nui / đặc biệt */
