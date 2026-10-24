@@ -150,6 +150,7 @@
               <a class="btn btn-order" href="https://tastyexpress-ca.github.io/tuyen-giao/dat-com/?login=1">Đăng nhập</a>
               <a class="btn btn-call" href="../cac-tiem/">Tiếp tục với khách</a>
             </div>
+            <button class="btn btn-call" id="shareAppBtn" type="button" style="width:100%;margin-top:12px">📤 Chia sẻ app</button>
             <p style="margin:14px 0 0;text-align:center"><a href="../dang-ky-tiem/" style="color:#8a4b12;font-weight:600;text-decoration:none">🏪 Bạn có tiệm? Đăng ký bán trên Tasty Express →</a></p>
           </div>
       </main>
@@ -173,6 +174,24 @@
             localStorage.setItem("te_install_dismissed", "1");
           });
         } catch (e) {}
+      })();
+    </script>
+      <script>
+      (function () {
+        var b = document.getElementById("shareAppBtn");
+        if (!b) return;
+        var url = "https://tastyexpress-ca.github.io/tuyen-giao/gioi-thieu/";
+        b.addEventListener("click", function () {
+          if (navigator.share) {
+            navigator.share({ title: "Tasty Express", text: "Tasty Express — lựa món Việt từ các tiệm nổi tiếng ở Bolsa, giao đến tận nơi. Mở app tại đây:", url: url }).catch(function () {});
+          } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(function () {
+              var t = b.textContent;
+              b.textContent = "✓ Đã chép link app";
+              setTimeout(function () { b.textContent = t; }, 2000);
+            });
+          }
+        });
       })();
     </script>
   </body>
