@@ -39,6 +39,10 @@
         --unknown-line: #ecd9a8;
         --done-bg: #eef4ee;
         --done-badge: #2f7d3e;
+        --web-bg: #e9f2fb;
+        --web-ink: #1c5fa6;
+        --web-solid: #1c5fa6;
+        --web-line: #b9d4f2;
         --shadow: 0 2px 10px rgba(58, 33, 16, 0.1);
       }
       @media (prefers-color-scheme: dark) {
@@ -68,6 +72,10 @@
           --unknown-line: #6b5518;
           --done-bg: #1b241b;
           --done-badge: #4ade80;
+          --web-bg: #132a42;
+          --web-ink: #8fc1f5;
+          --web-solid: #2f6db3;
+          --web-line: #26507c;
           --shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
         }
       }
@@ -1473,6 +1481,128 @@
         }
       }
 
+      /* ---------- Online orders (🌐 Đơn online, kitchen day view) ----------
+         Web orders placed in the customer ordering app (Supabase
+         web_orders), shown above the regular kitchen groups with
+         their own blue border/tint so they never blend into the
+         kitchen-entered orders. */
+      .web-section { padding: 14px 14px 0; }
+      .web-head {
+        font-size: 15px;
+        font-weight: 900;
+        letter-spacing: 0.07em;
+        color: var(--web-ink);
+        margin: 2px 2px 10px;
+      }
+      .web-list { display: flex; flex-direction: column; gap: 12px; }
+      .web-card {
+        background: var(--card);
+        border: 2px solid var(--web-line);
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+      .web-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      .web-pill {
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.03em;
+        padding: 5px 11px;
+        border-radius: 999px;
+        background: var(--web-solid);
+        color: #fff;
+      }
+      .web-badge-new {
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        padding: 5px 11px;
+        border-radius: 999px;
+        background: var(--collect-ink);
+        color: #fff;
+      }
+      .web-badge-in {
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.03em;
+        padding: 5px 11px;
+        border-radius: 999px;
+        background: var(--paid-bg);
+        color: var(--paid-ink);
+        border: 1.5px solid var(--paid-line);
+      }
+      .web-badge-other {
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.03em;
+        padding: 5px 11px;
+        border-radius: 999px;
+        background: var(--unknown-bg);
+        color: var(--unknown-ink);
+        border: 1.5px solid var(--unknown-line);
+      }
+      .web-method {
+        margin-top: 5px;
+        font-size: 16.5px;
+        font-weight: 700;
+        color: var(--ink);
+        overflow-wrap: anywhere;
+      }
+      .web-card .dishes {
+        margin-top: 12px;
+        background: var(--web-bg);
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .web-card .dish {
+        font-size: 16.5px;
+        font-weight: 600;
+        padding: 2px 0;
+        line-height: 1.4;
+      }
+      .web-total {
+        margin-top: 10px;
+        font-size: 18px;
+        font-weight: 900;
+      }
+      .web-card .note-line {
+        margin-top: 10px;
+        font-size: 15.5px;
+        font-weight: 700;
+        color: var(--paid-ink);
+        background: var(--paid-bg);
+        border: 1.5px solid var(--paid-line);
+        border-radius: 10px;
+        padding: 9px 12px;
+      }
+      .btn-web-add {
+        width: 100%;
+        margin-top: 12px;
+        min-height: 56px;
+        border-radius: 12px;
+        font-size: 17px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        background: var(--web-solid);
+        color: #fff;
+        border: 2px solid var(--web-solid);
+        cursor: pointer;
+      }
+      .btn-web-add:active { transform: scale(0.99); }
+      .btn-web-add:disabled { opacity: 0.65; cursor: default; }
+      .btn-web-add.in {
+        background: var(--paid-bg);
+        color: var(--paid-ink);
+        border-color: var(--paid-line);
+        opacity: 1;
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .progress-fill, .stop-card { transition: none; }
         .spinner { animation: none; }
@@ -1853,6 +1983,10 @@
         <div class="k-search-row">
           <input type="search" id="kitchenSearch" class="k-search" placeholder="Tìm theo 4 số cuối…" autocomplete="off" enterkeyhint="search" aria-label="Tìm order theo 4 số cuối số điện thoại" />
         </div>
+        <section class="web-section" id="webOrdersSection" hidden aria-label="Đơn online">
+          <div class="web-head" id="webOrdersHead">🌐 ĐƠN ONLINE</div>
+          <div class="web-list" id="webOrdersList"></div>
+        </section>
         <main id="kitchenGroups"></main>
 
         <footer>
@@ -1954,6 +2088,9 @@
         var kitchenDayList = document.getElementById("kitchenDayList");
         var kitchenGroups = document.getElementById("kitchenGroups");
         var kitchenSearch = document.getElementById("kitchenSearch");
+        var webOrdersSection = document.getElementById("webOrdersSection");
+        var webOrdersHead = document.getElementById("webOrdersHead");
+        var webOrdersList = document.getElementById("webOrdersList");
         var kitchenDayline = document.getElementById("kitchenDayline");
         var kitchenChips = document.getElementById("kitchenChips");
         var kFill = document.getElementById("kProgressFill");
@@ -2117,6 +2254,7 @@
         var kitchenDays = [];
         var stopsByDay = {};
         var kitchenOrdersByDay = {};
+        var webOrdersByDay = {};
         var stateMap = {};
         /* Toggle writes made on THIS device that a background refetch
            must not clobber before the server copy has caught up:
@@ -2136,7 +2274,16 @@
             dataGet("/rest/v1/stops?select=*&order=day.desc,seq.asc"),
             dataGet("/rest/v1/kitchen_days?select=*&order=day.desc"),
             dataGet("/rest/v1/kitchen_orders?select=*&order=day.desc,seq.asc"),
-            dataGet("/rest/v1/states?select=*")
+            dataGet("/rest/v1/states?select=*"),
+            /* web_orders (customer ordering app) is read with the same
+               signed-in session, but its failure must never break the
+               rest of the app: a failed read resolves to null and the
+               🌐 Đơn online section simply stays hidden that round. */
+            dataGet("/rest/v1/web_orders?select=*&order=day.desc,created_at.asc").then(function (rows) {
+              return rows;
+            }, function () {
+              return null;
+            })
           ]).then(function (res) {
             routeDays = res[0] || [];
             kitchenDays = res[2] || [];
@@ -2154,6 +2301,13 @@
             (res[4] || []).forEach(function (st) {
               stateMap[stateKey(st.day, st.card_key, st.toggle)] = st.value === true;
             });
+            webOrdersByDay = {};
+            if (Array.isArray(res[5])) {
+              res[5].forEach(function (o) {
+                if (!webOrdersByDay[o.day]) webOrdersByDay[o.day] = [];
+                webOrdersByDay[o.day].push(o);
+              });
+            }
             /* A toggle the user just set on this device wins over a
                refetch that raced its write — never reset it back. */
             for (var pk in pendingStates) {
@@ -4160,6 +4314,7 @@
           }
           renderKitchenProgress();
           applyKitchenFilter();
+          renderWebOrders();
         }
 
         function openKitchenDay(kd) {
@@ -4167,6 +4322,209 @@
           kitchenSearch.value = "";
           renderKitchenDay();
           showView(kitchenView);
+        }
+
+        /* ================================================================
+           ONLINE ORDERS — 🌐 Đơn online section at the top of the
+           kitchen day view. Rows come from the web_orders table (the
+           customer ordering app), read with the signed-in session, and
+           render as their own blue-bordered cards above the regular
+           kitchen groups. "➕ Đưa vào bếp" creates the matching
+           kitchen_orders row for the day — grp derived from the
+           order: delivery + ca Sáng → "giaosang", delivery + ca Tối →
+           "bepgiao", pickup → "pickup" — and flips web_orders.status
+           to "in_kitchen", after which the card locks to
+           "✓ Đã vào bếp" so an order can never be sent twice.
+           The section refreshes with the app's existing cadence:
+           web_orders is part of loadData, so the realtime triggers
+           and the 30s / foreground refetch all cover it.
+           ================================================================ */
+        var webBusy = {};
+
+        function webStatus(o) {
+          return String(o.status || "new").toLowerCase();
+        }
+        function webIsInKitchen(o) {
+          return webStatus(o) === "in_kitchen";
+        }
+        function webGrp(o) {
+          if (String(o.method || "").toLowerCase() === "delivery") {
+            return String(o.shift || "").indexOf("Tối") !== -1 ? "bepgiao" : "giaosang";
+          }
+          return "pickup";
+        }
+        function webMoney(n) {
+          var v = Number(n);
+          return isNaN(v) ? "$0.00" : "$" + v.toFixed(2);
+        }
+        /* One kitchen dish line per web item: "2x Cơm phần — Mặn: … ·
+           Xào: … · Canh: …" (the cơm phần detail already carries the
+           chosen mặn/xào/canh from the ordering app). */
+        function webDishLine(it) {
+          var line = "";
+          if (it.qty) line += it.qty + "x ";
+          line += it.name || "";
+          if (it.detail) line += " — " + it.detail;
+          return line;
+        }
+        function webKitchenNote(o) {
+          var note = "Đơn online — tổng " + webMoney(o.total) + " — thẻ/Stripe";
+          if (o.note) note += " · " + o.note;
+          return note;
+        }
+
+        function buildWebCard(o) {
+          var card = el("article", "web-card");
+
+          var top = el("div", "web-top");
+          top.appendChild(el("span", "web-pill", "🌐 ĐƠN ONLINE"));
+          var st = webStatus(o);
+          if (st === "new") {
+            top.appendChild(el("span", "web-badge-new", "MỚI"));
+          } else if (st === "in_kitchen") {
+            top.appendChild(el("span", "web-badge-in", "✓ ĐÃ VÀO BẾP"));
+          } else {
+            top.appendChild(el("span", "web-badge-other", st.toUpperCase()));
+          }
+          card.appendChild(top);
+
+          card.appendChild(el("div", "customer", o.customer_name || ""));
+          if (o.phone) {
+            card.appendChild(el("div", "sdt-line", o.phone));
+          }
+
+          if (String(o.method || "").toLowerCase() === "delivery") {
+            card.appendChild(el("div", "web-method",
+              "🚗 Giao hàng" + (o.shift ? " · Ca " + o.shift : "")));
+            if (o.address) {
+              card.appendChild(el("div", "addr-line", o.address));
+            }
+          } else {
+            card.appendChild(el("div", "web-method",
+              "🏠 Pick up" + (o.pickup_time ? " · Giờ lấy: " + o.pickup_time : "")));
+          }
+
+          var items = Array.isArray(o.items) ? o.items : [];
+          if (items.length) {
+            var dishBox = el("div", "dishes");
+            items.forEach(function (it) {
+              dishBox.appendChild(el("div", "dish", "• " + webDishLine(it)));
+            });
+            card.appendChild(dishBox);
+          }
+
+          card.appendChild(el("div", "web-total", "Tổng cộng: " + webMoney(o.total)));
+
+          if (o.note) {
+            card.appendChild(el("div", "note-line", "📝 " + o.note));
+          }
+
+          var inK = webIsInKitchen(o);
+          var btn = el("button", "btn-web-add", inK ? "✓ Đã vào bếp" : "➕ Đưa vào bếp");
+          btn.type = "button";
+          if (inK) {
+            btn.disabled = true;
+            btn.classList.add("in");
+          } else {
+            btn.addEventListener("click", function () {
+              sendWebOrderToKitchen(o, btn);
+            });
+          }
+          card.appendChild(btn);
+          return card;
+        }
+
+        function renderWebOrders() {
+          var kd = currentKitchenDay;
+          var list = kd ? (webOrdersByDay[kd.day] || []) : [];
+          webOrdersList.innerHTML = "";
+          if (!list.length) {
+            webOrdersSection.hidden = true;
+            return;
+          }
+          webOrdersHead.textContent = "🌐 ĐƠN ONLINE · " + list.length + " ĐƠN";
+          list.forEach(function (o) {
+            webOrdersList.appendChild(buildWebCard(o));
+          });
+          webOrdersSection.hidden = false;
+        }
+
+        function sendWebOrderToKitchen(o, btn) {
+          if (!o || o.id == null || webBusy[o.id] || webIsInKitchen(o)) return;
+          webBusy[o.id] = true;
+          btn.disabled = true;
+          btn.textContent = "⏳ Đang đưa vào bếp…";
+          var day = o.day;
+          var grp = webGrp(o);
+          var dishes = (Array.isArray(o.items) ? o.items : []).map(webDishLine);
+          var tagBase = grp === "pickup" ? "PICK UP" : (grp === "bepgiao" ? "BẾP GIAO" : "GIAO SÁNG");
+          var when = grp === "pickup" ? (o.pickup_time || "") : (o.shift || "");
+          var orderRow = {
+            day: day,
+            grp: grp,
+            tag: when ? tagBase + " · " + when : tagBase,
+            label: o.customer_name || "",
+            name: null,
+            phone: o.phone || null,
+            place: grp === "pickup" ? "Pick up" : (o.address || null),
+            dishes: dishes,
+            note: webKitchenNote(o)
+          };
+          /* Same insert pattern as the manual entry form: create the
+             kitchen_days row first when the day is new, and land the
+             order last in the day's seq. */
+          Promise.all([
+            dataGet("/rest/v1/kitchen_days?select=day&day=eq." + encodeURIComponent(day)),
+            dataGet("/rest/v1/kitchen_orders?select=seq&day=eq." + encodeURIComponent(day) + "&order=seq.desc&limit=1")
+          ]).then(function (res) {
+            var dayExists = (res[0] || []).length > 0;
+            var maxSeq = (res[1] && res[1][0]) ? Number(res[1][0].seq) || 0 : 0;
+            orderRow.seq = maxSeq + 1;
+            var chain = Promise.resolve();
+            if (!dayExists) {
+              chain = dataPost("/rest/v1/kitchen_days", {
+                day: day,
+                summary: "🍱 " + dishes.join(" + ")
+              }, "resolution=ignore-duplicates,return=minimal");
+            }
+            return chain.then(function () {
+              return dataPost("/rest/v1/kitchen_orders", orderRow);
+            });
+          }).then(function () {
+            /* Kitchen row created — flip the web order's status so it
+               cannot be sent twice. If the flip itself fails, the
+               order IS in the kitchen: still lock the card locally on
+               this device and warn, so nobody taps it again. */
+            return apiFetch("/rest/v1/web_orders?id=eq." + encodeURIComponent(o.id), {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+              },
+              body: JSON.stringify({ status: "in_kitchen" })
+            }).then(function (r) {
+              if (!r.ok) throw new Error("status-update-failed");
+              return true;
+            }, function () {
+              return false;
+            });
+          }).then(function (statusOk) {
+            o.status = "in_kitchen";
+            delete webBusy[o.id];
+            showToast(statusOk
+              ? "✅ Đã đưa đơn của " + (o.customer_name || "khách") + " vào bếp!"
+              : "✅ Đã vào bếp — trạng thái web chưa cập nhật, đừng bấm lại nhé");
+            loadData().then(function () {
+              rerenderCurrent();
+            }, function () {
+              renderWebOrders();
+            });
+          }, function () {
+            delete webBusy[o.id];
+            btn.disabled = false;
+            btn.textContent = "➕ Đưa vào bếp";
+            showToast("⚠️ Chưa đưa vào bếp được — kiểm tra mạng rồi bấm lại nhé");
+          });
         }
 
         /* ================================================================
@@ -4227,6 +4585,7 @@
           kitchenDays = [];
           stopsByDay = {};
           kitchenOrdersByDay = {};
+          webOrdersByDay = {};
           stateMap = {};
           showLogin();
         });
@@ -4556,6 +4915,7 @@
            ================================================================ */
         var rtClient = null;
         var rtChannel = null;
+        var rtWebChannel = null;
         var refreshing = false;
         var refreshQueued = false;
         var refreshTimer = null;
@@ -4648,6 +5008,21 @@
             });
             ch.subscribe();
             rtChannel = ch;
+            /* web_orders gets its own channel so the 🌐 Đơn online
+               section also refreshes live, isolated from the main
+               channel: if web_orders is not in the realtime
+               publication this fails quietly and the 30s / foreground
+               refetch still keeps the section current. */
+            try {
+              var wch = rtClient.channel("tasty-express-web-orders");
+              wch.on("postgres_changes", { event: "*", schema: "public", table: "web_orders" }, function () {
+                scheduleRefresh(700);
+              });
+              wch.subscribe();
+              rtWebChannel = wch;
+            } catch (e2) {
+              rtWebChannel = null;
+            }
           } catch (e) {
             /* Realtime unavailable (CDN blocked or tables not in the
                realtime publication): foreground + interval refetch
@@ -4659,9 +5034,11 @@
         function teardownRealtime() {
           try {
             if (rtClient && rtChannel) rtClient.removeChannel(rtChannel);
+            if (rtClient && rtWebChannel) rtClient.removeChannel(rtWebChannel);
           } catch (e) { /* ignore */ }
           rtClient = null;
           rtChannel = null;
+          rtWebChannel = null;
         }
 
         document.addEventListener("visibilitychange", function () {

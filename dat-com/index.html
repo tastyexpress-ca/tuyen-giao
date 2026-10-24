@@ -530,9 +530,7 @@
               <div class="field" style="margin-bottom:0;">
                 <label>Thanh toán</label>
                 <div class="pay-opts">
-                  <label class="radio-opt"><input type="radio" name="pay" value="Zelle" checked /><span>Zelle — 626-283-9994 (Thinh Ho)<span class="ro-sub">Chuyển khoản sau khi tiệm gọi xác nhận đơn</span></span></label>
-                  <label class="radio-opt"><input type="radio" name="pay" value="Venmo" /><span>Venmo<span class="ro-sub">Thanh toán qua Venmo sau khi tiệm xác nhận</span></span></label>
-                  <label class="radio-opt"><input type="radio" name="pay" value="Tiền mặt" /><span>Tiền mặt khi nhận<span class="ro-sub">Trả tiền mặt lúc nhận món</span></span></label>
+                  <label class="radio-opt"><input type="radio" name="pay" value="card_stripe" checked /><span>💳 Thanh toán bằng thẻ / Apple Pay / Google Pay<span class="ro-sub">Thanh toán an toàn qua Stripe</span></span></label>
                 </div>
               </div>
             </div>
@@ -612,7 +610,6 @@
           ]
         }
       ];
-      var GOI_CUON = { name: "Gỏi cuốn", price: 6, detail: "1 phần = 3 cuốn" };
       var TAX_RATE = 0.0875;
       var SUPABASE_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/web_orders";
       var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
@@ -741,10 +738,7 @@
 
         /* (c) Món thêm */
         html += '<section class="menu-section"><div class="sec-head"><h2>MÓN THÊM</h2><div class="rule"></div></div>' +
-          '<p class="sec-sub">Gỏi cuốn và các món trong ngày gọi lẻ: phần nhỏ $5 · phần lớn $10.</p><div class="dish-list">';
-        html += '<div class="dish"><div class="d-info"><div class="d-name">' + GOI_CUON.name + '</div>' +
-          '<div class="d-detail">' + GOI_CUON.detail + '</div></div>' +
-          '<span class="d-price">' + money(GOI_CUON.price) + '</span>' + stepperHTML(keyOf(day.date, GOI_CUON.name, GOI_CUON.detail)) + '</div>';
+          '<p class="sec-sub">Các món trong ngày gọi lẻ: phần nhỏ $5 · phần lớn $10.</p><div class="dish-list">';
 
         var groups = [["Món mặn", day.man], ["Món xào", day.xao], ["Món canh", day.canh]];
         groups.forEach(function (g) {
@@ -796,7 +790,6 @@
       function priceFor(day, name, detail) {
         var i, pool = day.tray ? day.trays : STANDING.concat(day.specials || []);
         for (i = 0; i < pool.length; i++) if (pool[i].name === name) return pool[i].price;
-        if (name === GOI_CUON.name) return GOI_CUON.price;
         if (detail === "Phần nhỏ") return 5;
         if (detail === "Phần lớn") return 10;
         if (name === "Cơm phần") return 10;
@@ -1002,9 +995,7 @@
           html += '<div class="s-meta">Giao hàng: ' + esc(order.address) + '<br />Ca giao: ' + esc(order.shift) + '</div>';
           html += '<div class="s-meta">Phí giao tính theo khoảng cách — tiệm gọi lại xác nhận với bạn.</div>';
         }
-        html += '<div class="s-meta">Thanh toán: ' +
-          (order.payment_method === "Zelle" ? "Zelle — 626-283-9994 (Thinh Ho)" :
-           order.payment_method === "Venmo" ? "Venmo" : "Tiền mặt khi nhận") + '</div>';
+        html += '<div class="s-meta">Thanh toán: 💳 Thanh toán bằng thẻ / Apple Pay / Google Pay (Stripe)</div>';
         if (order.note) html += '<div class="s-meta">Ghi chú: ' + esc(order.note) + '</div>';
         html += '</div>';
         return html;
