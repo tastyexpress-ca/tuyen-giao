@@ -1775,8 +1775,7 @@
           var d = res.d;
           if (d.access_token && d.user) {
             saveSession(sessionFromAuth(d));
-            closeAuth();
-            prefillFromHistory();
+            window.location.href = "../cac-tiem/";
           } else if (authMode === "signup" && d.user) {
             setAuthMode("login");
             showAuthOk("Đăng ký thành công! Tiệm vừa gửi email xác nhận — bạn mở hộp thư, bấm link xác nhận rồi đăng nhập nhé.");
@@ -1918,7 +1917,7 @@
       loadSession();
       renderAcct();
       if (!session) {
-        try { if (new URLSearchParams(window.location.search).get("login") === "1") openAuth("login"); } catch (e) { /* ignore */ }
+        try { if (new URLSearchParams(window.location.search).get("login") === "1") { if (session) { window.location.href = "../cac-tiem/"; } else { openAuth("login"); } } } catch (e) { /* ignore */ }
       }
       if (session) {
         validSession().then(function (s) { if (s) prefillFromHistory(); });
