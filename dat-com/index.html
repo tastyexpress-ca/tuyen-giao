@@ -1088,7 +1088,7 @@
           body: JSON.stringify({
             order_id: orderId,
             amount_cents: Math.round(order.total * 100),
-            description: "Tasty Express — Đơn online #" + orderId,
+            description: "Tasty Express — Đơn online",
             success_url: CHECKOUT_SUCCESS_URL,
             cancel_url: CHECKOUT_CANCEL_URL
           })
@@ -1119,19 +1119,15 @@
             "apikey": SUPABASE_ANON,
             "Authorization": "Bearer " + SUPABASE_ANON,
             "Content-Type": "application/json",
-            "Prefer": "return=representation"
+            "Prefer": "return=minimal"
           },
           body: JSON.stringify(order)
         }).then(function (res) {
           if (!res.ok) throw new Error("insert failed");
-          return res.json();
-        }).then(function (rows) {
-          var id = rows && rows.length ? rows[0].id : null;
-          if (id == null) throw new Error("no order id");
-          pendingOrderId = id;
+          pendingOrderId = null;
           saveOrderSummary(order);
           btn.textContent = "Đang mở trang thanh toán…";
-          return requestCheckout(id, order).catch(function () {
+          return requestCheckout(null, order).catch(function () {
             btn.disabled = false;
             btn.textContent = "💳 Thanh toán & Đặt hàng";
             showResult("payerror", order);
