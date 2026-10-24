@@ -1920,7 +1920,10 @@
         try { if (new URLSearchParams(window.location.search).get("login") === "1") { if (session) { window.location.href = "../cac-tiem/"; } else { openAuth("login"); } } } catch (e) { /* ignore */ }
       }
       if (session) {
-        validSession().then(function (s) { if (s) prefillFromHistory(); });
+        var goShops = false;
+        try { goShops = new URLSearchParams(window.location.search).get("login") === "1"; } catch (e) { /* ignore */ }
+        if (goShops) { window.location.href = "../cac-tiem/"; }
+        else { validSession().then(function (s) { if (s) prefillFromHistory(); }); }
       }
 
       renderDayChips();
