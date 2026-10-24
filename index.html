@@ -4155,22 +4155,6 @@
               var label = buildPrintLabel(kd, order);
               printArea.appendChild(label);
               printArea.classList.add("capturing");
-              /* Measure this one label exactly the way the
-                 per-order print measures a single label: the
-                 print area laid out off-screen at the true 2.4in
-                 width, total rendered height read back. */
-              var px = 0;
-              try {
-                px = Math.max(printArea.scrollHeight || 0, printArea.offsetHeight || 0);
-              } catch (e) { px = 0; }
-              /* The label's natural height at the full 62mm width:
-                 round UP to the next 0.01in so nothing is clipped,
-                 then convert to mm. It no longer sizes the page —
-                 every page is the fixed [62mm × 101.6mm]; the
-                 natural height only decides the fit below. */
-              var heightIn = Math.ceil((px / 96) * 100) / 100;
-              if (heightIn > 200) heightIn = 200;
-              var heightMm = heightIn * 25.4;
               return window.html2canvas(label, {
                 scale: 3,
                 backgroundColor: "#ffffff",
@@ -4178,13 +4162,20 @@
               }).then(function (canvas) {
                 printArea.classList.remove("capturing");
                 var img = canvas.toDataURL("image/jpeg", 0.92);
-                /* If the off-screen measurement failed, fall back
-                   to the captured image's own aspect ratio. */
-                if (!heightMm || heightMm <= 0) {
-                  heightMm = canvas.width > 0
-                    ? 62 * (canvas.height / canvas.width)
-                    : 101.6;
-                }
+                /* FULL-PAGE fit (Chris 2026-10-24): the label's
+                   natural height comes from the captured image's
+                   OWN aspect ratio — the ground truth of what was
+                   rendered — never from an off-screen scrollHeight
+                   measurement, which overshot on real devices and
+                   shrank every label to about half the page. The
+                   image is drawn at the full 62mm page width, so a
+                   label whose aspect matches the page fills it
+                   edge to edge; only a genuinely taller label is
+                   scaled down proportionally to fit the 101.6mm
+                   height, never clipped. */
+                var heightMm = canvas.width > 0
+                  ? 62 * (canvas.height / canvas.width)
+                  : 101.6;
                 if (!pdf) {
                   pdf = new JsPDF({
                     unit: "mm",
