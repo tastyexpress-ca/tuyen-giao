@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="Trang quản lý Tasty Express — các tiệm bán, đơn đăng ký và lợi nhuận của app." />
+    <link rel="icon" type="image/png" href="https://tastyexpress-ca.github.io/tuyen-giao/assets/favicon.png" />
+    <link rel="apple-touch-icon" href="https://tastyexpress-ca.github.io/tuyen-giao/assets/apple-touch-icon.png" />
+    <meta name="theme-color" content="#54301a" />
+    <title>Quản Lý Tasty Express</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        --bg:#faf5ec; --card:#fffdf8; --ink:#26221a; --muted:#6b6252;
+        --red:#b3352b; --red-deep:#8f2a22; --green:#1d6b3a; --green-deep:#155830;
+        --line:#e4d9c4; --chip:#f5e7cd; --chip-line:#d9a441; --shadow:0 10px 26px rgba(64,48,20,.14);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{ --bg:#16140f; --card:#201d16; --ink:#f0e9da; --muted:#b8ae99; --red:#c94f42; --red-deep:#b3352b; --green:#5cb87e; --green-deep:#7ccb97; --line:#38322a; --chip:#2c2517; --chip-line:#a07d2e; --shadow:0 10px 26px rgba(0,0,0,.5); }
+      }
+      *{box-sizing:border-box}
+      body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif; min-height:100svh; -webkit-font-smoothing:antialiased; }
+      .wrap{max-width:860px;margin:0 auto;padding:20px 18px 48px}
+      header.site{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:6px 0 18px; flex-wrap:wrap; }
+      .brand{ font-family:"Playfair Display","Be Vietnam Pro",serif; font-weight:800; font-size:1.35rem; }
+      .brand .accent{ color:var(--red); }
+      .logout{ background:none; border:1.5px solid var(--line); color:var(--ink); border-radius:999px; padding:9px 16px; font:inherit; font-weight:600; cursor:pointer; }
+      h2.sec{ font-size:1.12rem; margin:26px 0 10px; }
+      .stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+      .stat{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 15px; box-shadow:var(--shadow); }
+      .stat .num{ font-size:1.45rem; font-weight:800; margin-top:2px; }
+      .stat .lbl{ color:var(--muted); font-size:.85rem; font-weight:600; }
+      .stat .sub{ color:var(--muted); font-size:.8rem; margin-top:2px; }
+      .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:15px 16px; box-shadow:var(--shadow); margin-bottom:12px; }
+      .card h3{ margin:0 0 4px; font-size:1.05rem; }
+      .meta{ color:var(--muted); font-size:.9rem; line-height:1.55; }
+      .row{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start; }
+      .pill{ display:inline-block; font-size:.75rem; font-weight:700; padding:3px 9px; border-radius:999px; border:1px solid var(--chip-line); background:var(--chip); }
+      .pill.ok{ border-color:var(--green); color:var(--green-deep); background:none; }
+      .pill.no{ border-color:var(--red); color:var(--red-deep); background:none; }
+      .actions{ display:flex; gap:9px; margin-top:11px; }
+      .btn{ padding:10px 18px; border-radius:999px; border:0; font:inherit; font-weight:700; cursor:pointer; }
+      .btn-ok{ background:var(--green); color:#fff; }
+      .btn-no{ background:none; border:1.5px solid var(--line); color:var(--ink); }
+      .empty{ color:var(--muted); background:var(--card); border:1px dashed var(--line); border-radius:14px; padding:16px; text-align:center; }
+      .order{ display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:.93rem; }
+      .order:last-child{ border-bottom:0; }
+      .order .amt{ font-weight:700; white-space:nowrap; }
+      /* login */
+      .login-box{ max-width:420px; margin:8vh auto 0; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:24px 20px; box-shadow:var(--shadow); }
+      .login-box h1{ font-family:"Playfair Display",serif; font-size:1.4rem; margin:0 0 6px; }
+      .login-box p{ color:var(--muted); line-height:1.55; margin:0 0 14px; font-size:.93rem; }
+      label{ display:block; font-weight:600; font-size:.92rem; margin:12px 0 6px; }
+      input{ width:100%; padding:12px 13px; border:1.5px solid var(--line); border-radius:11px; font:inherit; font-size:1rem; background:var(--bg); color:var(--ink); }
+      .submit{ width:100%; margin-top:18px; padding:14px; border:0; border-radius:999px; background:var(--red); color:#fff; font:inherit; font-weight:700; font-size:1.02rem; cursor:pointer; }
+      .submit:disabled{ opacity:.55; }
+      .err{ display:none; margin-top:12px; background:#fdeceb; border:1px solid #e5a19b; color:#8f2a22; border-radius:11px; padding:10px 12px; font-size:.9rem; }
+      .loading{ text-align:center; color:var(--muted); padding:30px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <!-- LOGIN -->
+      <div id="loginView" style="display:none">
+        <div class="login-box">
+          <h1>📊 Quản Lý Tasty Express</h1>
+          <p>Trang quản lý dành cho chủ nền tảng: xem các tiệm bán, duyệt đơn đăng ký và lợi nhuận của app. Đăng nhập bằng tài khoản app của tiệm (app@creameryace.com).</p>
+          <form id="loginForm">
+            <label for="fEmail">Email</label>
+            <input id="fEmail" type="email" autocomplete="username" placeholder="app@creameryace.com" required />
+            <label for="fPass">Mật khẩu</label>
+            <input id="fPass" type="password" autocomplete="current-password" placeholder="Mật khẩu" required />
+            <button class="submit" id="loginBtn" type="submit">Đăng nhập</button>
+            <div class="err" id="loginErr"></div>
+          </form>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="dashView" style="display:none">
+        <header class="site">
+          <div class="brand">📊 Quản Lý <span class="accent">Tasty Express</span></div>
+          <button class="logout" id="logoutBtn" type="button">Đăng xuất</button>
+        </header>
+
+        <div class="stats" id="statsBox"><div class="loading">Đang tải dữ liệu…</div></div>
+
+        <h2 class="sec">🏪 Đơn đăng ký bán</h2>
+        <div id="signupsBox"><div class="loading">Đang tải…</div></div>
+
+        <h2 class="sec">🍽️ Các tiệm đang bán</h2>
+        <div id="shopsBox"><div class="loading">Đang tải…</div></div>
+
+        <h2 class="sec">🧾 Đơn online gần nhất</h2>
+        <div class="card" id="ordersBox"><div class="loading">Đang tải…</div></div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+        var BASE = "https://kxfvxtsoncpjleoiupwf.supabase.co";
+        var KEY = "te_admin_session";
+        var session = null;
+        try { session = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { session = null; }
+
+        function $(id) { return document.getElementById(id); }
+        function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+        function money(n) { return "$" + (Math.round((Number(n) || 0) * 100) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function ptDate(iso) {
+          try { return new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }); } catch (e) { return ""; }
+        }
+        function todayPT() { return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }); }
+        function fmtDate(iso) {
+          try { return new Date(iso).toLocaleString("vi-VN", { timeZone: "America/Los_Angeles", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; }
+        }
+        function api(path, opts) {
+          opts = opts || {};
+          var headers = { "apikey": ANON, "Authorization": "Bearer " + (session ? session.access_token : ANON), "Content-Type": "application/json" };
+          if (opts.headers) for (var k in opts.headers) headers[k] = opts.headers[k];
+          return fetch(BASE + path, { method: opts.method || "GET", headers: headers, body: opts.body || undefined })
+            .then(function (r) { if (!r.ok) throw new Error("api " + r.status); return r.status === 204 ? null : r.json().catch(function () { return null; }); });
+        }
+
+        function showLogin() { $("loginView").style.display = "block"; $("dashView").style.display = "none"; }
+        function showDash() { $("loginView").style.display = "none"; $("dashView").style.display = "block"; loadAll(); }
+
+        $("loginForm").addEventListener("submit", function (ev) {
+          ev.preventDefault();
+          var btn = $("loginBtn"), err = $("loginErr");
+          err.style.display = "none"; btn.disabled = true; btn.textContent = "Đang đăng nhập…";
+          fetch(BASE + "/auth/v1/token?grant_type=password", {
+            method: "POST",
+            headers: { "apikey": ANON, "Content-Type": "application/json" },
+            body: JSON.stringify({ email: $("fEmail").value.trim(), password: $("fPass").value })
+          }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+            .then(function (res) {
+              btn.disabled = false; btn.textContent = "Đăng nhập";
+              if (!res.ok || !res.d.access_token) { err.textContent = "Đăng nhập chưa được — kiểm tra lại email/mật khẩu nhé."; err.style.display = "block"; return; }
+              session = { access_token: res.d.access_token, refresh_token: res.d.refresh_token };
+              localStorage.setItem(KEY, JSON.stringify(session));
+              showDash();
+            })
+            .catch(function () { btn.disabled = false; btn.textContent = "Đăng nhập"; err.textContent = "Không kết nối được — thử lại nhé."; err.style.display = "block"; });
+        });
+
+        $("logoutBtn").addEventListener("click", function () {
+          session = null; localStorage.removeItem(KEY); showLogin();
+        });
+
+        function loadAll() {
+          var signups = [], orders = [];
+          api("/rest/v1/shop_signups?select=*&order=created_at.desc")
+            .then(function (rows) { signups = rows || []; })
+            .catch(function () { signups = []; })
+            .then(function () { return api("/rest/v1/web_orders?select=*&order=created_at.desc&limit=1000"); })
+            .then(function (rows) { orders = rows || []; })
+            .catch(function () { orders = []; })
+            .then(function () { render(signups, orders); });
+        }
+
+        function render(signups, orders) {
+          var pending = signups.filter(function (s) { return s.status === "new"; });
+          var approved = signups.filter(function (s) { return s.status === "approved"; });
+          var revenue = orders.reduce(function (a, o) { return a + (Number(o.total) || 0); }, 0);
+          var t = todayPT();
+          var todayOrders = orders.filter(function (o) { return ptDate(o.created_at) === t; });
+          var todayRevenue = todayOrders.reduce(function (a, o) { return a + (Number(o.total) || 0); }, 0);
+          var commissionPartner = 0; // tiệm đối tác chưa có đơn — khi có, tính 15% doanh thu của họ
+
+          $("statsBox").innerHTML =
+            stat("📝", pending.length, "Đăng ký chờ duyệt", approved.length + " tiệm đã duyệt") +
+            stat("🧾", orders.length, "Đơn online (tất cả)", todayOrders.length + " đơn hôm nay") +
+            stat("💰", money(revenue), "Doanh thu online", "Hôm nay: " + money(todayRevenue)) +
+            stat("📈", money(commissionPartner), "Lời của app (commission 15%)", "Từ tiệm đối tác — chưa có tiệm nào bán");
+
+          // signups
+          if (!signups.length) {
+            $("signupsBox").innerHTML = '<div class="empty">Chưa có tiệm nào đăng ký. Đơn đăng ký mới sẽ hiện ở đây để anh duyệt.</div>';
+          } else {
+            $("signupsBox").innerHTML = signups.map(function (s) {
+              var pill = s.status === "approved" ? '<span class="pill ok">Đã duyệt</span>' : (s.status === "rejected" ? '<span class="pill no">Đã từ chối</span>' : '<span class="pill">Chờ duyệt</span>');
+              var acts = s.status === "new" ? '<div class="actions"><button class="btn btn-ok" data-act="approved" data-id="' + s.id + '">✓ Duyệt tiệm</button><button class="btn btn-no" data-act="rejected" data-id="' + s.id + '">Từ chối</button></div>' : "";
+              return '<div class="card"><div class="row"><h3>' + esc(s.shop_name) + '</h3>' + pill + '</div>' +
+                '<div class="meta">Chủ tiệm: ' + esc(s.owner_name || "—") + ' · SĐT: ' + esc(s.phone) + '<br />Địa chỉ: ' + esc(s.address || "—") + '<br />Loại món: ' + esc(s.cuisine || "—") + (s.note ? '<br />Ghi chú: ' + esc(s.note) : '') + '<br />Đăng ký: ' + fmtDate(s.created_at) + '</div>' + acts + '</div>';
+            }).join("");
+            Array.prototype.forEach.call($("signupsBox").querySelectorAll("button[data-act]"), function (b) {
+              b.addEventListener("click", function () {
+                b.disabled = true;
+                api("/rest/v1/shop_signups?id=eq." + b.getAttribute("data-id"), { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify({ status: b.getAttribute("data-act") }) })
+                  .then(loadAll).catch(function () { b.disabled = false; alert("Cập nhật chưa được — thử lại nhé."); });
+              });
+            });
+          }
+
+          // shops
+          $("shopsBox").innerHTML =
+            '<div class="card"><div class="row"><h3>Think\'s Kitchen</h3><span class="pill ok">Đang bán · Tiệm của anh</span></div>' +
+            '<div class="meta">Đơn online: <b>' + orders.length + '</b> · Doanh thu online: <b>' + money(revenue) + '</b><br />Tiệm đầu tiên trên Tasty Express — đơn chạy vào hệ thống bếp + tài xế của tiệm.</div></div>' +
+            '<div class="empty">Các tiệm đối tác được duyệt sẽ hiện ở đây với số đơn, doanh thu và commission 15% của họ.</div>';
+
+          // recent orders
+          if (!orders.length) {
+            $("ordersBox").innerHTML = '<div class="empty">Chưa có đơn online nào.</div>';
+          } else {
+            $("ordersBox").innerHTML = orders.slice(0, 10).map(function (o) {
+              var left = "<b>" + esc(o.customer_name || "Khách") + "</b> · " + esc(o.weekday_label || "") + " " + esc(o.day || "") + "<br /><span class='meta'>" + (o.method === "delivery" ? "Giao hàng" : "Pick up") + (o.shift ? " · Ca " + esc(o.shift) : "") + " · " + fmtDate(o.created_at) + "</span>";
+              return '<div class="order"><div>' + left + '</div><div class="amt">' + money(o.total) + '</div></div>';
+            }).join("");
+          }
+        }
+        function stat(icon, num, lbl, sub) {
+          return '<div class="stat"><div class="lbl">' + icon + " " + esc(lbl) + '</div><div class="num">' + esc(num) + '</div><div class="sub">' + esc(sub) + "</div></div>";
+        }
+
+        if (session && session.access_token) showDash(); else showLogin();
+      })();
+    </script>
+  </body>
+</html>
