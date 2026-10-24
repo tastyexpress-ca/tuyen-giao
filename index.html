@@ -745,6 +745,51 @@
       .kt-table td.kt-name { font-weight: 700; overflow-wrap: anywhere; }
       .kt-table tfoot td { border-top: 2px solid var(--line); font-weight: 900; }
       .kt-fee-total { margin-top: 10px; }
+      /* Chris profit panel (💵 Chris, kitchen day view): the day's
+         per-order profit for the owner, toggled from a button beside
+         "💰 Thanh toán với tiệm". Green paid palette — money the
+         owner keeps. Same line shape as the collect list: label on
+         the left, amount on the right, bold total as the last line. */
+      .chris-panel {
+        margin-bottom: 14px;
+        background: var(--paid-bg);
+        border: 1.5px solid var(--paid-line);
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .chris-list { margin-top: 8px; }
+      .chris-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        padding: 7px 0;
+        font-size: 17px;
+        font-weight: 700;
+        border-top: 1px dashed var(--paid-line);
+      }
+      .chris-line:first-child { border-top: none; }
+      .chris-name { overflow-wrap: anywhere; }
+      .chris-fee-note {
+        display: block;
+        margin-top: 1px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .chris-amt { font-weight: 900; white-space: nowrap; color: var(--paid-ink); }
+      .chris-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-top: 10px;
+        padding-top: 12px;
+        border-top: 1.5px solid var(--paid-line);
+        font-size: 20px;
+        font-weight: 900;
+        color: var(--paid-ink);
+      }
       /* Net day summary panel: highlighted green, like the collect panel. */
       .kt-net {
         margin-top: 26px;
@@ -1669,6 +1714,7 @@
           <div class="dayline" id="kitchenDayline"></div>
           <div class="chips" id="kitchenChips"></div>
           <button type="button" class="btn-totals" id="kitchenTotalsBtn">💰 Thanh toán với tiệm</button>
+          <button type="button" class="btn-totals" id="chrisBtn" aria-expanded="false">💵 Chris</button>
           <button type="button" class="btn-print-all" id="printAllBtn">🖨 In tất cả</button>
           <div class="progress-row">
             <div class="progress-track" role="progressbar" aria-label="Tiến độ nấu order" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="kProgressBar">
@@ -1680,6 +1726,10 @@
       </header>
 
       <div class="wrap">
+        <section class="chris-panel" id="chrisPanel" hidden>
+          <div class="totals-label">TIỀN CỦA THINH</div>
+          <div id="chrisBody"></div>
+        </section>
         <div class="k-search-row">
           <input type="search" id="kitchenSearch" class="k-search" placeholder="Tìm theo 4 số cuối…" autocomplete="off" enterkeyhint="search" aria-label="Tìm order theo 4 số cuối số điện thoại" />
         </div>
@@ -1746,6 +1796,9 @@
         var kitchenTotalsView = document.getElementById("kitchenTotalsView");
         var ktDayline = document.getElementById("ktDayline");
         var ktBody = document.getElementById("ktBody");
+        var chrisPanel = document.getElementById("chrisPanel");
+        var chrisBody = document.getElementById("chrisBody");
+        var chrisBtn = document.getElementById("chrisBtn");
         var kitchenListView = document.getElementById("kitchenListView");
         var kitchenView = document.getElementById("kitchenView");
         var entryView = document.getElementById("entryView");
@@ -2820,6 +2873,113 @@
         }
 
         /* ================================================================
+           KITCHEN — 💵 Chris panel ("TIỀN CỦA THINH"): what the OWNER
+           keeps from the open kitchen day, one line per FOOD order
+           (kem-only orders are excluded, exactly like the settlement).
+           Display only — computed live from the same kitchen_orders
+           data, dishes parsed with the same parseKitchenDish /
+           isPremiumDish classification as the settlement:
+           - portion profit: $12-class portion → $4, other → $2.
+           - món lẻ profit: (price ÷ 5) × $1 — i.e. 20% of its money.
+           - GIAO SÁNG orders ADD their delivery fee (read from the
+             note with parseShipFee, the same way the settlement reads
+             bếp giao fees) — morning fees belong to the owner. BẾP
+             GIAO fees belong to the shop and are NOT added; PICK UP
+             is margins only, whoever the customer paid.
+           - WIX / web-paid orders (label starts "Wix", or the note /
+             label mentions "qua web" / "wix") SUBTRACT the Wix
+             processing fee: 2.9% of the charged total + $0.30, where
+             charged total = (food at selling prices — $12-class
+             portion $12, other $10, món lẻ at its $ price — plus the
+             delivery fee if any) × 1.0875 tax, rounded to cents.
+           A line never displays below $0.00.
+           ================================================================ */
+        var chrisPanelOpen = false;
+
+        /* Strict two-decimal money for this panel ("$3.07"). */
+        function fmtUsd2(n) {
+          var r = Math.round(n * 100) / 100;
+          return "$" + r.toFixed(2);
+        }
+        function isWebPaidOrder(o) {
+          var label = String(o.label || "");
+          if (label.indexOf("Wix") === 0) return true;
+          var text = (label + " " + String(o.note || "")).toLowerCase();
+          return text.indexOf("qua web") !== -1 || text.indexOf("wix") !== -1;
+        }
+        /* Per-order owner profit lines for one kitchen day. */
+        function chrisDayProfit(dayStr) {
+          var orders = kitchenOrdersByDay[dayStr] || [];
+          var rows = [];
+          var total = 0;
+          orders.forEach(function (o) {
+            var gkey = grpInfo(o.grp).key;
+            var margin = 0;
+            var sell = 0;
+            var hasFood = false;
+            (Array.isArray(o.dishes) ? o.dishes : []).forEach(function (d) {
+              var p = parseKitchenDish(d);
+              if (p.type === "monle") {
+                hasFood = true;
+                margin += p.money * 0.2;
+                sell += p.money;
+              } else if (p.type === "food") {
+                hasFood = true;
+                var premium = isPremiumDish(p.name);
+                margin += p.qty * (premium ? 4 : 2);
+                sell += p.qty * (premium ? 12 : 10);
+              }
+            });
+            if (!hasFood) return;
+            var fee = parseShipFee(o.note);
+            var profit = margin;
+            if (gkey === "sang") profit += fee;
+            var wixFee = 0;
+            if (isWebPaidOrder(o)) {
+              var charged = Math.round((sell + fee) * 1.0875 * 100) / 100;
+              wixFee = Math.round((charged * 0.029 + 0.30) * 100) / 100;
+              profit -= wixFee;
+            }
+            var amount = Math.max(0, Math.round(profit * 100) / 100);
+            rows.push({ label: o.label || o.name || "", amount: amount, wixFee: wixFee });
+            total += amount;
+          });
+          return { rows: rows, total: Math.round(total * 100) / 100 };
+        }
+
+        function renderChrisPanel() {
+          var kd = currentKitchenDay;
+          if (!kd) return;
+          var res = chrisDayProfit(kd.day);
+          chrisBody.innerHTML = "";
+          if (res.rows.length) {
+            var list = el("div", "chris-list");
+            res.rows.forEach(function (r) {
+              var line = el("div", "chris-line");
+              var name = el("span", "chris-name", r.label);
+              if (r.wixFee > 0) {
+                name.appendChild(el("span", "chris-fee-note", "− phí Wix " + fmtUsd2(r.wixFee)));
+              }
+              line.appendChild(name);
+              line.appendChild(el("span", "chris-amt", fmtUsd2(r.amount)));
+              list.appendChild(line);
+            });
+            chrisBody.appendChild(list);
+          }
+          var tot = el("div", "chris-total");
+          tot.appendChild(el("span", "", "Tổng tiền của Thinh"));
+          tot.appendChild(el("span", "", fmtUsd2(res.total)));
+          chrisBody.appendChild(tot);
+        }
+
+        function toggleChrisPanel() {
+          chrisPanelOpen = !chrisPanelOpen;
+          chrisPanel.hidden = !chrisPanelOpen;
+          chrisBtn.setAttribute("aria-expanded", chrisPanelOpen ? "true" : "false");
+          if (chrisPanelOpen) renderChrisPanel();
+        }
+
+        /* ================================================================
            KITCHEN — day list (home section)
            ================================================================ */
         function renderKitchenList() {
@@ -3224,6 +3384,9 @@
           }
           renderKitchenProgress();
           applyKitchenFilter();
+          /* The 💵 Chris panel lives in this view: keep its figures
+             in step with the same realtime refresh as the cards. */
+          if (chrisPanelOpen) renderChrisPanel();
         }
 
         function openKitchenDay(kd) {
@@ -3272,6 +3435,9 @@
         });
         document.getElementById("kitchenTotalsBtn").addEventListener("click", function () {
           openKitchenTotals();
+        });
+        chrisBtn.addEventListener("click", function () {
+          toggleChrisPanel();
         });
         document.getElementById("kitchenTotalsBackBtn").addEventListener("click", function () {
           showView(kitchenView);
