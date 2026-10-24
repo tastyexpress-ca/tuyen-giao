@@ -1313,6 +1313,8 @@
         cursor: pointer;
       }
       .btn-print-all:active { background: var(--line); }
+      .hdr-btn-row { display: flex; gap: 8px; }
+      .hdr-btn-row .btn-print-all { flex: 1; width: auto; }
 
       /* ---------- Kitchen cook list (🍳 Tổng món cần nấu) ---------- */
       .cook-overlay {
@@ -2024,8 +2026,10 @@
           <div class="chips" id="kitchenChips"></div>
           <button type="button" class="btn-totals" id="kitchenTotalsBtn">💰 Thanh toán với tiệm</button>
           <button type="button" class="btn-totals" id="chrisBtn">💵 Chris</button>
-          <button type="button" class="btn-print-all" id="printAllBtn">🖨 In tất cả</button>
-          <button type="button" class="btn-print-all" id="cookListBtn">🍳 Tổng món cần nấu</button>
+          <div class="hdr-btn-row">
+            <button type="button" class="btn-print-all" id="printAllBtn">🖨 In tất cả</button>
+            <button type="button" class="btn-print-all" id="cookListBtn">🍳 Tổng món cần nấu</button>
+          </div>
           <div class="progress-row">
             <div class="progress-track" role="progressbar" aria-label="Tiến độ nấu order" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="kProgressBar">
               <div class="progress-fill" id="kProgressFill"></div>
