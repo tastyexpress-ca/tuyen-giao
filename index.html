@@ -1281,8 +1281,8 @@
       }
       .btn-print:active { background: var(--line); }
       /* "🖨 In tất cả" in the kitchen day header: builds ONE PDF for
-         the open day — one page per order, each page exactly that
-         label's true size (62mm × its own height) — and shares /
+         the open day — one page per order, every page the fixed
+         label size 62mm × 101.6mm (2.44in × 4in) — and shares /
          opens it; if the PDF libraries cannot load (no network) it
          falls back to printing every order as one continuous
          strip, one label each, in a single print job. */
@@ -1478,13 +1478,16 @@
         .spinner { animation: none; }
       }
     </style>
-    <!-- Dynamic @page size for kitchen printing: JS fills this
-         right before each print with "@page { size: 2.4in
-         <measured>in; margin: 0; }" — one page tall enough for
-         every label — and clears it again after printing. While
-         empty, the static "@page { size: 2.4in auto; }" fallback
-         in the stylesheet above applies. It sits after that
-         stylesheet so its @page rule wins while it is filled. -->
+    <!-- Dynamic @page rules for kitchen printing: JS fills this
+         right before each print — the per-order print puts the
+         fixed label size "@page { size: 2.44in 4in; margin: 0; }"
+         (plus a scale-down transform when a label is taller than
+         4in), the print-all fallback strip puts a measured height
+         tall enough for every label — and clears it again after
+         printing. While empty, the static "@page { size: 2.4in
+         auto; }" fallback in the stylesheet above applies. It
+         sits after that stylesheet so its @page rule wins while
+         it is filled. -->
     <style id="dynamicPageStyle"></style>
   </head>
   <body>
@@ -3816,14 +3819,18 @@
           dynamicPageTimer = setTimeout(clearDynamicPage, 120000);
         }
 
-        /* Per-order print page size: the same off-screen measurement
-           as prepareDynamicPage, but used ONLY by the single-order
-           print ("🖨 In order") and sized to that one label's exact
-           measured height — rounded up only to the next 0.01in, with
-           none of the 0.1in rounding + 0.1in epsilon prepareDynamicPage
-           adds — so the roll feeds exactly the label's own length and
-           there is no blank paper tail to cut off. The label's layout
-           and content are unchanged; only the page length differs. */
+        /* Per-order print page size ("🖨 In order"): the FIXED label
+           size 2.44in × 4in — the same fixed size as every page of
+           the print-all PDF. The label is still measured off-screen
+           (the same measurement as before), but only to apply the
+           fit rule: a label whose natural height is within 4in
+           prints at its natural size, top-aligned on the page; a
+           taller label is scaled down proportionally — via a
+           print-only transform injected into #dynamicPageStyle
+           alongside the @page rule — so it fits inside the 4in
+           height. Never clipped, never stretched. The injected
+           rules are cleared again after printing, exactly like
+           the dynamic page rules before them. */
         function prepareSingleLabelPage() {
           clearDynamicPage();
           var px = 0;
@@ -3835,11 +3842,18 @@
             try { printArea.classList.remove("measuring"); } catch (e2) {}
             px = 0;
           }
-          if (!px || px <= 0 || !dynamicPageStyle) return;
-          var heightIn = Math.ceil((px / 96) * 100) / 100;
-          if (heightIn > 200) heightIn = 200;
-          dynamicPageStyle.textContent =
-            "@page { size: 2.4in " + heightIn.toFixed(2) + "in; margin: 0; }";
+          if (!dynamicPageStyle) return;
+          var css = "@page { size: 2.44in 4in; margin: 0; }";
+          var naturalIn = px > 0 ? px / 96 : 0;
+          if (naturalIn > 4) {
+            /* A hair under the exact ratio so rounding in the
+               print pipeline can never push the scaled label past
+               the bottom edge of the 4in page. */
+            var scale = 3.99 / naturalIn;
+            css += "\n@media print { #printArea { transform: scale(" +
+              scale.toFixed(4) + "); transform-origin: top left; } }";
+          }
+          dynamicPageStyle.textContent = css;
           window.addEventListener("afterprint", clearDynamicPage);
           dynamicPageTimer = setTimeout(clearDynamicPage, 120000);
         }
@@ -3877,12 +3891,13 @@
         /* ---------- "🖨 In tất cả" → one-page-per-label PDF ----------
            Tapping "🖨 In tất cả" builds ONE PDF for the open day
            with exactly one page per order, in the day's kitchen
-           order sequence. Every page is exactly 62mm wide and as
-           tall as THAT label's own measured height (the same
-           off-screen measurement the per-order print uses, 40mm
-           floor), and the label's image fills its page edge to
-           edge — no margins, no blank area, no strip slicing, so
-           the label printer only ever prints where an order is.
+           order sequence. Every page is the FIXED label size
+           [62mm × 101.6mm] (2.44in × 4in). Each label is rendered
+           at the full 62mm width and fitted onto its page: a label
+           whose natural height is within 4in sits top-aligned at
+           its natural size; a taller label is scaled down
+           proportionally to fit inside the 4in height — never
+           clipped, never stretched, no strip slicing.
            html2canvas + jsPDF (classic UMD builds) are lazy-loaded
            from cdnjs on first use; if they cannot load (no
            network), the button falls back to the continuous-strip
@@ -3930,9 +3945,10 @@
         }
 
         /* Render every order's label separately, in sequence, and
-           add each one to the PDF as its own page sized exactly
-           [62mm × that label's measured height]. Resolves with the
-           finished jsPDF document. */
+           add each one to the PDF as its own page of the fixed
+           size [62mm × 101.6mm], the label fitted onto the page
+           per the rule above. Resolves with the finished jsPDF
+           document. */
         function buildLabelsPdf(kd, orders) {
           var JsPDF = window.jspdf.jsPDF;
           var pdf = null;
@@ -3952,13 +3968,14 @@
               try {
                 px = Math.max(printArea.scrollHeight || 0, printArea.offsetHeight || 0);
               } catch (e) { px = 0; }
-              /* Same height math as prepareSingleLabelPage: round
-                 UP to the next 0.01in so nothing is clipped, then
-                 convert to mm; a label page is never under 40mm. */
+              /* The label's natural height at the full 62mm width:
+                 round UP to the next 0.01in so nothing is clipped,
+                 then convert to mm. It no longer sizes the page —
+                 every page is the fixed [62mm × 101.6mm]; the
+                 natural height only decides the fit below. */
               var heightIn = Math.ceil((px / 96) * 100) / 100;
               if (heightIn > 200) heightIn = 200;
               var heightMm = heightIn * 25.4;
-              if (!heightMm || heightMm < 40) heightMm = 40;
               return window.html2canvas(label, {
                 scale: 3,
                 backgroundColor: "#ffffff",
@@ -3966,22 +3983,35 @@
               }).then(function (canvas) {
                 printArea.classList.remove("capturing");
                 var img = canvas.toDataURL("image/jpeg", 0.92);
-                /* jsPDF keeps the longer side as the page height in
-                   portrait (width in landscape), so pick the
-                   orientation that leaves [62 × heightMm] exact. */
-                var orient = heightMm < 62 ? "landscape" : "portrait";
+                /* If the off-screen measurement failed, fall back
+                   to the captured image's own aspect ratio. */
+                if (!heightMm || heightMm <= 0) {
+                  heightMm = canvas.width > 0
+                    ? 62 * (canvas.height / canvas.width)
+                    : 101.6;
+                }
                 if (!pdf) {
                   pdf = new JsPDF({
                     unit: "mm",
-                    format: [62, heightMm],
-                    orientation: orient,
+                    format: [62, 101.6],
+                    orientation: "portrait",
                     compress: true
                   });
                 } else {
-                  pdf.addPage([62, heightMm], orient);
+                  pdf.addPage([62, 101.6], "portrait");
                 }
-                /* Edge to edge: the image fills the whole page. */
-                pdf.addImage(img, "JPEG", 0, 0, 62, heightMm);
+                /* Fit the label onto the fixed page, top-aligned:
+                   natural size at the full 62mm width when its
+                   height fits within 101.6mm; otherwise scaled
+                   down proportionally (height exactly 101.6mm,
+                   width shrunk by the same factor, centered). */
+                var drawW = 62;
+                var drawH = heightMm;
+                if (drawH > 101.6) {
+                  drawW = 62 * (101.6 / drawH);
+                  drawH = 101.6;
+                }
+                pdf.addImage(img, "JPEG", (62 - drawW) / 2, 0, drawW, drawH);
               }, function (err) {
                 try { printArea.classList.remove("capturing"); } catch (e2) {}
                 throw err;
