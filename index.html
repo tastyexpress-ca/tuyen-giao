@@ -1415,6 +1415,8 @@
         padding: 0 4px;
         background: #fff;
         color: #000;
+        page-break-before: auto;
+        break-before: auto;
         page-break-after: auto;
         break-after: auto;
         page-break-inside: auto;
@@ -1437,6 +1439,22 @@
           background: #fff;
           color: #000;
           font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+        /* Print-all is ONE continuous page: the whole strip and
+           every label in it are explicitly break-free in the
+           print context too, so no UA default or inherited rule
+           can start a label on a fresh page or split one — the
+           single @page sized by prepareDynamicPage (tall enough
+           for the full stacked strip) holds everything, each
+           label ending with its dashed cut line. */
+        #printArea,
+        #printArea .pl-label {
+          page-break-before: auto;
+          break-before: auto;
+          page-break-after: auto;
+          break-after: auto;
+          page-break-inside: auto;
+          break-inside: auto;
         }
       }
 
@@ -1803,7 +1821,7 @@
           <div class="chips" id="kitchenChips"></div>
           <button type="button" class="btn-totals" id="kitchenTotalsBtn">💰 Thanh toán với tiệm</button>
           <button type="button" class="btn-totals" id="chrisBtn">💵 Chris</button>
-          <button type="button" class="btn-print-all" id="printAllBtn">🖨 In tất cả</button>
+          <button type="button" class="btn-print-all" id="printAllBtn">🖨 In tất cả · 62mm × 1 trang</button>
           <div class="progress-row">
             <div class="progress-track" role="progressbar" aria-label="Tiến độ nấu order" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="kProgressBar">
               <div class="progress-fill" id="kProgressFill"></div>
