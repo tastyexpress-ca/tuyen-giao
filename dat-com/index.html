@@ -911,7 +911,7 @@
       function dishImg(name, cls) {
         var f = DISH_IMG[name];
         if (!f) return "";
-        return '<img class="' + cls + '" src="assets/img/' + f + '.jpg" alt="' + esc(name) + '" loading="lazy" />';
+        return '<img class="' + cls + '" src="assets/img/' + f + '.jpg?v=2" alt="' + esc(name) + '" loading="lazy" />';
       }
       function keyOf(day, name, detail) { return day + "|" + name + "|" + (detail || ""); }
       function findLine(key) {
