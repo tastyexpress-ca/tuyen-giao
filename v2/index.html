@@ -2990,11 +2990,14 @@
            - Lời món (food profit): $12-class portion → $4, other
              portion → $2; món lẻ → (price ÷ 5) × $1 (20% of money).
            - Shipping of Chris's: GIAO SÁNG orders ADD their delivery
-             fee (read from the note with parseShipFee, the same way
-             the settlement reads fees) — morning fees belong to the
-             owner, shown on the line as "+ ship $F". BẾP GIAO fees
-             belong to the shop and are NEVER counted here; PICK UP
-             orders have no shipping.
+             fee, derived from the DRIVER side — the kitchen note
+             normally never carries the morning fee, so the matching
+             driver stop's money line (which carries the order TOTAL)
+             minus the food subtotal at selling prices is the fee
+             (a "qua web" stop total is unwound ÷ 1.0875 tax first;
+             see chrisDriverFee) — shown on the line as "+ ship $F".
+             BẾP GIAO fees belong to the shop and are NEVER counted
+             here; PICK UP orders have no shipping.
            - WIX / web-paid orders (label starts "Wix", or the note /
              label mentions "qua web" / "wix") SUBTRACT the Wix
              processing fee: 2.9% of the charged total + $0.30, where
@@ -3024,6 +3027,47 @@
            marginNet is the line's food profit minus its Wix fee,
            floored at $0 exactly like the displayed line net, so the
            summary always matches the sum of the lines. */
+        /* Normalize a label for matching a kitchen order to its
+           driver stop: lowercase, collapsed whitespace, and a
+           trailing " · <last4>" suffix (the kitchen label carries
+           the phone's last 4; the stop label usually doesn't)
+           stripped before comparing. */
+        function chrisNormLabel(s) {
+          return String(s || "").toLowerCase().replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "")
+            .replace(/\s*·\s*[\d]{4}\s*$/, "");
+        }
+        /* The order TOTAL carried on a driver stop's money line:
+           the first $ amount in the text ("THU $26 khi giao (chưa
+           trả)", "Đã trả Zelle $12 ✅ · Không thu tiền", "Đã trả qua
+           web $48.94 · Không thu tiền"). 0 when none is parseable. */
+        function parseStopTotal(money) {
+          var m = /\$\s*([\d,]+(?:\.\d+)?)/.exec(String(money || ""));
+          return m ? (parseFloat(m[1].replace(/,/g, "")) || 0) : 0;
+        }
+        /* GIAO SÁNG delivery fee derived from the DRIVER side: the
+           kitchen note normally never carries the morning fee, but
+           the matching stop's money line carries the order TOTAL,
+           so fee = total − food subtotal at selling prices. For a
+           web-paid stop ("qua web") the total includes tax, so it
+           is unwound first (÷ 1.0875). Clamped at ≥ 0, rounded to
+           cents; no matching stop or no parseable total → 0. */
+        function chrisDriverFee(dayStr, order, sell) {
+          var want = chrisNormLabel(order.label || order.name || "");
+          if (!want) return 0;
+          var stops = stopsByDay[dayStr] || [];
+          for (var i = 0; i < stops.length; i++) {
+            if (chrisNormLabel(stops[i].label) !== want) continue;
+            var total = parseStopTotal(stops[i].money);
+            if (!total) return 0;
+            var base = total;
+            if (String(stops[i].money || "").toLowerCase().indexOf("qua web") !== -1) {
+              base = total / 1.0875;
+            }
+            var fee = Math.round((base - sell) * 100) / 100;
+            return fee > 0 ? fee : 0;
+          }
+          return 0;
+        }
         function chrisDayProfit(dayStr) {
           var orders = kitchenOrdersByDay[dayStr] || [];
           var rows = [];
@@ -3048,10 +3092,13 @@
               }
             });
             if (!hasFood) return;
-            var fee = parseShipFee(o.note);
-            /* Only GIAO SÁNG fees are Chris's shipping; bếp giao
-               fees belong to the shop, pick up has none. The fee
-               still counts toward a web order's charged total. */
+            /* GIAO SÁNG fees live on the DRIVER side (the note is
+               normally empty for morning orders): derive the fee
+               from the matching stop's money-line total. Other
+               groups keep the note-based fee the charged total has
+               always used; only GIAO SÁNG fees are Chris's shipping,
+               bếp giao fees belong to the shop, pick up has none. */
+            var fee = gkey === "sang" ? chrisDriverFee(dayStr, o, sell) : parseShipFee(o.note);
             var ship = gkey === "sang" ? fee : 0;
             var wixFee = 0;
             if (isWebPaidOrder(o)) {
