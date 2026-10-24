@@ -803,6 +803,29 @@
       var deliveryFee = null; // số tiền phí khi feeStatus === "ok"
       var feeTimer = null, feeSeq = 0;
 
+      function geocodeAddress(address) {
+        var photonUrl = "https://photon.komoot.io/api/?limit=1&lang=en&lat=" + SHOP_COORDS.lat + "&lon=" + SHOP_COORDS.lon + "&q=" + encodeURIComponent(address);
+        return fetch(photonUrl)
+          .then(function (r) { if (!r.ok) throw new Error("photon failed"); return r.json(); })
+          .then(function (d) {
+            if (!d || !d.features || !d.features.length) throw new Error("photon empty");
+            var c = d.features[0].geometry.coordinates;
+            var pt = { lat: parseFloat(c[1]), lon: parseFloat(c[0]) };
+            if (!isFinite(pt.lat) || !isFinite(pt.lon)) throw new Error("bad coords");
+            return pt;
+          })
+          .catch(function () {
+            return fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(address))
+              .then(function (r) { if (!r.ok) throw new Error("geocode failed"); return r.json(); })
+              .then(function (arr) {
+                if (!arr || !arr.length) throw new Error("address not found");
+                var pt = { lat: parseFloat(arr[0].lat), lon: parseFloat(arr[0].lon) };
+                if (!isFinite(pt.lat) || !isFinite(pt.lon)) throw new Error("bad coords");
+                return pt;
+              });
+          });
+      }
+
       function calcDeliveryFee() {
         var seq = ++feeSeq;
         var address = $("inAddress").value.trim();
@@ -813,30 +836,31 @@
         }
         feeStatus = "loading"; deliveryFee = null;
         renderTotals(); updateSubmitState();
-        fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(address))
-          .then(function (r) { if (!r.ok) throw new Error("geocode failed"); return r.json(); })
-          .then(function (arr) {
-            if (!arr || !arr.length) throw new Error("address not found");
-            var lat = parseFloat(arr[0].lat), lon = parseFloat(arr[0].lon);
-            if (!isFinite(lat) || !isFinite(lon)) throw new Error("bad coords");
-            return fetch("https://router.project-osrm.org/route/v1/driving/" +
-              SHOP_COORDS.lon + "," + SHOP_COORDS.lat + ";" + lon + "," + lat + "?overview=false");
-          })
-          .then(function (r) { if (!r.ok) throw new Error("route failed"); return r.json(); })
-          .then(function (data) {
-            if (!data || !data.routes || !data.routes.length) throw new Error("no route");
-            var miles = data.routes[0].distance / 1609.34;
-            if (seq !== feeSeq) return;
-            deliveryFee = Math.max(1, Math.ceil(miles));
-            feeStatus = "ok";
-            renderTotals(); updateSubmitState();
-          })
-          .catch(function () {
-            if (seq !== feeSeq) return;
-            deliveryFee = null;
-            feeStatus = "unknown"; // không chặn đặt hàng — tiệm gọi lại xác nhận phí sau
-            renderTotals(); updateSubmitState();
-          });
+        var attemptsLeft = 2;
+        (function tryOnce() {
+          geocodeAddress(address)
+            .then(function (pt) {
+              return fetch("https://router.project-osrm.org/route/v1/driving/" +
+                SHOP_COORDS.lon + "," + SHOP_COORDS.lat + ";" + pt.lon + "," + pt.lat + "?overview=false");
+            })
+            .then(function (r) { if (!r.ok) throw new Error("route failed"); return r.json(); })
+            .then(function (data) {
+              if (!data || !data.routes || !data.routes.length) throw new Error("no route");
+              var miles = data.routes[0].distance / 1609.34;
+              if (seq !== feeSeq) return;
+              deliveryFee = Math.max(1, Math.ceil(miles));
+              feeStatus = "ok";
+              renderTotals(); updateSubmitState();
+            })
+            .catch(function () {
+              if (seq !== feeSeq) return;
+              attemptsLeft--;
+              if (attemptsLeft > 0) { setTimeout(function () { if (seq === feeSeq) tryOnce(); }, 700); return; }
+              deliveryFee = null;
+              feeStatus = "unknown"; // không chặn đặt hàng — tiệm gọi lại xác nhận phí sau
+              renderTotals(); updateSubmitState();
+            });
+        })();
       }
 
       function scheduleFeeCalc() {
