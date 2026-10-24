@@ -942,6 +942,32 @@
       @media (prefers-color-scheme: dark) {
         .btn-cash.on { color: #0c1a0e; }
       }
+
+      /* ---------- Payee toggle (💵 TRẢ THINH, kitchen cards) ----------
+         Records who the customer paid for the order. Off = paid the
+         shop (muted outline, like an off toggle); on = paid Thinh
+         (solid green). */
+      .btn-payee {
+        flex: 1;
+        border-radius: 12px;
+        font-size: 15.5px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        background: var(--card);
+        color: var(--muted);
+        border: 2.5px solid var(--line);
+        cursor: pointer;
+        padding: 10px 4px;
+      }
+      .btn-payee:active { transform: scale(0.99); }
+      .btn-payee.on {
+        background: var(--paid-ink);
+        border-color: var(--paid-ink);
+        color: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        .btn-payee.on { color: #0c1a0e; }
+      }
       .stop-actions {
         display: flex;
         gap: 10px;
@@ -955,6 +981,7 @@
       }
       .stop-actions .btn-cash { min-height: 66px; }
       .k-actions .btn-cash { min-height: 60px; font-size: 14.5px; }
+      .k-actions .btn-payee { min-height: 60px; font-size: 14.5px; }
       .k-actions .btn-received { font-size: 15px; }
 
       /* Delivered state */
@@ -2493,8 +2520,10 @@
            - a line mentioning "kem" (ice cream) is excluded entirely.
            - every other line counts qty food portions at $8 each to
              the shop.
-           Who the customer paid is read from the order note (see
-           detectPayee); group defaults apply when the note is silent.
+           Who the customer paid is decided by effectivePayee: an
+           explicit "payee_thinh" toggle state (the card's 💵 TRẢ
+           THINH button) wins absolutely; otherwise the order note
+           (see detectPayee), with group defaults when it is silent.
            ================================================================ */
         /* Clean money format for the settlement view: no trailing
            ".00" on whole dollars, one decimal when that is all the
@@ -2555,6 +2584,24 @@
               n.indexOf("cho anh") !== -1 || n.indexOf("qua web") !== -1) return "chris";
           return grpKey === "pickup" ? "shop" : "chris";
         }
+        /* The EFFECTIVE payee of a kitchen order: an explicit
+           "payee_thinh" toggle state — set by the kitchen tapping the
+           card's 💵 TRẢ THINH button — wins absolutely (true = paid
+           CHRIS, false = paid the SHOP). stateMap only carries a key
+           for a toggle once a states row exists for it, so the
+           hasOwnProperty check is what separates "the kitchen set
+           this" from "nobody touched it". With no state stored yet,
+           fall back to the note/group auto-detection (detectPayee),
+           so untouched days settle exactly as before. The button's
+           displayed state and the settlement both read this one
+           function, so they can never disagree. */
+        function effectivePayee(dayStr, order, grpKey) {
+          var key = stateKey(dayStr, "ko-" + order.id, "payee_thinh");
+          if (Object.prototype.hasOwnProperty.call(stateMap, key)) {
+            return stateMap[key] === true ? "chris" : "shop";
+          }
+          return detectPayee(order.note, grpKey);
+        }
         /* Delivery fee written in a bếp giao note: a $ amount sitting
            next to "phí" or "ship" ("phí ship $5", "$3 phí giao"…). */
         function parseShipFee(note) {
@@ -2595,7 +2642,7 @@
                 g.nameTotals[key].qty += p.qty;
               }
             });
-            var payee = detectPayee(o.note, gkey);
+            var payee = effectivePayee(dayStr, o, gkey);
             var fee = gkey === "bep" ? parseShipFee(o.note) : 0;
             var anhTra = 0;
             var tiemNo = 0;
@@ -2916,6 +2963,27 @@
             renderKitchenDay();
           });
           actions.appendChild(cashBtn);
+
+          /* 💵 TRẢ THINH — who the customer paid for THIS order. The
+             button shows the EFFECTIVE payee (explicit payee_thinh
+             state when set, else the note/group auto-detection), so
+             on first load it already matches the settlement; the
+             first tap stores the opposite as an explicit state, and
+             from then on the state wins. setToggle updates stateMap
+             synchronously, and the settlement view recomputes from
+             stateMap, so the numbers follow the button immediately. */
+          var isThinh = effectivePayee(dayStr, order, info.key) === "chris";
+          var payeeBtn = el("button", "btn-payee", isThinh ? "💵 TRẢ THINH ✓" : "💵 TRẢ THINH");
+          payeeBtn.type = "button";
+          payeeBtn.classList.toggle("on", isThinh);
+          payeeBtn.setAttribute("aria-pressed", isThinh ? "true" : "false");
+          payeeBtn.addEventListener("click", function () {
+            var nowThinh = effectivePayee(dayStr, order, info.key) === "chris";
+            setToggle(dayStr, cardKey, "payee_thinh", !nowThinh, renderKitchenDay);
+            renderKitchenDay();
+            renderKitchenTotals();
+          });
+          actions.appendChild(payeeBtn);
           card.appendChild(actions);
 
           var printRow = el("div", "k-actions");
