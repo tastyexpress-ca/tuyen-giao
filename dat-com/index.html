@@ -538,7 +538,7 @@
             <div class="card totals" id="totalsBox"></div>
 
             <div class="submit-zone">
-              <button class="btn accent" type="button" id="submitBtn">Đặt hàng</button>
+              <button class="btn accent" type="button" id="submitBtn">💳 Thanh toán &amp; Đặt hàng</button>
             </div>
           </div>
         </div>
@@ -613,6 +613,9 @@
       var TAX_RATE = 0.0875;
       var SUPABASE_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/web_orders";
       var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+      var CHECKOUT_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/functions/v1/create-checkout";
+      var CHECKOUT_SUCCESS_URL = "https://tastyexpress-ca.github.io/tuyen-giao/dat-com/?paid=1";
+      var CHECKOUT_CANCEL_URL = "https://tastyexpress-ca.github.io/tuyen-giao/dat-com/?paid=0";
 
       /* ================= STATE ================= */
       var cart = []; // {key, day, wd, dm, name, detail, qty, price}
@@ -1012,6 +1015,23 @@
             '<p>Tiệm sẽ gọi lại số <b>' + esc(order.phone) + '</b> để xác nhận đơn. Cảm ơn bạn!</p>' +
             summaryHTML(order) +
             '<button class="btn accent block" type="button" id="againBtn">Đặt thêm đơn mới</button></div>';
+        } else if (kind === "paid") {
+          v.innerHTML = '<div class="card result-card"><p class="big ok">✅ Đặt hàng &amp; thanh toán thành công!</p>' +
+            '<p>Tiệm sẽ gọi lại số <b>' + esc(order.phone) + '</b> để xác nhận đơn. Cảm ơn bạn!</p>' +
+            summaryHTML(order) +
+            '<button class="btn accent block" type="button" id="againBtn">Đặt thêm đơn mới</button></div>';
+        } else if (kind === "unpaid") {
+          v.innerHTML = '<div class="card result-card"><p class="big">⚠️ Thanh toán chưa hoàn tất</p>' +
+            '<p>Đơn của bạn đã được ghi nhận — tiệm sẽ gọi lại số <b>' + esc(order.phone) + '</b> để xác nhận.</p>' +
+            summaryHTML(order) +
+            '<button class="btn accent block" type="button" id="againBtn">Quay lại menu</button></div>';
+        } else if (kind === "payerror") {
+          v.innerHTML = '<div class="card result-card"><p class="big bad">Chưa mở được trang thanh toán</p>' +
+            '<p>Đơn của bạn đã được ghi nhận rồi — chỉ còn bước thanh toán chưa xong:</p>' +
+            summaryHTML(order) +
+            '<p style="margin-top:14px;">Vui lòng gọi <a href="tel:+16262839994"><b>626-283-9994</b></a> để tiệm hỗ trợ, hoặc thử thanh toán lại.</p>' +
+            '<button class="btn accent block" type="button" id="payRetryBtn">Thử thanh toán lại</button>' +
+            '<button class="btn ghost block" type="button" id="backBtn">Quay lại giỏ hàng</button></div>';
         } else {
           v.innerHTML = '<div class="card result-card"><p class="big bad">Chưa gửi được đơn</p>' +
             '<p>Có lỗi khi gửi đơn lên hệ thống. Đừng lo — đơn của bạn vẫn còn đây:</p>' +
@@ -1033,12 +1053,54 @@
         });
         var retry = $("retryBtn");
         if (retry) retry.addEventListener("click", function () { submitOrder(true); });
+        var payRetry = $("payRetryBtn");
+        if (payRetry) payRetry.addEventListener("click", function () {
+          payRetry.disabled = true;
+          payRetry.textContent = "Đang mở trang thanh toán…";
+          requestCheckout(pendingOrderId, order).catch(function () {
+            payRetry.disabled = false;
+            payRetry.textContent = "Thử thanh toán lại";
+          });
+        });
         var back = $("backBtn");
         if (back) back.addEventListener("click", function () {
           v.classList.remove("show");
           v.innerHTML = "";
           $("menuView").classList.remove("hidden");
           openCart();
+        });
+      }
+
+      var pendingOrderId = null;
+
+      function saveOrderSummary(order) {
+        try { sessionStorage.setItem("te_last_order", JSON.stringify(order)); } catch (e) { /* trình duyệt chặn thì bỏ qua */ }
+      }
+
+      function requestCheckout(orderId, order) {
+        return fetch(CHECKOUT_URL, {
+          method: "POST",
+          headers: {
+            "apikey": SUPABASE_ANON,
+            "Authorization": "Bearer " + SUPABASE_ANON,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            order_id: orderId,
+            amount_cents: Math.round(order.total * 100),
+            description: "Tasty Express — Đơn online #" + orderId,
+            success_url: CHECKOUT_SUCCESS_URL,
+            cancel_url: CHECKOUT_CANCEL_URL
+          })
+        }).then(function (res) {
+          if (!res.ok) throw new Error("checkout failed");
+          return res.json();
+        }).then(function (data) {
+          if (data && data.url) {
+            window.location.href = data.url;
+            return;
+          }
+          throw new Error("no checkout url");
         });
       }
 
@@ -1057,21 +1119,64 @@
             "apikey": SUPABASE_ANON,
             "Authorization": "Bearer " + SUPABASE_ANON,
             "Content-Type": "application/json",
-            "Prefer": "return=minimal"
+            "Prefer": "return=representation"
           },
           body: JSON.stringify(order)
         }).then(function (res) {
-          btn.disabled = false;
-          btn.textContent = "Đặt hàng";
-          if (res.ok) {
-            showResult("success", order);
-          } else {
-            showResult("error", order);
-          }
+          if (!res.ok) throw new Error("insert failed");
+          return res.json();
+        }).then(function (rows) {
+          var id = rows && rows.length ? rows[0].id : null;
+          if (id == null) throw new Error("no order id");
+          pendingOrderId = id;
+          saveOrderSummary(order);
+          btn.textContent = "Đang mở trang thanh toán…";
+          return requestCheckout(id, order).catch(function () {
+            btn.disabled = false;
+            btn.textContent = "💳 Thanh toán & Đặt hàng";
+            showResult("payerror", order);
+          });
         }).catch(function () {
           btn.disabled = false;
-          btn.textContent = "Đặt hàng";
+          btn.textContent = "💳 Thanh toán & Đặt hàng";
           showResult("error", order);
+        });
+      }
+
+      /* ================= TRỞ VỀ TỪ TRANG THANH TOÁN ================= */
+      function handlePaidReturn() {
+        var paid = null;
+        try { paid = new URLSearchParams(window.location.search).get("paid"); } catch (e) { return; }
+        if (paid !== "1" && paid !== "0") return;
+        try { history.replaceState(null, "", window.location.pathname + window.location.hash); } catch (e) {}
+        var order = null;
+        try {
+          var raw = sessionStorage.getItem("te_last_order");
+          if (raw) order = JSON.parse(raw);
+        } catch (e) { order = null; }
+        if (order && order.items) {
+          showResult(paid === "1" ? "paid" : "unpaid", order);
+          return;
+        }
+        /* Không còn tóm tắt trong phiên này — vẫn báo đúng trạng thái thanh toán */
+        closeCart();
+        closeCpPicker();
+        $("menuView").classList.add("hidden");
+        $("cartBar").classList.add("hidden");
+        var v = $("resultView");
+        v.innerHTML = '<div class="card result-card"><p class="big' + (paid === "1" ? ' ok' : '') + '">' +
+          (paid === "1" ? "✅ Đặt hàng &amp; thanh toán thành công!" : "⚠️ Thanh toán chưa hoàn tất") + '</p>' +
+          '<p>' + (paid === "1"
+            ? "Cảm ơn bạn! Tiệm sẽ gọi lại để xác nhận đơn của bạn."
+            : "Đơn của bạn đã được ghi nhận — tiệm sẽ gọi lại để xác nhận.") + '</p>' +
+          '<button class="btn accent block" type="button" id="againBtn">Quay lại menu</button></div>';
+        v.classList.add("show");
+        window.scrollTo(0, 0);
+        $("againBtn").addEventListener("click", function () {
+          v.classList.remove("show");
+          v.innerHTML = "";
+          $("menuView").classList.remove("hidden");
+          refreshCartUI();
         });
       }
 
@@ -1105,6 +1210,7 @@
       renderDayChips();
       renderMenu();
       refreshCartUI();
+      handlePaidReturn();
     </script>
   </body>
 </html>
