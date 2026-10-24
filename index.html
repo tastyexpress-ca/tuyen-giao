@@ -1280,8 +1280,12 @@
         cursor: pointer;
       }
       .btn-print:active { background: var(--line); }
-      /* "🖨 In tất cả" in the kitchen day header: prints every order
-         of the open day, one label each, in a single print job. */
+      /* "🖨 In tất cả" in the kitchen day header: builds ONE PDF for
+         the open day — one page per order, each page exactly that
+         label's true size (62mm × its own height) — and shares /
+         opens it; if the PDF libraries cannot load (no network) it
+         falls back to printing every order as one continuous
+         strip, one label each, in a single print job. */
       .btn-print-all {
         display: block;
         width: 100%;
@@ -1315,6 +1319,17 @@
         top: 0;
         width: 2.4in;
         visibility: hidden;
+      }
+      /* Capture mode for the print-all PDF: the same off-screen
+         layout as .measuring but WITHOUT visibility:hidden, so
+         html2canvas can rasterize the filled label while the PDF
+         is being built (see buildLabelsPdf in the script). */
+      #printArea.capturing {
+        display: block;
+        position: absolute;
+        left: -10000px;
+        top: 0;
+        width: 2.4in;
       }
       #printArea .pl-head {
         display: flex;
@@ -3841,12 +3856,14 @@
           window.print();
         }
 
-        /* "🖨 In tất cả": fill the print area with one label per
-           order of the open kitchen day (display order, every order
-           — the search filter does not narrow it) and print them
-           as one continuous stacked strip through the same
-           dynamic-@page window.print() flow as a single order. */
-        function printAllKitchenOrders() {
+        /* "🖨 In tất cả" fallback: fill the print area with one label
+           per order of the open kitchen day (display order, every
+           order — the search filter does not narrow it) and print
+           them as one continuous stacked strip through the same
+           dynamic-@page window.print() flow as a single order.
+           Used when the PDF libraries cannot be loaded (no
+           network) — see printAllKitchenOrders below. */
+        function printAllViaPrintDialog() {
           var kd = currentKitchenDay;
           if (!kd || !currentPrintOrders.length) return;
           printArea.innerHTML = "";
@@ -3855,6 +3872,203 @@
           });
           prepareDynamicPage();
           window.print();
+        }
+
+        /* ---------- "🖨 In tất cả" → one-page-per-label PDF ----------
+           Tapping "🖨 In tất cả" builds ONE PDF for the open day
+           with exactly one page per order, in the day's kitchen
+           order sequence. Every page is exactly 62mm wide and as
+           tall as THAT label's own measured height (the same
+           off-screen measurement the per-order print uses, 40mm
+           floor), and the label's image fills its page edge to
+           edge — no margins, no blank area, no strip slicing, so
+           the label printer only ever prints where an order is.
+           html2canvas + jsPDF (classic UMD builds) are lazy-loaded
+           from cdnjs on first use; if they cannot load (no
+           network), the button falls back to the continuous-strip
+           window.print() flow above, with a toast saying so. */
+        var PDF_LIB_URLS = [
+          "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+          "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+        ];
+        var pdfLibsPromise = null;
+        var printPdfBusy = false;
+
+        function loadScriptOnce(src) {
+          return new Promise(function (resolve, reject) {
+            var s = document.createElement("script");
+            s.src = src;
+            s.async = true;
+            s.onload = function () { resolve(); };
+            s.onerror = function () { reject(new Error("load failed: " + src)); };
+            document.head.appendChild(s);
+          });
+        }
+
+        function pdfLibsReady() {
+          return !!(window.html2canvas && window.jspdf && window.jspdf.jsPDF);
+        }
+
+        /* Resolves true when both PDF libraries are usable. A
+           failure is NOT cached, so the next tap retries the load. */
+        function loadPdfLibs() {
+          if (pdfLibsReady()) return Promise.resolve(true);
+          if (!pdfLibsPromise) {
+            var timeout = new Promise(function (resolve) {
+              setTimeout(function () { resolve(false); }, 20000);
+            });
+            var loading = Promise.all(PDF_LIB_URLS.map(loadScriptOnce)).then(
+              function () { return pdfLibsReady(); },
+              function () { return false; }
+            );
+            pdfLibsPromise = Promise.race([loading, timeout]).then(function (ok) {
+              if (!ok) pdfLibsPromise = null;
+              return ok;
+            });
+          }
+          return pdfLibsPromise;
+        }
+
+        /* Render every order's label separately, in sequence, and
+           add each one to the PDF as its own page sized exactly
+           [62mm × that label's measured height]. Resolves with the
+           finished jsPDF document. */
+        function buildLabelsPdf(kd, orders) {
+          var JsPDF = window.jspdf.jsPDF;
+          var pdf = null;
+          var chain = Promise.resolve();
+          orders.forEach(function (order, idx) {
+            chain = chain.then(function () {
+              showToast("Đang tạo PDF… " + (idx + 1) + "/" + orders.length);
+              printArea.innerHTML = "";
+              var label = buildPrintLabel(kd, order);
+              printArea.appendChild(label);
+              printArea.classList.add("capturing");
+              /* Measure this one label exactly the way the
+                 per-order print measures a single label: the
+                 print area laid out off-screen at the true 2.4in
+                 width, total rendered height read back. */
+              var px = 0;
+              try {
+                px = Math.max(printArea.scrollHeight || 0, printArea.offsetHeight || 0);
+              } catch (e) { px = 0; }
+              /* Same height math as prepareSingleLabelPage: round
+                 UP to the next 0.01in so nothing is clipped, then
+                 convert to mm; a label page is never under 40mm. */
+              var heightIn = Math.ceil((px / 96) * 100) / 100;
+              if (heightIn > 200) heightIn = 200;
+              var heightMm = heightIn * 25.4;
+              if (!heightMm || heightMm < 40) heightMm = 40;
+              return window.html2canvas(label, {
+                scale: 3,
+                backgroundColor: "#ffffff",
+                logging: false
+              }).then(function (canvas) {
+                printArea.classList.remove("capturing");
+                var img = canvas.toDataURL("image/jpeg", 0.92);
+                /* jsPDF keeps the longer side as the page height in
+                   portrait (width in landscape), so pick the
+                   orientation that leaves [62 × heightMm] exact. */
+                var orient = heightMm < 62 ? "landscape" : "portrait";
+                if (!pdf) {
+                  pdf = new JsPDF({
+                    unit: "mm",
+                    format: [62, heightMm],
+                    orientation: orient,
+                    compress: true
+                  });
+                } else {
+                  pdf.addPage([62, heightMm], orient);
+                }
+                /* Edge to edge: the image fills the whole page. */
+                pdf.addImage(img, "JPEG", 0, 0, 62, heightMm);
+              }, function (err) {
+                try { printArea.classList.remove("capturing"); } catch (e2) {}
+                throw err;
+              });
+            });
+          });
+          return chain.then(function () { return pdf; });
+        }
+
+        /* Open the finished PDF in a new tab from its blob URL;
+           if the popup is blocked, fall back to a download link
+           click so the file still reaches the device. */
+        function openPdfBlobUrl(blob, fileName) {
+          var url = URL.createObjectURL(blob);
+          var w = null;
+          try { w = window.open(url, "_blank"); } catch (e) { w = null; }
+          if (!w) {
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+          setTimeout(function () {
+            try { URL.revokeObjectURL(url); } catch (e) {}
+          }, 60000);
+        }
+
+        /* iOS delivery: share the PDF file when the Web Share API
+           accepts files (straight to the Phomemo app / Files);
+           otherwise open the PDF in a new tab. A share the user
+           cancels is left alone; any other share failure also
+           falls back to opening the PDF. */
+        function deliverLabelsPdf(blob, fileName) {
+          var file = null;
+          try {
+            file = new File([blob], fileName, { type: "application/pdf" });
+          } catch (e) { file = null; }
+          if (file && navigator.share && navigator.canShare) {
+            var can = false;
+            try { can = navigator.canShare({ files: [file] }); } catch (e) { can = false; }
+            if (can) {
+              navigator.share({ files: [file], title: fileName }).then(function () {}, function (err) {
+                if (err && err.name === "AbortError") return;
+                openPdfBlobUrl(blob, fileName);
+              });
+              return;
+            }
+          }
+          openPdfBlobUrl(blob, fileName);
+        }
+
+        function printAllFallback(msg) {
+          showToast(msg);
+          /* Let the toast land before the print dialog covers it. */
+          setTimeout(function () { printAllViaPrintDialog(); }, 900);
+        }
+
+        /* "🖨 In tất cả": build the day's one-page-per-label PDF and
+           deliver it (share sheet / new tab). Falls back to the
+           continuous-strip print when the PDF libraries cannot
+           load or generation fails. */
+        function printAllKitchenOrders() {
+          var kd = currentKitchenDay;
+          if (!kd || !currentPrintOrders.length) return;
+          if (printPdfBusy) return;
+          printPdfBusy = true;
+          showToast("Đang tạo PDF…");
+          var orders = currentPrintOrders.slice();
+          loadPdfLibs().then(function (ok) {
+            if (!ok) {
+              printPdfBusy = false;
+              printAllFallback("⚠️ Tạo PDF cần có mạng — đang in theo cách cũ…");
+              return;
+            }
+            buildLabelsPdf(kd, orders).then(function (pdf) {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              if (!pdf) return;
+              deliverLabelsPdf(pdf.output("blob"), "labels-" + kd.day + ".pdf");
+            }, function () {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              printAllFallback("⚠️ Không tạo được PDF — đang in theo cách cũ…");
+            });
+          });
         }
 
         function renderKitchenDay() {
