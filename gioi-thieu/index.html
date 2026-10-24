@@ -89,7 +89,7 @@
   function go() {
     if (done) return; done = true;
     document.body.classList.add("fade-out");
-    setTimeout(function () { window.location.href = HOME; }, 620);
+    setTimeout(function () { window.location.href = HOME + "?v=" + Date.now(); }, 620);
   }
   setTimeout(go, 3000);
   document.addEventListener("click", go);
