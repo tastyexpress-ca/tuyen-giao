@@ -673,9 +673,9 @@
         },
         {
           date: "2026-10-27", wd: "Thứ 3", dm: "27/10",
-          man: ["Tôm kho tàu", "Gà kho sả", "Cá chim, cá lưỡi trâu chiên", "Trứng chiên thịt bằm", "Cánh gà, đùi gà chiên nước mắm"],
+          man: ["Tôm kho tàu", "Gà kho sả", "Trứng chiên thịt bằm", "Cánh gà, đùi gà chiên nước mắm", "Cá nục kho thơm", "Thịt ba rọi kho mắm ruốc"],
           xao: ["Giá hẹ xào", "Bông cải xào"],
-          canh: ["Canh khổ qua dồi thịt", "Canh bí đỏ"],
+          canh: ["Canh khổ qua dồi thịt", "Canh cải thảo"],
           specials: [
             { name: "Bánh canh giò heo, trứng cút, tôm", price: 12 },
             { name: "Nui giò heo, trứng cút, tôm", price: 12 }
@@ -683,24 +683,24 @@
         },
         {
           date: "2026-10-28", wd: "Thứ 4", dm: "28/10",
-          man: ["Trứng chiên thịt bằm", "Đùi gà, cánh gà chiên nước mắm", "Mắm chưng", "Sườn non nướng", "Gà kho gừng"],
-          xao: ["Mực xào chua ngọt", "Bắp cải xào"],
-          canh: ["Canh rau dền", "Canh cải chua sườn non"],
+          man: ["Trứng chiên thịt bằm", "Đùi gà, cánh gà chiên nước mắm", "Mắm chưng", "Sườn non xào chua ngọt", "Gà kho gừng"],
+          xao: ["Bò xào cà chua củ hành", "Bắp cải xào"],
+          canh: ["Canh bầu nấu tôm", "Canh cải chua sườn non"],
           specials: []
         },
         {
           date: "2026-10-29", wd: "Thứ 5", dm: "29/10",
-          man: ["Đùi gà, cánh gà chiên nước mắm", "Tôm rim", "Cá kèo kho rau răm", "Gà kho sả", "Đậu hủ dồi thịt sốt cà chua"],
+          man: ["Đùi gà, cánh gà chiên nước mắm", "Tôm rim thịt ba rọi", "Cá kèo kho rau răm", "Gà kho sả", "Kho quẹt chấm rau luộc"],
           xao: ["Cải ngọt xào", "Su su xào"],
-          canh: ["Canh khoai mỡ", "Canh salad xoong"],
-          specials: [{ name: "Bún riêu", price: 12 }]
+          canh: ["Canh khoai mỡ", "Canh mồng tơi mướp"],
+          specials: [{ name: "Cháo lòng", price: 12 }]
         },
         {
           date: "2026-10-30", wd: "Thứ 6", dm: "30/10",
-          man: ["Sườn kho tiêu", "Gà rô ti", "Cá kho tộ", "Đùi gà, cánh gà chiên nước mắm", "Trứng chiên thịt bằm", "Cá nục chiên"],
-          xao: ["Bắp cải xào", "Đậu que xào"],
-          canh: ["Canh hẹ đậu hủ", "Canh chua tôm"],
-          specials: [{ name: "Bún riêu", price: 12 }]
+          man: ["Sườn kho tiêu", "Gà rô ti", "Cá ngừ kho thơm", "Đùi gà, cánh gà chiên nước mắm", "Trứng chiên thịt bằm", "Cá nục chiên"],
+          xao: ["Bắp cải xào", "Khổ qua xào trứng"],
+          canh: ["Canh bí đỏ", "Canh chua tôm"],
+          specials: []
         },
         {
           date: "2026-10-31", wd: "Thứ 7", dm: "31/10", tray: true,
@@ -743,6 +743,18 @@
         "Bánh canh giò heo, trứng cút, tôm": "banh-canh-gio-heo",
         "Nui giò heo, trứng cút, tôm": "nui-gio-heo",
         "Bún riêu": "bun-rieu",
+        "Cá nục kho thơm": "ca-nuc-kho-thom",
+        "Thịt ba rọi kho mắm ruốc": "thit-ba-roi-kho-mam-ruoc",
+        "Canh cải thảo": "canh-cai-thao",
+        "Sườn non xào chua ngọt": "suon-non-xao-chua-ngot",
+        "Bò xào cà chua củ hành": "bo-xao-ca-chua-cu-hanh",
+        "Canh bầu nấu tôm": "canh-bau-nau-tom",
+        "Cháo lòng": "chao-long",
+        "Kho quẹt chấm rau luộc": "kho-quet-rau-luoc",
+        "Tôm rim thịt ba rọi": "tom-rim-thit-ba-roi",
+        "Canh mồng tơi mướp": "canh-mong-toi-muop",
+        "Khổ qua xào trứng": "kho-qua-xao-trung",
+        "Cá ngừ kho thơm": "ca-ngu-kho-thom",
         "Trứng chiên thịt bằm": "trung-chien-thit-bam",
         "Cá kho tộ": "ca-kho-to",
         "Đùi gà, cánh gà chiên nước mắm tỏi": "ga-chien-nuoc-mam",
@@ -959,7 +971,7 @@
       function dishImg(name, cls) {
         var f = DISH_IMG[name];
         if (!f) return "";
-        return '<img class="' + cls + '" src="assets/img/' + f + '.jpg?v=2" alt="' + esc(name) + '" loading="lazy" />';
+        return '<img class="' + cls + '" src="assets/img/' + f + '.jpg?v=3" alt="' + esc(name) + '" loading="lazy" />';
       }
       function keyOf(day, name, detail) { return day + "|" + name + "|" + (detail || ""); }
       function findLine(key) {
