@@ -4021,12 +4021,48 @@
            open the system print dialog. Nothing in the app is
            touched, so when the dialog closes or is cancelled the
            kitchen view is exactly as it was — scroll, search and
-           toggles included. */
-        function printKitchenOrder(kd, order) {
+           toggles included. FALLBACK ONLY (see printKitchenOrder):
+           iOS Safari ignores the @page size here and paginates to
+           US Letter, which forced a manual crop in the printer
+           app for every single label. */
+        function printKitchenOrderViaDialog(kd, order) {
           printArea.innerHTML = "";
           printArea.appendChild(buildPrintLabel(kd, order));
           prepareSingleLabelPage();
           window.print();
+        }
+
+        /* "🖨 In order": build a REAL one-page PDF for just this
+           order — the same fixed [62mm × 101.6mm] page as every
+           page of the print-all PDF — and deliver it (share sheet
+           straight to the printer app / new tab), so a single
+           label prints at exactly 2.44in × 4in with NO manual
+           cropping. Falls back to the print dialog only when the
+           PDF libraries cannot load or generation fails. */
+        function printKitchenOrder(kd, order) {
+          if (printPdfBusy) return;
+          printPdfBusy = true;
+          showToast("Đang tạo PDF…");
+          loadPdfLibs().then(function (ok) {
+            if (!ok) {
+              printPdfBusy = false;
+              showToast("⚠️ Tạo PDF cần có mạng — đang in theo cách cũ…");
+              setTimeout(function () { printKitchenOrderViaDialog(kd, order); }, 900);
+              return;
+            }
+            buildLabelsPdf(kd, [order]).then(function (pdf) {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              if (!pdf) { printKitchenOrderViaDialog(kd, order); return; }
+              var who = (order.label || order.phone || "order").toString().replace(/[^\w-]+/g, "-");
+              deliverLabelsPdf(pdf.output("blob"), "label-" + kd.day + "-" + who + ".pdf");
+            }, function () {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              showToast("⚠️ Không tạo được PDF — đang in theo cách cũ…");
+              setTimeout(function () { printKitchenOrderViaDialog(kd, order); }, 900);
+            });
+          });
         }
 
         /* "🖨 In tất cả" fallback: fill the print area with one label
