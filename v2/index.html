@@ -988,7 +988,8 @@
       .stop-card.done {
         background: var(--done-bg);
         border-color: var(--paid-line);
-        opacity: 0.78;
+        opacity: 0.58;
+        filter: saturate(0.5);
       }
       .stop-card.done .badge { background: var(--done-badge); }
       .stop-card.done .customer { text-decoration: line-through; text-decoration-thickness: 2px; }
@@ -2115,6 +2116,14 @@
           collectStops(dayStr).forEach(function (c) { sum += c.amount; });
           return sum;
         }
+        /* True when a stop is collect-on-delivery — the same test
+           collectStops below uses to build the totals page's
+           "Cần thu khi giao" list: the money line carries a "THU $…"
+           amount, i.e. the customer has not paid yet. The driver stop
+           card shows its TRẢ CASH button only for these stops. */
+        function isCollectStop(stop) {
+          return /thu\s*\$\s*[\d,]+(?:\.\d+)?/i.test(String(stop.money || ""));
+        }
         /* The individual stops behind collectTotal: every stop whose
            money line carries a "THU $…" amount, in route order, with
            the badge + label the stop shows on its card and the parsed
@@ -2287,6 +2296,7 @@
            ================================================================ */
         var currentRouteDay = null;
         var currentStopEntries = [];
+        var routeDoneDivider = null;
 
         function renderRouteProgress() {
           var doneCount = 0;
@@ -2304,11 +2314,14 @@
             entry.foodBtn.textContent = isPicked ? "✅ ĐÃ LẤY FOOD" : "☐ ĐÃ LẤY FOOD";
             entry.foodBtn.classList.toggle("on", isPicked);
             entry.foodBtn.setAttribute("aria-pressed", isPicked ? "true" : "false");
-            entry.cashBtn.textContent = isCash ? "✅ ĐÃ TRẢ CASH" : "💵 TRẢ CASH";
-            entry.cashBtn.classList.toggle("on", isCash);
-            entry.cashBtn.setAttribute("aria-pressed", isCash ? "true" : "false");
+            if (entry.cashBtn) {
+              entry.cashBtn.textContent = isCash ? "✅ ĐÃ TRẢ CASH" : "💵 TRẢ CASH";
+              entry.cashBtn.classList.toggle("on", isCash);
+              entry.cashBtn.setAttribute("aria-pressed", isCash ? "true" : "false");
+            }
             if (isDone) doneCount++;
           });
+          if (routeDoneDivider) routeDoneDivider.hidden = doneCount === 0;
           var counts = driverCounts(currentRouteDay.day);
           var total = currentStopEntries.length;
           fill.style.width = (total ? (doneCount / total) * 100 : 0) + "%";
@@ -2391,17 +2404,23 @@
             renderRouteProgress();
           });
 
-          var cashBtn = el("button", "btn-cash", "💵 TRẢ CASH");
-          cashBtn.type = "button";
-          cashBtn.setAttribute("aria-pressed", "false");
-          cashBtn.addEventListener("click", function () {
-            setToggle(dayStr, cardKey, "cash", !getToggle(dayStr, cardKey, "cash"), renderRouteProgress);
-            renderRouteProgress();
-          });
+          /* TRẢ CASH only applies while money is still owed at the
+             door: prepaid stops (Zelle/Venmo/web/cash in advance) get
+             no cash button at all, and ĐÃ GIAO takes the whole row. */
+          var cashBtn = null;
+          if (isCollectStop(stop)) {
+            cashBtn = el("button", "btn-cash", "💵 TRẢ CASH");
+            cashBtn.type = "button";
+            cashBtn.setAttribute("aria-pressed", "false");
+            cashBtn.addEventListener("click", function () {
+              setToggle(dayStr, cardKey, "cash", !getToggle(dayStr, cardKey, "cash"), renderRouteProgress);
+              renderRouteProgress();
+            });
+          }
 
           var stopActions = el("div", "stop-actions");
           stopActions.appendChild(doneBtn);
-          stopActions.appendChild(cashBtn);
+          if (cashBtn) stopActions.appendChild(cashBtn);
           card.appendChild(stopActions);
 
           return { card: card, stop: stop, order: index, foodBtn: foodBtn, doneBtn: doneBtn, cashBtn: cashBtn };
@@ -2461,11 +2480,25 @@
           Array.prototype.slice.call(stopList.querySelectorAll(".stop-card")).forEach(function (n) {
             n.parentNode.removeChild(n);
           });
+          if (routeDoneDivider && routeDoneDivider.parentNode) {
+            routeDoneDivider.parentNode.removeChild(routeDoneDivider);
+          }
+          routeDoneDivider = null;
           currentStopEntries = stops.map(function (stop, i) {
             var entry = buildStopCard(rd, stop, i);
             stopList.appendChild(entry.card);
             return entry;
           });
+          /* Delivered stops sink below this divider (mirroring the
+             kitchen side's "ĐÃ XONG" divider): flex order 99 parks it
+             between the pending stops (order = route index) and the
+             delivered ones (order = 100 + index) that
+             renderRouteProgress assigns; it stays hidden until the
+             day has a delivered stop. */
+          routeDoneDivider = el("div", "group-head done-divider", "ĐÃ GIAO");
+          routeDoneDivider.style.order = "99";
+          routeDoneDivider.hidden = true;
+          stopList.appendChild(routeDoneDivider);
           renderRouteProgress();
         }
 
