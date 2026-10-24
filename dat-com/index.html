@@ -421,6 +421,8 @@
       /* ---------- Account ---------- */
       .acct-row { display: flex; align-items: center; gap: 8px; margin-top: 0; flex-wrap: wrap; flex: 1; min-width: 0; }
       .acct-wrap { margin-top: 10px; }
+      .nav-wrap { display: flex; gap: 8px; margin-top: 8px; }
+      .navbtn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; background: rgba(255, 250, 241, 0.12); border: 1px solid rgba(253, 243, 224, 0.45); color: #fdf3e0; text-decoration: none; font-weight: 700; font-size: 13.5px; padding: 8px 10px; border-radius: 10px; white-space: nowrap; cursor: pointer; font-family: inherit; }
       .acct-email { font-size: 13px; font-weight: 600; color: #f0cf9e; margin-right: auto; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .acct-btn { background: rgba(255, 250, 241, 0.12); border: 1px solid rgba(253, 243, 224, 0.45); color: #fdf3e0; border-radius: 9px; padding: 7px 12px; font-weight: 700; font-size: 13px; white-space: nowrap; }
       .auth-ok { display: none; background: var(--green-bg); color: var(--green); border: 1px solid var(--green); border-radius: 10px; padding: 11px 13px; font-size: 13.5px; font-weight: 600; margin-bottom: 12px; }
@@ -456,7 +458,8 @@
           <span><small>Hotline</small>626-283-9994</span>
         </a>
       </div>
-      <div class="wrap acct-wrap"><div class="acct-row" id="acctRow"></div><a class="homebtn" href="../home/" onclick="this.href='../home/?v='+Date.now();return true;" aria-label="Về trang chính">🏠 Home</a></div>
+      <div class="wrap acct-wrap"><div class="acct-row" id="acctRow"></div></div>
+      <div class="wrap nav-wrap"><a class="navbtn" href="../cac-tiem/" onclick="this.href='../cac-tiem/?v='+Date.now();return true;">🏠 Hệ Thống Các Tiệm</a><button type="button" class="navbtn" id="navOrdersBtn" style="display:none">Đơn của tôi</button></div>
     </header>
 
     <div id="menuView">
@@ -1661,13 +1664,13 @@
         var box = $("acctRow");
         if (!box) return;
         if (session) {
-          box.innerHTML = '<span class="acct-email">👤 ' + esc(session.email) + '</span>' +
-            '<button type="button" class="acct-btn" id="myOrdersBtn">Đơn của tôi</button>';
-          $("myOrdersBtn").addEventListener("click", openMyOrders);
+          box.innerHTML = '<span class="acct-email">👤 ' + esc(session.email) + '</span>';
+          $("navOrdersBtn").style.display = "";
         } else {
           box.innerHTML = '<span class="acct-email">Có tài khoản? Đăng nhập để xem lại đơn đã đặt</span>' +
             '<button type="button" class="acct-btn" id="loginBtn">Đăng nhập</button>';
           $("loginBtn").addEventListener("click", function () { openAuth("login"); });
+          $("navOrdersBtn").style.display = "none";
         }
       }
       function openAuth(mode) {
@@ -1890,6 +1893,7 @@
         });
       });
       $("ordersClose").addEventListener("click", closeOrders);
+      $("navOrdersBtn").addEventListener("click", openMyOrders);
       $("ordersOverlay").addEventListener("click", function (e) { if (e.target === $("ordersOverlay")) closeOrders(); });
 
       loadSession();
