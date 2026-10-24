@@ -1662,7 +1662,7 @@
         if (!box) return;
         if (session) {
           box.innerHTML = '<span class="acct-email">👤 ' + esc(session.email) + '</span>' +
-            '<button type="button" class="acct-btn" id="myOrdersBtn">Đơn của tôi</button>'';
+            '<button type="button" class="acct-btn" id="myOrdersBtn">Đơn của tôi</button>';
           $("myOrdersBtn").addEventListener("click", openMyOrders);
         } else {
           box.innerHTML = '<span class="acct-email">Có tài khoản? Đăng nhập để xem lại đơn đã đặt</span>' +
