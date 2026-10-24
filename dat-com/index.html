@@ -723,6 +723,12 @@
       function qtyOf(key) { var l = findLine(key); return l ? l.qty : 0; }
       function cartCount() { return cart.reduce(function (s, l) { return s + l.qty; }, 0); }
       function cartSubtotal() { return cart.reduce(function (s, l) { return s + l.qty * l.price; }, 0); }
+      /* Số ngày khác nhau có món trong giỏ — mỗi ngày giao 1 chuyến riêng */
+      function deliveryDayCount() {
+        var seen = {};
+        cart.forEach(function (l) { seen[l.day] = true; });
+        return Object.keys(seen).length;
+      }
 
       function addToCart(day, name, detail, price, delta) {
         var key = keyOf(day.date, name, detail);
@@ -953,7 +959,8 @@
 
       function totals() {
         var sub = round2(cartSubtotal());
-        var fee = (method === "delivery" && feeStatus === "ok" && deliveryFee != null) ? deliveryFee : 0;
+        /* Phí giao 1 chuyến × số ngày giao — mỗi ngày trong giỏ là 1 chuyến riêng */
+        var fee = (method === "delivery" && feeStatus === "ok" && deliveryFee != null) ? deliveryFee * deliveryDayCount() : 0;
         var tax = round2((sub + fee) * TAX_RATE);
         return { sub: sub, fee: fee, tax: tax, total: round2(sub + fee + tax) };
       }
@@ -965,7 +972,12 @@
           if (feeStatus === "loading") {
             feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>Đang tính phí giao…</span></div>';
           } else if (feeStatus === "ok") {
-            feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>' + money(deliveryFee) + '</span></div>';
+            var feeDays = deliveryDayCount();
+            if (feeDays > 1) {
+              feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>' + money(deliveryFee) + " × " + feeDays + " ngày = " + money(deliveryFee * feeDays) + '</span></div>';
+            } else {
+              feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>' + money(deliveryFee) + '</span></div>';
+            }
           } else if (feeStatus === "unknown") {
             feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>Tiệm gọi xác nhận sau</span></div>';
           } else {
@@ -1026,8 +1038,11 @@
           shift = document.querySelector("input[name=shift]:checked").value;
           address = $("inAddress").value.trim();
           if (feeStatus === "ok" && deliveryFee != null) {
-            fee = deliveryFee;
-            note = (note ? note + " · " : "") + "Phí giao $" + fee;
+            var feeDays = deliveryDayCount();
+            fee = deliveryFee * feeDays; // delivery_fee = TỔNG phí giao (đã nhân số ngày)
+            note = (note ? note + " · " : "") + (feeDays > 1
+              ? "Phí giao $" + deliveryFee + " × " + feeDays + " ngày = $" + fee
+              : "Phí giao $" + fee);
           }
         } else {
           pickupTime = $("inPickupTime").value.trim() || null;
