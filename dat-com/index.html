@@ -1887,6 +1887,9 @@
 
       loadSession();
       renderAcct();
+      if (!session) {
+        try { if (new URLSearchParams(window.location.search).get("login") === "1") openAuth("login"); } catch (e) { /* ignore */ }
+      }
       if (session) {
         validSession().then(function (s) { if (s) prefillFromHistory(); });
       }
