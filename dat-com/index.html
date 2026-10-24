@@ -519,7 +519,7 @@
                     <label class="radio-opt"><input type="radio" name="shift" value="Tối 7–9pm" /> Tối 7–9pm</label>
                   </div>
                 </div>
-                <div class="fee-note">Phí giao tính theo khoảng cách — tiệm gọi lại xác nhận với bạn.</div>
+                <div class="fee-note">Phí giao được tính tự động theo khoảng cách lái xe từ tiệm ($1/dặm, làm tròn lên) và cộng vào tổng khi thanh toán.</div>
               </div>
 
               <div class="field">
@@ -622,6 +622,75 @@
       var dayIdx = defaultDayIndex();
       var method = "pickup";
       var cpSel = { man: null, xao: null, canh: null, qty: 1 };
+
+      /* Phí giao hàng — $1/dặm lái xe thật từ tiệm, làm tròn lên (giống web Wix) */
+      var SHOP_COORDS = { lat: 33.7513, lon: -117.9930 }; // 14131 Roxanne Dr, Westminster, CA 92683
+      var feeStatus = "idle"; // idle | loading | ok | unknown
+      var deliveryFee = null; // số tiền phí khi feeStatus === "ok"
+      var feeTimer = null, feeSeq = 0;
+
+      function calcDeliveryFee() {
+        var seq = ++feeSeq;
+        var address = $("inAddress").value.trim();
+        if (method !== "delivery" || !address) {
+          feeStatus = "idle"; deliveryFee = null;
+          renderTotals(); updateSubmitState();
+          return;
+        }
+        feeStatus = "loading"; deliveryFee = null;
+        renderTotals(); updateSubmitState();
+        fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(address))
+          .then(function (r) { if (!r.ok) throw new Error("geocode failed"); return r.json(); })
+          .then(function (arr) {
+            if (!arr || !arr.length) throw new Error("address not found");
+            var lat = parseFloat(arr[0].lat), lon = parseFloat(arr[0].lon);
+            if (!isFinite(lat) || !isFinite(lon)) throw new Error("bad coords");
+            return fetch("https://router.project-osrm.org/route/v1/driving/" +
+              SHOP_COORDS.lon + "," + SHOP_COORDS.lat + ";" + lon + "," + lat + "?overview=false");
+          })
+          .then(function (r) { if (!r.ok) throw new Error("route failed"); return r.json(); })
+          .then(function (data) {
+            if (!data || !data.routes || !data.routes.length) throw new Error("no route");
+            var miles = data.routes[0].distance / 1609.34;
+            if (seq !== feeSeq) return;
+            deliveryFee = Math.max(1, Math.ceil(miles));
+            feeStatus = "ok";
+            renderTotals(); updateSubmitState();
+          })
+          .catch(function () {
+            if (seq !== feeSeq) return;
+            deliveryFee = null;
+            feeStatus = "unknown"; // không chặn đặt hàng — tiệm gọi lại xác nhận phí sau
+            renderTotals(); updateSubmitState();
+          });
+      }
+
+      function scheduleFeeCalc() {
+        if (feeTimer) clearTimeout(feeTimer);
+        var address = $("inAddress").value.trim();
+        if (method === "delivery" && address) {
+          if (feeStatus === "ok" || feeStatus === "unknown") { deliveryFee = null; }
+          feeStatus = "loading";
+          renderTotals(); updateSubmitState();
+          feeTimer = setTimeout(calcDeliveryFee, 800);
+        } else {
+          feeSeq++;
+          feeStatus = "idle"; deliveryFee = null;
+          renderTotals(); updateSubmitState();
+        }
+      }
+
+      function updateSubmitState() {
+        var btn = $("submitBtn");
+        if (!btn) return;
+        if (method === "delivery" && feeStatus === "loading") {
+          btn.disabled = true;
+          btn.textContent = "Đang tính phí giao…";
+        } else if (!btn.disabled || btn.textContent === "Đang tính phí giao…") {
+          btn.disabled = false;
+          btn.textContent = "💳 Thanh toán & Đặt hàng";
+        }
+      }
 
       function defaultDayIndex() {
         var la;
@@ -884,16 +953,29 @@
 
       function totals() {
         var sub = round2(cartSubtotal());
-        var tax = round2(sub * TAX_RATE);
-        return { sub: sub, tax: tax, total: round2(sub + tax) };
+        var fee = (method === "delivery" && feeStatus === "ok" && deliveryFee != null) ? deliveryFee : 0;
+        var tax = round2((sub + fee) * TAX_RATE);
+        return { sub: sub, fee: fee, tax: tax, total: round2(sub + fee + tax) };
       }
 
       function renderTotals() {
         var t = totals();
+        var feeRow = "";
+        if (method === "delivery") {
+          if (feeStatus === "loading") {
+            feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>Đang tính phí giao…</span></div>';
+          } else if (feeStatus === "ok") {
+            feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>' + money(deliveryFee) + '</span></div>';
+          } else if (feeStatus === "unknown") {
+            feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>Tiệm gọi xác nhận sau</span></div>';
+          } else {
+            feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>Tiệm gọi xác nhận</span></div>';
+          }
+        }
         $("totalsBox").innerHTML =
           '<div class="t-row"><span>Tạm tính</span><span>' + money(t.sub) + '</span></div>' +
+          feeRow +
           '<div class="t-row"><span>Thuế 8.75%</span><span>' + money(t.tax) + '</span></div>' +
-          (method === "delivery" ? '<div class="t-row"><span>Phí giao hàng</span><span>Tiệm gọi xác nhận</span></div>' : "") +
           '<div class="t-row grand"><span>Tổng cộng</span><span>' + money(t.total) + '</span></div>';
       }
 
@@ -903,7 +985,9 @@
         $("segDelivery").classList.toggle("active", m === "delivery");
         $("pickupZone").classList.toggle("hidden", m !== "pickup");
         $("deliveryZone").classList.toggle("hidden", m !== "delivery");
-        renderTotals();
+        if (m === "delivery") scheduleFeeCalc();
+        else { feeSeq++; renderTotals(); }
+        updateSubmitState();
       }
 
       function openCart() {
@@ -911,6 +995,7 @@
         $("cartOverlay").classList.add("open");
         $("cartBar").classList.add("hidden");
         document.body.style.overflow = "hidden";
+        if (method === "delivery") scheduleFeeCalc();
       }
       function closeCart() {
         $("cartOverlay").classList.remove("open");
@@ -936,9 +1021,14 @@
         });
         var first = cart.slice().sort(function (a, b) { return a.day < b.day ? -1 : 1; })[0];
         var shift = null, pickupTime = null, address = null;
+        var fee = null;
         if (method === "delivery") {
           shift = document.querySelector("input[name=shift]:checked").value;
           address = $("inAddress").value.trim();
+          if (feeStatus === "ok" && deliveryFee != null) {
+            fee = deliveryFee;
+            note = (note ? note + " · " : "") + "Phí giao $" + fee;
+          }
         } else {
           pickupTime = $("inPickupTime").value.trim() || null;
         }
@@ -953,6 +1043,7 @@
           address: address,
           items: items,
           subtotal: t.sub,
+          delivery_fee: fee,
           tax: t.tax,
           total: t.total,
           payment_method: pay,
@@ -986,6 +1077,9 @@
             '</span><span>' + money(it.price * it.qty) + '</span></div>';
         });
         html += '<div class="s-line"><span>Tạm tính</span><span>' + money(order.subtotal) + '</span></div>';
+        if (order.delivery_fee != null) {
+          html += '<div class="s-line"><span>Phí giao hàng</span><span>' + money(order.delivery_fee) + '</span></div>';
+        }
         html += '<div class="s-line"><span>Thuế 8.75%</span><span>' + money(order.tax) + '</span></div>';
         html += '<div class="s-total"><span>Tổng cộng</span><span>' + money(order.total) + '</span></div></div>';
         html += '<div class="summary-box"><h4>Thông tin của bạn</h4>';
@@ -996,7 +1090,11 @@
             (order.pickup_time ? '<br />Giờ lấy: ' + esc(order.pickup_time) : "") + '</div>';
         } else {
           html += '<div class="s-meta">Giao hàng: ' + esc(order.address) + '<br />Ca giao: ' + esc(order.shift) + '</div>';
-          html += '<div class="s-meta">Phí giao tính theo khoảng cách — tiệm gọi lại xác nhận với bạn.</div>';
+          if (order.delivery_fee != null) {
+            html += '<div class="s-meta">Phí giao hàng: ' + money(order.delivery_fee) + ' (đã gồm trong tổng)</div>';
+          } else {
+            html += '<div class="s-meta">Phí giao: tiệm gọi lại xác nhận sau.</div>';
+          }
         }
         html += '<div class="s-meta">Thanh toán: 💳 Thanh toán bằng thẻ / Apple Pay / Google Pay (Stripe)</div>';
         if (order.note) html += '<div class="s-meta">Ghi chú: ' + esc(order.note) + '</div>';
@@ -1201,6 +1299,10 @@
           if (f) f.classList.remove("invalid");
           $("formAlert").classList.remove("show");
         });
+      });
+      $("inAddress").addEventListener("input", scheduleFeeCalc);
+      $("inAddress").addEventListener("blur", function () {
+        if (method === "delivery" && $("inAddress").value.trim()) calcDeliveryFee();
       });
 
       renderDayChips();
