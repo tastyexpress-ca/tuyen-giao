@@ -1776,6 +1776,14 @@
             </span>
             <span class="section-arrow" aria-hidden="true">→</span>
           </button>
+          <button type="button" class="section-card" id="shareAppBtn">
+            <span class="section-icon" aria-hidden="true">📤</span>
+            <span>
+              <span class="section-title">Chia sẻ app</span>
+              <span class="section-sub">Gửi link app cho tài xế / nhà bếp</span>
+            </span>
+            <span class="section-arrow" aria-hidden="true">→</span>
+          </button>
         </div>
       </div>
     </div>
@@ -4851,6 +4859,18 @@
         document.getElementById("openEntryBtn").addEventListener("click", function () {
           resetEntryForm();
           showView(entryView);
+        });
+        document.getElementById("shareAppBtn").addEventListener("click", function () {
+          var shareUrl = "https://tastyexpress-ca.github.io/tuyen-giao/";
+          if (navigator.share) {
+            navigator.share({ title: "Tasty Express", text: "App Tasty Express — giao hàng & nhà bếp:", url: shareUrl }).catch(function () {});
+          } else if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shareUrl).then(function () {
+              showToast("✓ Đã chép link app");
+            }, function () { showToast(shareUrl); });
+          } else {
+            showToast(shareUrl);
+          }
         });
         document.getElementById("entryBackBtn").addEventListener("click", function () {
           showView(homeView);
