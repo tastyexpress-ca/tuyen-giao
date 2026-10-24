@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Tasty Express</title>
+<link rel="icon" type="image/png" href="https://tastyexpress-ca.github.io/tuyen-giao/assets/favicon.png" />
+<link rel="apple-touch-icon" href="https://tastyexpress-ca.github.io/tuyen-giao/assets/apple-touch-icon.png" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Tasty Express" />
+<meta property="og:description" content="Cơm nhà nấu mỗi ngày — giao đến tận nơi. Order: 626-283-9994" />
+<meta property="og:image" content="https://tastyexpress-ca.github.io/tuyen-giao/assets/logo-og.jpg" />
+<link rel="prefetch" href="../home/" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #fff8ef;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    transition: opacity .6s ease;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body.fade-out { opacity: 0; }
+  .stage { position: relative; width: min(88vw, 430px); text-align: center; }
+  .orbit {
+    position: absolute; left: 50%; top: 44%;
+    width: 118%; aspect-ratio: 1/1;
+    transform: translate(-50%, -50%);
+    animation: spin 9s linear infinite;
+    pointer-events: none;
+  }
+  .orbit span {
+    position: absolute; left: 50%; top: 50%;
+    font-size: clamp(22px, 6.4vw, 30px);
+    line-height: 1;
+    transform: rotate(var(--a)) translateY(calc(min(88vw, 430px) * -0.59)) rotate(calc(var(--a) * -1));
+    margin: -0.5em 0 0 -0.5em;
+    animation: spinBack 9s linear infinite;
+    filter: drop-shadow(0 2px 3px rgba(90, 45, 0, .18));
+  }
+  @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+  @keyframes spinBack { to { transform: rotate(var(--a)) translateY(calc(min(88vw, 430px) * -0.59)) rotate(calc(var(--a) * -1 - 360deg)); } }
+  .logo {
+    width: 100%; height: auto; display: block; position: relative; z-index: 2;
+    animation: pop .8s cubic-bezier(.2, 1.4, .4, 1) both;
+  }
+  @keyframes pop { from { opacity: 0; transform: scale(.78); } to { opacity: 1; transform: scale(1); } }
+  .tagline {
+    margin-top: 10px; position: relative; z-index: 2;
+    color: #7a4a21; font-size: clamp(15px, 4.4vw, 18px); font-weight: 600;
+    animation: rise .8s .25s ease both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .bar {
+    margin: 22px auto 0; width: 72%; height: 8px; border-radius: 99px;
+    background: #f0ddc4; overflow: hidden; position: relative; z-index: 2;
+  }
+  .bar i {
+    display: block; height: 100%; width: 0; border-radius: 99px;
+    background: linear-gradient(90deg, #f5a301, #e63312);
+    animation: fill 3s linear forwards;
+  }
+  @keyframes fill { to { width: 100%; } }
+  .hint { margin-top: 14px; color: #b08a5e; font-size: 13px; position: relative; z-index: 2; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="orbit" aria-hidden="true">
+      <span style="--a:0deg">🍱</span>
+      <span style="--a:45deg">🍜</span>
+      <span style="--a:90deg">🍦</span>
+      <span style="--a:135deg">🍲</span>
+      <span style="--a:180deg">🥗</span>
+      <span style="--a:225deg">🍗</span>
+      <span style="--a:270deg">🧁</span>
+      <span style="--a:315deg">🍤</span>
+    </div>
+    <img class="logo" src="../assets/logo-og.jpg" alt="Tasty Express" />
+    <div class="tagline">Cơm nhà nấu mỗi ngày — giao đến tận nơi</div>
+    <div class="bar"><i></i></div>
+    <div class="hint">Đang vào trang chính…</div>
+  </div>
+<script>
+  var HOME = "../home/";
+  var done = false;
+  function go() {
+    if (done) return; done = true;
+    document.body.classList.add("fade-out");
+    setTimeout(function () { window.location.href = HOME; }, 620);
+  }
+  setTimeout(go, 3000);
+  document.addEventListener("click", go);
+</script>
+</body>
+</html>
