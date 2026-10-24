@@ -745,18 +745,48 @@
       .kt-table td.kt-name { font-weight: 700; overflow-wrap: anywhere; }
       .kt-table tfoot td { border-top: 2px solid var(--line); font-weight: 900; }
       .kt-fee-total { margin-top: 10px; }
-      /* Chris profit panel (💵 Chris, kitchen day view): the day's
-         per-order profit for the owner, toggled from a button beside
-         "💰 Thanh toán với tiệm". Green paid palette — money the
-         owner keeps. Same line shape as the collect list: label on
-         the left, amount on the right, bold total as the last line. */
-      .chris-panel {
-        margin-bottom: 14px;
-        background: var(--paid-bg);
-        border: 1.5px solid var(--paid-line);
-        border-radius: 14px;
-        padding: 14px;
+      /* Chris earnings page (💵 Chris): a dedicated password-gated
+         page opened from the button beside "💰 Thanh toán với tiệm"
+         in the kitchen day header. Per-order lines use the same
+         shape as the collect list: label on the left, amount on
+         the right; the summary block closes the page. */
+      .chris-ship-note {
+        display: block;
+        margin-top: 1px;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--paid-ink);
       }
+      .chris-summary {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1.5px solid var(--line);
+      }
+      .chris-sum-line {
+        font-size: 19px;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+      .chris-grand {
+        margin-top: 8px;
+        font-size: 26px;
+        font-weight: 900;
+        line-height: 1.3;
+        color: var(--paid-ink);
+      }
+      .chris-pass-row { margin-top: 20px; }
+      .btn-change-pass {
+        background: var(--card);
+        color: var(--muted);
+        border: 1.5px solid var(--line);
+        border-radius: 999px;
+        padding: 7px 14px;
+        font-size: 14px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .btn-change-pass:active { background: var(--accent-soft); }
+      #chrisChangeForm { margin-top: 14px; }
       .chris-list { margin-top: 8px; }
       .chris-line {
         display: flex;
@@ -1687,6 +1717,64 @@
       </div>
     </div>
 
+    <!-- ================= CHRIS VIEW (TIỀN CỦA THINH, password-gated) ================= -->
+    <div id="chrisView" hidden>
+      <header>
+        <div class="wrap">
+          <button type="button" class="back-btn" id="chrisBackBtn">← Quay lại bếp</button>
+          <div class="brand">Tasty Express <span class="route-name">· Tiền của Thinh</span></div>
+          <div class="dayline">TIỀN CỦA THINH</div>
+          <div class="origin" id="chrisDayline"></div>
+        </div>
+      </header>
+      <div class="wrap">
+        <main>
+          <div class="totals-card" id="chrisGateCard" hidden>
+            <div class="totals-sub" id="chrisGateLoading">Đang kiểm tra mật khẩu…</div>
+            <form id="chrisSetupForm" hidden novalidate>
+              <div class="totals-big">🔒 Tạo mật khẩu cho trang này</div>
+              <label class="login-label" for="chrisNewPass">Mật khẩu mới
+                <input type="password" id="chrisNewPass" class="login-input" autocomplete="new-password" enterkeyhint="next" />
+              </label>
+              <label class="login-label" for="chrisNewPass2">Nhập lại mật khẩu
+                <input type="password" id="chrisNewPass2" class="login-input" autocomplete="new-password" enterkeyhint="go" />
+              </label>
+              <div class="login-error" id="chrisSetupError" hidden></div>
+              <button type="submit" class="btn-login" id="chrisSetupBtn">Lưu mật khẩu</button>
+            </form>
+            <form id="chrisLockForm" hidden novalidate>
+              <div class="totals-big">🔒 Trang này cần mật khẩu</div>
+              <label class="login-label" for="chrisPassInput">Mật khẩu
+                <input type="password" id="chrisPassInput" class="login-input" autocomplete="current-password" enterkeyhint="go" />
+              </label>
+              <div class="login-error" id="chrisLockError" hidden>Sai mật khẩu, thử lại nhé</div>
+              <button type="submit" class="btn-login" id="chrisUnlockBtn">Mở trang</button>
+            </form>
+          </div>
+          <div class="totals-card" id="chrisContentCard" hidden>
+            <div id="chrisPageBody"></div>
+            <div class="chris-summary" id="chrisSummary"></div>
+            <div class="chris-pass-row">
+              <button type="button" class="btn-change-pass" id="chrisChangeBtn" aria-expanded="false">🔒 Đổi mật khẩu</button>
+            </div>
+            <form id="chrisChangeForm" hidden novalidate>
+              <label class="login-label" for="chrisCurPass">Mật khẩu hiện tại
+                <input type="password" id="chrisCurPass" class="login-input" autocomplete="current-password" enterkeyhint="next" />
+              </label>
+              <label class="login-label" for="chrisChgNew">Mật khẩu mới
+                <input type="password" id="chrisChgNew" class="login-input" autocomplete="new-password" enterkeyhint="next" />
+              </label>
+              <label class="login-label" for="chrisChgNew2">Nhập lại mật khẩu mới
+                <input type="password" id="chrisChgNew2" class="login-input" autocomplete="new-password" enterkeyhint="go" />
+              </label>
+              <div class="login-error" id="chrisChangeError" hidden></div>
+              <button type="submit" class="btn-login" id="chrisChangeSaveBtn">Lưu mật khẩu mới</button>
+            </form>
+          </div>
+        </main>
+      </div>
+    </div>
+
     <!-- ================= KITCHEN DAY LIST VIEW ================= -->
     <div id="kitchenListView" hidden>
       <header>
@@ -1714,7 +1802,7 @@
           <div class="dayline" id="kitchenDayline"></div>
           <div class="chips" id="kitchenChips"></div>
           <button type="button" class="btn-totals" id="kitchenTotalsBtn">💰 Thanh toán với tiệm</button>
-          <button type="button" class="btn-totals" id="chrisBtn" aria-expanded="false">💵 Chris</button>
+          <button type="button" class="btn-totals" id="chrisBtn">💵 Chris</button>
           <button type="button" class="btn-print-all" id="printAllBtn">🖨 In tất cả</button>
           <div class="progress-row">
             <div class="progress-track" role="progressbar" aria-label="Tiến độ nấu order" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="kProgressBar">
@@ -1726,10 +1814,6 @@
       </header>
 
       <div class="wrap">
-        <section class="chris-panel" id="chrisPanel" hidden>
-          <div class="totals-label">TIỀN CỦA THINH</div>
-          <div id="chrisBody"></div>
-        </section>
         <div class="k-search-row">
           <input type="search" id="kitchenSearch" class="k-search" placeholder="Tìm theo 4 số cuối…" autocomplete="off" enterkeyhint="search" aria-label="Tìm order theo 4 số cuối số điện thoại" />
         </div>
@@ -1796,9 +1880,30 @@
         var kitchenTotalsView = document.getElementById("kitchenTotalsView");
         var ktDayline = document.getElementById("ktDayline");
         var ktBody = document.getElementById("ktBody");
-        var chrisPanel = document.getElementById("chrisPanel");
-        var chrisBody = document.getElementById("chrisBody");
         var chrisBtn = document.getElementById("chrisBtn");
+        var chrisView = document.getElementById("chrisView");
+        var chrisDayline = document.getElementById("chrisDayline");
+        var chrisGateCard = document.getElementById("chrisGateCard");
+        var chrisGateLoading = document.getElementById("chrisGateLoading");
+        var chrisSetupForm = document.getElementById("chrisSetupForm");
+        var chrisNewPass = document.getElementById("chrisNewPass");
+        var chrisNewPass2 = document.getElementById("chrisNewPass2");
+        var chrisSetupError = document.getElementById("chrisSetupError");
+        var chrisSetupBtn = document.getElementById("chrisSetupBtn");
+        var chrisLockForm = document.getElementById("chrisLockForm");
+        var chrisPassInput = document.getElementById("chrisPassInput");
+        var chrisLockError = document.getElementById("chrisLockError");
+        var chrisUnlockBtn = document.getElementById("chrisUnlockBtn");
+        var chrisContentCard = document.getElementById("chrisContentCard");
+        var chrisPageBody = document.getElementById("chrisPageBody");
+        var chrisSummary = document.getElementById("chrisSummary");
+        var chrisChangeBtn = document.getElementById("chrisChangeBtn");
+        var chrisChangeForm = document.getElementById("chrisChangeForm");
+        var chrisCurPass = document.getElementById("chrisCurPass");
+        var chrisChgNew = document.getElementById("chrisChgNew");
+        var chrisChgNew2 = document.getElementById("chrisChgNew2");
+        var chrisChangeError = document.getElementById("chrisChangeError");
+        var chrisChangeSaveBtn = document.getElementById("chrisChangeSaveBtn");
         var kitchenListView = document.getElementById("kitchenListView");
         var kitchenView = document.getElementById("kitchenView");
         var entryView = document.getElementById("entryView");
@@ -1823,7 +1928,7 @@
         var dynamicPageStyle = document.getElementById("dynamicPageStyle");
         var toastTimer = null;
 
-        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenTotalsView, kitchenListView, kitchenView, entryView];
+        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenTotalsView, chrisView, kitchenListView, kitchenView, entryView];
         var currentView = null;
         function showView(v) {
           currentView = v;
@@ -2873,28 +2978,34 @@
         }
 
         /* ================================================================
-           KITCHEN — 💵 Chris panel ("TIỀN CỦA THINH"): what the OWNER
-           keeps from the open kitchen day, one line per FOOD order
-           (kem-only orders are excluded, exactly like the settlement).
+           KITCHEN — 💵 Chris page ("TIỀN CỦA THINH"): a DEDICATED
+           page (opened from the button beside "💰 Thanh toán với
+           tiệm" in the kitchen day header, same navigation pattern
+           as the settlement page) showing what the OWNER keeps from
+           the open kitchen day, one line per FOOD order (kem-only
+           orders are excluded, exactly like the settlement).
            Display only — computed live from the same kitchen_orders
            data, dishes parsed with the same parseKitchenDish /
            isPremiumDish classification as the settlement:
-           - portion profit: $12-class portion → $4, other → $2.
-           - món lẻ profit: (price ÷ 5) × $1 — i.e. 20% of its money.
-           - GIAO SÁNG orders ADD their delivery fee (read from the
-             note with parseShipFee, the same way the settlement reads
-             bếp giao fees) — morning fees belong to the owner. BẾP
-             GIAO fees belong to the shop and are NOT added; PICK UP
-             is margins only, whoever the customer paid.
+           - Lời món (food profit): $12-class portion → $4, other
+             portion → $2; món lẻ → (price ÷ 5) × $1 (20% of money).
+           - Shipping of Chris's: GIAO SÁNG orders ADD their delivery
+             fee (read from the note with parseShipFee, the same way
+             the settlement reads fees) — morning fees belong to the
+             owner, shown on the line as "+ ship $F". BẾP GIAO fees
+             belong to the shop and are NEVER counted here; PICK UP
+             orders have no shipping.
            - WIX / web-paid orders (label starts "Wix", or the note /
              label mentions "qua web" / "wix") SUBTRACT the Wix
              processing fee: 2.9% of the charged total + $0.30, where
              charged total = (food at selling prices — $12-class
              portion $12, other $10, món lẻ at its $ price — plus the
              delivery fee if any) × 1.0875 tax, rounded to cents.
-           A line never displays below $0.00.
+             Shown on the line as a muted "− phí Wix $X.XX" note.
+           Each line's net = lời món + ship − phí Wix, floored at
+           $0.00 for display. The summary block totals lời món (food
+           profits minus Wix fees), Chris's shipping, and both.
            ================================================================ */
-        var chrisPanelOpen = false;
 
         /* Strict two-decimal money for this panel ("$3.07"). */
         function fmtUsd2(n) {
@@ -2907,11 +3018,17 @@
           var text = (label + " " + String(o.note || "")).toLowerCase();
           return text.indexOf("qua web") !== -1 || text.indexOf("wix") !== -1;
         }
-        /* Per-order owner profit lines for one kitchen day. */
+        /* Per-order owner earnings for one kitchen day, with the
+           components kept separate so the page can show lời món,
+           Chris's shipping and the Wix fee apart, then total them.
+           marginNet is the line's food profit minus its Wix fee,
+           floored at $0 exactly like the displayed line net, so the
+           summary always matches the sum of the lines. */
         function chrisDayProfit(dayStr) {
           var orders = kitchenOrdersByDay[dayStr] || [];
           var rows = [];
-          var total = 0;
+          var profitTotal = 0;
+          var shipTotal = 0;
           orders.forEach(function (o) {
             var gkey = grpInfo(o.grp).key;
             var margin = 0;
@@ -2932,31 +3049,48 @@
             });
             if (!hasFood) return;
             var fee = parseShipFee(o.note);
-            var profit = margin;
-            if (gkey === "sang") profit += fee;
+            /* Only GIAO SÁNG fees are Chris's shipping; bếp giao
+               fees belong to the shop, pick up has none. The fee
+               still counts toward a web order's charged total. */
+            var ship = gkey === "sang" ? fee : 0;
             var wixFee = 0;
             if (isWebPaidOrder(o)) {
               var charged = Math.round((sell + fee) * 1.0875 * 100) / 100;
               wixFee = Math.round((charged * 0.029 + 0.30) * 100) / 100;
-              profit -= wixFee;
             }
-            var amount = Math.max(0, Math.round(profit * 100) / 100);
-            rows.push({ label: o.label || o.name || "", amount: amount, wixFee: wixFee });
-            total += amount;
+            var marginNet = Math.max(0, Math.round((margin - wixFee) * 100) / 100);
+            var amount = Math.round((marginNet + ship) * 100) / 100;
+            rows.push({
+              label: o.label || o.name || "",
+              amount: amount, ship: ship, wixFee: wixFee
+            });
+            profitTotal += marginNet;
+            shipTotal += ship;
           });
-          return { rows: rows, total: Math.round(total * 100) / 100 };
+          profitTotal = Math.round(profitTotal * 100) / 100;
+          shipTotal = Math.round(shipTotal * 100) / 100;
+          return {
+            rows: rows,
+            profitTotal: profitTotal,
+            shipTotal: shipTotal,
+            grandTotal: Math.round((profitTotal + shipTotal) * 100) / 100
+          };
         }
 
-        function renderChrisPanel() {
+        function renderChrisPage() {
           var kd = currentKitchenDay;
           if (!kd) return;
+          chrisDayline.textContent = kitchenDayLabel(kd);
           var res = chrisDayProfit(kd.day);
-          chrisBody.innerHTML = "";
+          chrisPageBody.innerHTML = "";
           if (res.rows.length) {
             var list = el("div", "chris-list");
             res.rows.forEach(function (r) {
               var line = el("div", "chris-line");
               var name = el("span", "chris-name", r.label);
+              if (r.ship > 0) {
+                name.appendChild(el("span", "chris-ship-note", "+ ship " + fmtUsd2(r.ship)));
+              }
               if (r.wixFee > 0) {
                 name.appendChild(el("span", "chris-fee-note", "− phí Wix " + fmtUsd2(r.wixFee)));
               }
@@ -2964,20 +3098,291 @@
               line.appendChild(el("span", "chris-amt", fmtUsd2(r.amount)));
               list.appendChild(line);
             });
-            chrisBody.appendChild(list);
+            chrisPageBody.appendChild(list);
+          } else {
+            chrisPageBody.appendChild(el("div", "kt-empty", "Không có order nào trong ngày này."));
           }
-          var tot = el("div", "chris-total");
-          tot.appendChild(el("span", "", "Tổng tiền của Thinh"));
-          tot.appendChild(el("span", "", fmtUsd2(res.total)));
-          chrisBody.appendChild(tot);
+          chrisSummary.innerHTML = "";
+          chrisSummary.appendChild(el("div", "chris-sum-line", "Tổng lời món: " + fmtUsd2(res.profitTotal)));
+          chrisSummary.appendChild(el("div", "chris-sum-line", "Tổng shipping của Thinh: " + fmtUsd2(res.shipTotal)));
+          chrisSummary.appendChild(el("div", "chris-grand", "TỔNG CẢ 2: " + fmtUsd2(res.grandTotal)));
         }
 
-        function toggleChrisPanel() {
-          chrisPanelOpen = !chrisPanelOpen;
-          chrisPanel.hidden = !chrisPanelOpen;
-          chrisBtn.setAttribute("aria-expanded", chrisPanelOpen ? "true" : "false");
-          if (chrisPanelOpen) renderChrisPanel();
+        /* ================================================================
+           CHRIS PAGE — PASSWORD GATE. The page has its own lock on
+           top of the shared app login, because the driver and the
+           kitchen use the same login. ONLY a SHA-256 hash of the
+           password is ever stored — in the Supabase `states` table
+           under the reserved key day='__settings__',
+           card_key='chris_pass', toggle='hash', value=<hex hash> —
+           and the check happens here, client-side, against that
+           hash; the plaintext never leaves the device. With no hash
+           stored, the page opens on a first-run setup form (Chris
+           sets his own password); deleting the hash row in Supabase
+           returns the page to that setup form — the recovery path
+           if the password is forgotten. A correct entry unlocks the
+           page for this app session only (an in-memory flag,
+           cleared on logout).
+           ================================================================ */
+        var chrisUnlocked = false;
+        var chrisHash = null; /* null = not fetched yet, "" = none stored */
+        var chrisGateBusy = false;
+
+        /* SHA-256 → lowercase hex. Uses WebCrypto when available,
+           with a compact pure-JS fallback for contexts without it. */
+        function sha256Hex(str) {
+          var utf8 = unescape(encodeURIComponent(String(str)));
+          if (window.crypto && window.crypto.subtle && window.crypto.subtle.digest) {
+            var bytes = new Uint8Array(utf8.length);
+            for (var i = 0; i < utf8.length; i++) bytes[i] = utf8.charCodeAt(i);
+            return window.crypto.subtle.digest("SHA-256", bytes).then(function (buf) {
+              var out = new Uint8Array(buf);
+              var hex = "";
+              for (var j = 0; j < out.length; j++) {
+                var s = out[j].toString(16);
+                hex += (s.length < 2 ? "0" : "") + s;
+              }
+              return hex;
+            }, function () {
+              return sha256HexSync(utf8);
+            });
+          }
+          return Promise.resolve(sha256HexSync(utf8));
         }
+        function sha256HexSync(ascii) {
+          function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
+          var maxWord = Math.pow(2, 32);
+          var result = "";
+          var words = [];
+          var asciiBitLength = ascii.length * 8;
+          var hash = (sha256HexSync.h = sha256HexSync.h || []);
+          var k = (sha256HexSync.k = sha256HexSync.k || []);
+          var primeCounter = k.length;
+          var isComposite = {};
+          for (var candidate = 2; primeCounter < 64; candidate++) {
+            if (!isComposite[candidate]) {
+              for (var i2 = 0; i2 < 313; i2 += candidate) isComposite[i2] = candidate;
+              hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
+              k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
+            }
+          }
+          ascii += "\x80";
+          while ((ascii.length % 64) - 56) ascii += "\x00";
+          for (var i = 0; i < ascii.length; i++) {
+            var code = ascii.charCodeAt(i);
+            if (code >> 8) return sha256Hex(ascii);
+            words[i >> 2] |= code << (((3 - i) % 4) * 8);
+          }
+          words[words.length] = (asciiBitLength / maxWord) | 0;
+          words[words.length] = asciiBitLength;
+          for (var j = 0; j < words.length;) {
+            var w = words.slice(j, (j += 16));
+            var oldHash = hash;
+            hash = hash.slice(0, 8);
+            for (var i3 = 0; i3 < 64; i3++) {
+              var w15 = w[i3 - 15], w2 = w[i3 - 2];
+              var a = hash[0], e = hash[4];
+              var temp1 = hash[7]
+                + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25))
+                + ((e & hash[5]) ^ (~e & hash[6]))
+                + k[i3]
+                + (w[i3] = i3 < 16 ? w[i3] : (
+                  w[i3 - 16]
+                  + (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3))
+                  + w[i3 - 7]
+                  + (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))
+                ) | 0);
+              var temp2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22))
+                + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+              hash = [(temp1 + temp2) | 0].concat(hash);
+              hash[4] = (hash[4] + temp1) | 0;
+            }
+            for (var i4 = 0; i4 < 8; i4++) hash[i4] = (hash[i4] + oldHash[i4]) | 0;
+          }
+          for (var i5 = 0; i5 < 8; i5++) {
+            for (var j2 = 3; j2 + 1; j2--) {
+              var b = (hash[i5] >> (j2 * 8)) & 255;
+              result += (b < 16 ? "0" : "") + b.toString(16);
+            }
+          }
+          return result;
+        }
+
+        function loadChrisHash() {
+          return dataGet("/rest/v1/states?select=value&day=eq.__settings__&card_key=eq.chris_pass&toggle=eq.hash")
+            .then(function (rows) {
+              var v = (rows && rows[0]) ? rows[0].value : null;
+              chrisHash = (typeof v === "string" && v) ? v : "";
+              return chrisHash;
+            }, function () {
+              /* Read failed (e.g. offline): fall back to the last
+                 known hash so the gate still behaves sensibly. */
+              if (chrisHash === null) chrisHash = "";
+              return chrisHash;
+            });
+        }
+        function saveChrisHash(hex) {
+          return apiFetch("/rest/v1/states", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Prefer": "resolution=merge-duplicates"
+            },
+            body: JSON.stringify({ day: "__settings__", card_key: "chris_pass", toggle: "hash", value: hex })
+          }).then(function (r) {
+            if (!r.ok) throw new Error("save-failed");
+            chrisHash = hex;
+          });
+        }
+
+        /* Show exactly one gate state: loading / first-run setup /
+           lock prompt — or, once unlocked, the content card. */
+        function renderChrisGate() {
+          var kd = currentKitchenDay;
+          if (kd) chrisDayline.textContent = kitchenDayLabel(kd);
+          chrisChangeForm.hidden = true;
+          chrisChangeBtn.setAttribute("aria-expanded", "false");
+          if (chrisUnlocked) {
+            chrisGateCard.hidden = true;
+            chrisContentCard.hidden = false;
+            renderChrisPage();
+            return;
+          }
+          chrisContentCard.hidden = true;
+          chrisGateCard.hidden = false;
+          chrisGateLoading.hidden = chrisHash !== null;
+          chrisSetupForm.hidden = !(chrisHash === "");
+          chrisLockForm.hidden = !(typeof chrisHash === "string" && chrisHash !== "");
+          chrisSetupError.hidden = true;
+          chrisLockError.hidden = true;
+        }
+
+        function openChrisPage() {
+          if (!currentKitchenDay) return;
+          showView(chrisView);
+          renderChrisGate();
+          if (!chrisUnlocked) {
+            /* Re-read the stored hash on every open: if the row was
+               deleted in Supabase (the forgotten-password recovery
+               path), the page falls back to first-run setup. */
+            loadChrisHash().then(function () {
+              if (currentView === chrisView) renderChrisGate();
+            });
+          }
+        }
+
+        function unlockChrisPage() {
+          chrisUnlocked = true;
+          chrisPassInput.value = "";
+          renderChrisGate();
+        }
+
+        chrisSetupForm.addEventListener("submit", function (ev) {
+          ev.preventDefault();
+          if (chrisGateBusy) return;
+          var p1 = chrisNewPass.value;
+          var p2 = chrisNewPass2.value;
+          chrisSetupError.hidden = true;
+          if (!p1) {
+            chrisSetupError.textContent = "Vui lòng nhập mật khẩu mới nhé.";
+            chrisSetupError.hidden = false;
+            return;
+          }
+          if (p1 !== p2) {
+            chrisSetupError.textContent = "Hai mật khẩu chưa khớp, nhập lại nhé.";
+            chrisSetupError.hidden = false;
+            return;
+          }
+          chrisGateBusy = true;
+          chrisSetupBtn.disabled = true;
+          chrisSetupBtn.textContent = "Đang lưu…";
+          sha256Hex(p1).then(function (hex) {
+            return saveChrisHash(hex);
+          }).then(function () {
+            chrisGateBusy = false;
+            chrisSetupBtn.disabled = false;
+            chrisSetupBtn.textContent = "Lưu mật khẩu";
+            chrisNewPass.value = "";
+            chrisNewPass2.value = "";
+            showToast("🔒 Đã tạo mật khẩu cho trang TIỀN CỦA THINH");
+            unlockChrisPage();
+          }, function () {
+            chrisGateBusy = false;
+            chrisSetupBtn.disabled = false;
+            chrisSetupBtn.textContent = "Lưu mật khẩu";
+            chrisSetupError.textContent = "⚠️ Chưa lưu được — kiểm tra mạng rồi thử lại nhé.";
+            chrisSetupError.hidden = false;
+          });
+        });
+
+        chrisLockForm.addEventListener("submit", function (ev) {
+          ev.preventDefault();
+          if (chrisGateBusy) return;
+          chrisLockError.hidden = true;
+          chrisGateBusy = true;
+          chrisUnlockBtn.disabled = true;
+          chrisUnlockBtn.textContent = "Đang mở…";
+          sha256Hex(chrisPassInput.value).then(function (hex) {
+            chrisGateBusy = false;
+            chrisUnlockBtn.disabled = false;
+            chrisUnlockBtn.textContent = "Mở trang";
+            if (hex === chrisHash) {
+              unlockChrisPage();
+            } else {
+              chrisPassInput.value = "";
+              chrisLockError.hidden = false;
+            }
+          });
+        });
+
+        chrisChangeBtn.addEventListener("click", function () {
+          var open = chrisChangeForm.hidden;
+          chrisChangeForm.hidden = !open;
+          chrisChangeBtn.setAttribute("aria-expanded", open ? "true" : "false");
+          chrisChangeError.hidden = true;
+          if (open) chrisCurPass.focus();
+        });
+
+        chrisChangeForm.addEventListener("submit", function (ev) {
+          ev.preventDefault();
+          if (chrisGateBusy) return;
+          chrisChangeError.hidden = true;
+          function fail(msg) {
+            chrisChangeError.textContent = msg;
+            chrisChangeError.hidden = false;
+          }
+          var cur = chrisCurPass.value;
+          var p1 = chrisChgNew.value;
+          var p2 = chrisChgNew2.value;
+          if (!cur || !p1) { fail("Vui lòng nhập đủ mật khẩu hiện tại và mật khẩu mới nhé."); return; }
+          if (p1 !== p2) { fail("Hai mật khẩu mới chưa khớp, nhập lại nhé."); return; }
+          chrisGateBusy = true;
+          chrisChangeSaveBtn.disabled = true;
+          chrisChangeSaveBtn.textContent = "Đang lưu…";
+          sha256Hex(cur).then(function (hex) {
+            if (hex !== chrisHash) throw new Error("wrong-current");
+            return sha256Hex(p1);
+          }).then(function (hex) {
+            return saveChrisHash(hex);
+          }).then(function () {
+            chrisGateBusy = false;
+            chrisChangeSaveBtn.disabled = false;
+            chrisChangeSaveBtn.textContent = "Lưu mật khẩu mới";
+            chrisCurPass.value = "";
+            chrisChgNew.value = "";
+            chrisChgNew2.value = "";
+            chrisChangeForm.hidden = true;
+            chrisChangeBtn.setAttribute("aria-expanded", "false");
+            showToast("🔒 Đã đổi mật khẩu");
+          }, function (err) {
+            chrisGateBusy = false;
+            chrisChangeSaveBtn.disabled = false;
+            chrisChangeSaveBtn.textContent = "Lưu mật khẩu mới";
+            fail(err && err.message === "wrong-current"
+              ? "Mật khẩu hiện tại chưa đúng."
+              : "⚠️ Chưa lưu được — kiểm tra mạng rồi thử lại nhé.");
+          });
+        });
 
         /* ================================================================
            KITCHEN — day list (home section)
@@ -3384,9 +3789,6 @@
           }
           renderKitchenProgress();
           applyKitchenFilter();
-          /* The 💵 Chris panel lives in this view: keep its figures
-             in step with the same realtime refresh as the cards. */
-          if (chrisPanelOpen) renderChrisPanel();
         }
 
         function openKitchenDay(kd) {
@@ -3437,14 +3839,19 @@
           openKitchenTotals();
         });
         chrisBtn.addEventListener("click", function () {
-          toggleChrisPanel();
+          openChrisPage();
         });
         document.getElementById("kitchenTotalsBackBtn").addEventListener("click", function () {
+          showView(kitchenView);
+        });
+        document.getElementById("chrisBackBtn").addEventListener("click", function () {
           showView(kitchenView);
         });
         document.getElementById("logoutBtn").addEventListener("click", function () {
           teardownRealtime();
           clearSession();
+          chrisUnlocked = false;
+          chrisHash = null;
           routeDays = [];
           kitchenDays = [];
           stopsByDay = {};
@@ -3815,6 +4222,13 @@
             var kd3 = findKitchenDay(currentKitchenDay.day);
             if (kd3) currentKitchenDay = kd3;
             renderKitchenTotals();
+          } else if (currentView === chrisView && currentKitchenDay) {
+            var kd4 = findKitchenDay(currentKitchenDay.day);
+            if (kd4) currentKitchenDay = kd4;
+            /* Only the unlocked page re-renders on refresh — never
+               wipe a password the user is halfway through typing. */
+            if (chrisUnlocked) renderChrisPage();
+            else chrisDayline.textContent = kitchenDayLabel(currentKitchenDay);
           }
           if (y) window.scrollTo(0, y);
         }
