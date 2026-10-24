@@ -106,6 +106,14 @@
       }
       .hotline svg { width: 16px; height: 16px; flex: none; }
       .hotline small { display: block; font-weight: 500; font-size: 10.5px; color: #f0cf9e; letter-spacing: 0.06em; text-transform: uppercase; }
+      .homebtn {
+        display: inline-flex; align-items: center; gap: 7px;
+        background: rgba(255, 250, 241, 0.12);
+        border: 1px solid rgba(253, 243, 224, 0.45);
+        color: #fdf3e0; text-decoration: none;
+        font-weight: 700; font-size: 14px;
+        padding: 8px 14px; border-radius: 10px; margin: 0 0 12px;
+      }
 
       /* ---------- Day picker ---------- */
       .daybar { position: sticky; top: 0; z-index: 30; background: var(--bg); padding: 12px 0 8px; }
@@ -448,6 +456,7 @@
         </a>
       </div>
       <div class="wrap"><div class="acct-row" id="acctRow"></div></div>
+      <div class="wrap"><a class="homebtn" href="../home/" onclick="this.href='../home/?v='+Date.now();return true;" aria-label="Về trang chính">🏠 Home</a></div>
     </header>
 
     <div id="menuView">
