@@ -324,7 +324,7 @@
       .field { margin-bottom: 13px; }
       .field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; }
       .field label .req { color: var(--red); }
-      .field input[type="text"], .field input[type="tel"], .field textarea {
+      .field input[type="text"], .field input[type="tel"], .field input[type="email"], .field input[type="password"], .field textarea {
         width: 100%; border: 1.5px solid var(--line-strong); border-radius: 10px;
         background: var(--surface); color: var(--ink);
         padding: 11px 12px; font-size: 15px;
@@ -391,6 +391,39 @@
       .summary-box .s-total { border-top: 1.5px solid var(--line); margin-top: 8px; padding-top: 9px; font-weight: 900; display: flex; justify-content: space-between; font-size: 16px; color: var(--brown-dark); }
       .hidden { display: none !important; }
 
+      /* ---------- Dish photos ---------- */
+      .dish .d-img { width: 58px; height: 58px; border-radius: 10px; object-fit: cover; flex: none; background: var(--surface-2); }
+      .comphan .cp-img { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; display: block; margin-bottom: 12px; background: var(--surface-2); }
+      .radio-opt .ro-img { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; flex: none; background: var(--surface-2); }
+      .radio-opt.disabled { opacity: 0.5; }
+
+      /* ---------- Cutoff ---------- */
+      .cutoff-banner { margin-top: 22px; background: var(--red-bg); color: var(--red); border: 1px solid var(--red); border-radius: 12px; padding: 11px 13px; font-size: 13.5px; font-weight: 600; }
+      .cutoff-banner.info { background: var(--surface-2); color: var(--ink); border-color: var(--line-strong); }
+      .day-chip.locked { opacity: 0.55; }
+      .day-chip:disabled { cursor: not-allowed; }
+      .menu-locked .dish, .menu-locked .comphan { opacity: 0.55; }
+
+      /* ---------- Account ---------- */
+      .acct-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+      .acct-email { font-size: 13px; font-weight: 600; color: #f0cf9e; margin-right: auto; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .acct-btn { background: rgba(255, 250, 241, 0.12); border: 1px solid rgba(253, 243, 224, 0.45); color: #fdf3e0; border-radius: 9px; padding: 7px 12px; font-weight: 700; font-size: 13px; white-space: nowrap; }
+      .auth-ok { display: none; background: var(--green-bg); color: var(--green); border: 1px solid var(--green); border-radius: 10px; padding: 11px 13px; font-size: 13.5px; font-weight: 600; margin-bottom: 12px; }
+      .auth-ok.show { display: block; }
+      .auth-note { font-size: 12.5px; color: var(--ink-soft); margin: 12px 0 0; text-align: center; }
+
+      /* ---------- My orders ---------- */
+      .order-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; margin-bottom: 10px; box-shadow: var(--shadow-sm); }
+      .order-card .o-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+      .order-card .o-day { font-weight: 800; font-size: 15px; color: var(--brown-dark); }
+      .o-badge { font-size: 11px; font-weight: 800; letter-spacing: 0.04em; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--brown-dark); white-space: nowrap; }
+      .o-badge.kitchen { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+      .order-card .o-meta { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+      .order-card .o-items { font-size: 13.5px; margin-top: 7px; }
+      .order-card .o-items .oi-detail { display: block; font-size: 12px; color: var(--ink-soft); }
+      .order-card .o-total { display: flex; justify-content: space-between; font-size: 14px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+      .order-card .o-total b { color: var(--brown-dark); }
+
       @media (min-width: 560px) {
         .brand h1 { font-size: 30px; }
         .sheet { top: 6%; }
@@ -409,6 +442,7 @@
           <span><small>Hotline</small>626-283-9994</span>
         </a>
       </div>
+      <div class="wrap"><div class="acct-row" id="acctRow"></div></div>
     </header>
 
     <div id="menuView">
@@ -417,6 +451,7 @@
           <p class="label">Chọn ngày đặt cơm</p>
           <div class="days" id="dayChips" role="tablist" aria-label="Chọn ngày"></div>
           <p class="day-note">Menu tuần này: Thứ 2 (26/10) – Thứ 7 (31/10). Chủ nhật tiệm nghỉ.</p>
+          <p class="day-note">⏰ Giờ chốt đơn: Ca Sáng 9–11am chốt 10:00 tối hôm trước · Ca Tối 7–9pm chốt 4:00 chiều cùng ngày. Pick up không áp dụng giờ chốt.</p>
         </div>
       </div>
       <main class="wrap" id="menuMain"></main>
@@ -512,12 +547,14 @@
                   <input type="text" id="inAddress" autocomplete="street-address" placeholder="Số nhà, đường, thành phố" />
                   <div class="err">Vui lòng nhập địa chỉ giao hàng.</div>
                 </div>
+                <div class="fee-note">⏰ Ca Sáng 9–11am: chốt đơn 10:00 tối hôm trước · Ca Tối 7–9pm: chốt đơn 4:00 chiều cùng ngày.</div>
                 <div class="field">
                   <label>Ca giao</label>
                   <div class="radio-group" style="margin-bottom:6px;">
                     <label class="radio-opt"><input type="radio" name="shift" value="Sáng 9–11am" checked /> Sáng 9–11am</label>
                     <label class="radio-opt"><input type="radio" name="shift" value="Tối 7–9pm" /> Tối 7–9pm</label>
                   </div>
+                  <div class="form-alert" id="shiftAlert"></div>
                 </div>
                 <div class="fee-note">Phí giao được tính tự động theo khoảng cách lái xe từ tiệm ($1/dặm, làm tròn lên) và cộng vào tổng khi thanh toán.</div>
               </div>
@@ -542,6 +579,54 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Đăng nhập / Đăng ký -->
+    <div class="overlay" id="authOverlay" role="dialog" aria-modal="true" aria-label="Đăng nhập tài khoản">
+      <div class="sheet">
+        <div class="sheet-head">
+          <div>
+            <h2 id="authTitle">Đăng nhập</h2>
+            <p>Đăng nhập để xem lại đơn đã đặt &amp; đặt hàng nhanh hơn</p>
+          </div>
+          <button class="close-x" type="button" id="authClose" aria-label="Đóng">×</button>
+        </div>
+        <div class="sheet-body">
+          <div class="seg" role="tablist" aria-label="Đăng nhập hoặc đăng ký">
+            <button type="button" id="tabLogin" class="active">Đăng nhập</button>
+            <button type="button" id="tabSignup">Đăng ký</button>
+          </div>
+          <div class="form-alert" id="authAlert"></div>
+          <div class="auth-ok" id="authOk"></div>
+          <div class="field" id="fEmail">
+            <label for="inEmail">Email <span class="req">*</span></label>
+            <input type="email" id="inEmail" autocomplete="email" placeholder="vidu@email.com" />
+            <div class="err">Email chưa đúng định dạng.</div>
+          </div>
+          <div class="field" id="fPass">
+            <label for="inPass">Mật khẩu <span class="req">*</span></label>
+            <input type="password" id="inPass" autocomplete="current-password" placeholder="Ít nhất 6 ký tự" />
+            <div class="err">Mật khẩu cần ít nhất 6 ký tự.</div>
+          </div>
+          <button class="btn accent block" type="button" id="authSubmit">Đăng nhập</button>
+          <p class="auth-note" id="authNote">Chưa có tài khoản? Bấm tab Đăng ký ở trên để tạo mới.</p>
+          <p class="auth-note">Không có tài khoản vẫn đặt hàng bình thường — đăng nhập chỉ để xem lại lịch sử đơn.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Đơn của tôi -->
+    <div class="overlay" id="ordersOverlay" role="dialog" aria-modal="true" aria-label="Đơn của tôi">
+      <div class="sheet">
+        <div class="sheet-head">
+          <div>
+            <h2>Đơn của tôi</h2>
+            <p id="ordersSub"></p>
+          </div>
+          <button class="close-x" type="button" id="ordersClose" aria-label="Đóng">×</button>
+        </div>
+        <div class="sheet-body" id="ordersBody"></div>
       </div>
     </div>
 
@@ -616,6 +701,56 @@
       var CHECKOUT_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/functions/v1/create-checkout";
       var CHECKOUT_SUCCESS_URL = "https://tastyexpress-ca.github.io/tuyen-giao/dat-com/?paid=1";
       var CHECKOUT_CANCEL_URL = "https://tastyexpress-ca.github.io/tuyen-giao/dat-com/?paid=0";
+      var AUTH_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/auth/v1";
+
+      /* Ảnh minh hoạ theo tên món (file trong assets/img/) */
+      var DISH_IMG = {
+        "Cơm phần": "com-phan",
+        "Mì xào bò": "mi-xao-bo", "Nui xào bò": "nui-xao-bo",
+        "Mì xào hải sản": "mi-xao-hai-san", "Nui xào hải sản": "nui-xao-hai-san",
+        "Bánh canh giò heo, trứng cút, tôm": "banh-canh-gio-heo",
+        "Nui giò heo, trứng cút, tôm": "nui-gio-heo",
+        "Bún riêu": "bun-rieu",
+        "Trứng chiên thịt bằm": "trung-chien-thit-bam",
+        "Cá kho tộ": "ca-kho-to",
+        "Đùi gà, cánh gà chiên nước mắm tỏi": "ga-chien-nuoc-mam",
+        "Cánh gà, đùi gà chiên nước mắm": "ga-chien-nuoc-mam",
+        "Đùi gà, cánh gà chiên nước mắm": "ga-chien-nuoc-mam",
+        "Thịt kho trứng": "thit-kho-trung",
+        "Gà kho gừng": "ga-kho-gung",
+        "Tôm kho tàu": "tom-kho-tau",
+        "Gà kho sả": "ga-kho-sa",
+        "Cá chim, cá lưỡi trâu chiên": "ca-chien",
+        "Mắm chưng": "mam-chung",
+        "Sườn non nướng": "suon-non-nuong",
+        "Tôm rim": "tom-rim",
+        "Cá kèo kho rau răm": "ca-keo-kho",
+        "Đậu hủ dồi thịt sốt cà chua": "dau-hu-doi-thit",
+        "Sườn kho tiêu": "suon-kho-tieu",
+        "Gà rô ti": "ga-ro-ti",
+        "Cá nục chiên": "ca-nuc-chien",
+        "Su su xào": "su-su-xao", "Bắp cải xào": "bap-cai-xao",
+        "Giá hẹ xào": "gia-he-xao", "Bông cải xào": "bong-cai-xao",
+        "Mực xào chua ngọt": "muc-xao-chua-ngot",
+        "Cải ngọt xào": "cai-ngot-xao", "Đậu que xào": "dau-que-xao",
+        "Canh cà rốt, khoai tây": "canh-ca-rot-khoai-tay",
+        "Canh cải bẹ xanh": "canh-cai-be-xanh",
+        "Canh khổ qua dồi thịt": "canh-kho-qua",
+        "Canh bí đỏ": "canh-bi-do",
+        "Canh rau dền": "canh-rau-den",
+        "Canh cải chua sườn non": "canh-cai-chua-suon",
+        "Canh khoai mỡ": "canh-khoai-mo",
+        "Canh salad xoong": "canh-xa-lach-xoong",
+        "Canh hẹ đậu hủ": "canh-he-dau-hu",
+        "Canh chua tôm": "canh-chua-tom",
+        "Món khai vị": "tray-khai-vi",
+        "Cơm chiên hải sản": "com-chien-hai-san",
+        "Cơm chiên Dương Châu": "com-chien-duong-chau",
+        "Cơm chiên tỏi trứng": "com-chien-toi-trung",
+        "Gỏi": "goi", "Món chiên": "mon-chien",
+        "Xào hải sản": "xao-hai-san", "Xào bò": "xao-bo",
+        "Cà ri gà": "ca-ri-ga", "Bò kho": "bo-kho"
+      };
 
       /* ================= STATE ================= */
       var cart = []; // {key, day, wd, dm, name, detail, qty, price}
@@ -680,30 +815,73 @@
         }
       }
 
+      var checkoutBlocked = false; // true khi cutoff chặn cả 2 ca của đơn trong giỏ
       function updateSubmitState() {
         var btn = $("submitBtn");
         if (!btn) return;
-        if (method === "delivery" && feeStatus === "loading") {
+        if (checkoutBlocked) {
+          btn.disabled = true;
+          btn.textContent = "Đã qua giờ nhận đơn";
+        } else if (method === "delivery" && feeStatus === "loading") {
           btn.disabled = true;
           btn.textContent = "Đang tính phí giao…";
-        } else if (!btn.disabled || btn.textContent === "Đang tính phí giao…") {
+        } else if (btn.textContent === "Đang tính phí giao…" || btn.textContent === "Đã qua giờ nhận đơn") {
           btn.disabled = false;
           btn.textContent = "💳 Thanh toán & Đặt hàng";
         }
       }
 
-      function defaultDayIndex() {
-        var la;
+      /* ===== Giờ chốt đơn theo ca (giờ Los Angeles) =====
+         Ca Sáng 9–11am: chốt 10:00 PM ngày hôm trước · Ca Tối 7–9pm: chốt 4:00 PM cùng ngày.
+         Một ngày chỉ khóa hẳn khi CẢ 2 ca đã qua chốt. Pick up không áp cutoff. */
+      function laNowParts() {
         try {
-          la = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
+          var fmt = new Intl.DateTimeFormat("en-US", {
+            timeZone: "America/Los_Angeles",
+            year: "numeric", month: "2-digit", day: "2-digit",
+            hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+          });
+          var parts = {};
+          fmt.formatToParts(new Date()).forEach(function (p) { parts[p.type] = p.value; });
+          return { y: +parts.year, mo: +parts.month, d: +parts.day, h: +parts.hour, mi: +parts.minute };
         } catch (e) {
           var n = new Date();
-          la = n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0");
+          return { y: n.getFullYear(), mo: n.getMonth() + 1, d: n.getDate(), h: n.getHours(), mi: n.getMinutes() };
         }
-        var i, idx = -1;
-        for (i = 0; i < DAYS.length; i++) if (DAYS[i].date === la) return i;
-        for (i = 0; i < DAYS.length; i++) if (DAYS[i].date > la) { idx = i; break; }
-        return idx >= 0 ? idx : 0;
+      }
+      function laNowMin() {
+        var p = laNowParts();
+        return Date.UTC(p.y, p.mo - 1, p.d, p.h, p.mi) / 60000;
+      }
+      function laTodayStr() {
+        var p = laNowParts();
+        return p.y + "-" + String(p.mo).padStart(2, "0") + "-" + String(p.d).padStart(2, "0");
+      }
+      function dayParts(dateStr) {
+        var a = dateStr.split("-");
+        return { y: +a[0], mo: +a[1], d: +a[2] };
+      }
+      function morningClosed(dateStr) { /* quá 10:00 PM hôm trước */
+        var p = dayParts(dateStr);
+        return laNowMin() >= Date.UTC(p.y, p.mo - 1, p.d - 1, 22, 0) / 60000;
+      }
+      function eveningClosed(dateStr) { /* quá 4:00 PM cùng ngày */
+        var p = dayParts(dateStr);
+        return laNowMin() >= Date.UTC(p.y, p.mo - 1, p.d, 16, 0) / 60000;
+      }
+      function dayLocked(dateStr) { return morningClosed(dateStr) && eveningClosed(dateStr); }
+      function dayLabelOf(dateStr) {
+        for (var i = 0; i < DAYS.length; i++) if (DAYS[i].date === dateStr) return DAYS[i].wd + " " + DAYS[i].dm;
+        return dateStr;
+      }
+
+      function defaultDayIndex() {
+        var today = laTodayStr();
+        var i;
+        for (i = 0; i < DAYS.length; i++) if (DAYS[i].date === today && !dayLocked(DAYS[i].date)) return i;
+        for (i = 0; i < DAYS.length; i++) if (DAYS[i].date > today && !dayLocked(DAYS[i].date)) return i;
+        for (i = 0; i < DAYS.length; i++) if (!dayLocked(DAYS[i].date)) return i;
+        return 0;
       }
 
       /* ================= HELPERS ================= */
@@ -715,6 +893,11 @@
       }
       function money(n) { return "$" + n.toFixed(2); }
       function round2(n) { return Math.round(n * 100) / 100; }
+      function dishImg(name, cls) {
+        var f = DISH_IMG[name];
+        if (!f) return "";
+        return '<img class="' + cls + '" src="assets/img/' + f + '.jpg" alt="' + esc(name) + '" loading="lazy" />';
+      }
       function keyOf(day, name, detail) { return day + "|" + name + "|" + (detail || ""); }
       function findLine(key) {
         for (var i = 0; i < cart.length; i++) if (cart[i].key === key) return cart[i];
@@ -754,9 +937,10 @@
       function renderDayChips() {
         var html = "";
         DAYS.forEach(function (d, i) {
-          html += '<button type="button" role="tab" class="day-chip' + (i === dayIdx ? " active" : "") +
-            '" data-day="' + i + '" aria-selected="' + (i === dayIdx) + '">' +
-            '<span class="dow">' + d.wd + '</span><span class="dmy">' + d.dm + '</span></button>';
+          var locked = dayLocked(d.date);
+          html += '<button type="button" role="tab" class="day-chip' + (i === dayIdx ? " active" : "") + (locked ? " locked" : "") +
+            '" data-day="' + i + '" aria-selected="' + (i === dayIdx) + '"' + (locked ? " disabled" : "") + '>' +
+            '<span class="dow">' + d.wd + '</span><span class="dmy">' + d.dm + (locked ? " · Đã chốt" : "") + '</span></button>';
         });
         $("dayChips").innerHTML = html;
         var chips = $("dayChips").querySelectorAll(".day-chip");
@@ -779,16 +963,30 @@
 
       function dishRow(day, item, tagLabel, detailText) {
         var key = keyOf(day.date, item.name, detailText || "");
-        return '<div class="dish"><div class="d-info"><div class="d-name">' + esc(item.name) +
+        return '<div class="dish">' + dishImg(item.name, "d-img") + '<div class="d-info"><div class="d-name">' + esc(item.name) +
           (tagLabel ? '<span class="tag' + (tagLabel === "Đặc biệt" ? " special" : "") + '">' + tagLabel + '</span>' : "") +
           '</div>' + (detailText ? '<div class="d-detail">' + esc(detailText) + '</div>' : "") +
           '</div><span class="d-price">' + money(item.price) + '</span>' +
           stepperHTML(key) + '</div>';
       }
 
+      function applyDayLock(day) {
+        var locked = dayLocked(day.date);
+        $("menuMain").classList.toggle("menu-locked", locked);
+        if (locked) {
+          $("menuMain").querySelectorAll("button").forEach(function (b) { b.disabled = true; });
+        }
+      }
+
       function renderMenu() {
         var day = DAYS[dayIdx];
         var html = "";
+
+        if (dayLocked(day.date)) {
+          html += '<div class="cutoff-banner">⛔ ' + day.wd + ' ' + day.dm + ' đã qua giờ nhận đơn — cả 2 ca đều đã chốt (Ca Sáng chốt 10:00 tối hôm trước · Ca Tối chốt 4:00 chiều cùng ngày). Bạn chọn ngày khác giúp tiệm nhé.</div>';
+        } else if (morningClosed(day.date)) {
+          html += '<div class="cutoff-banner info">⏰ Ca Sáng của ' + day.wd + ' ' + day.dm + ' đã chốt đơn (10:00 tối hôm trước) — ngày này chỉ còn nhận đơn cho Ca Tối 7–9pm.</div>';
+        }
 
         if (day.tray) {
           html += '<section class="menu-section"><div class="tray-banner"><h3>MENU ĐẶC TIỆC — ' + day.wd + ' ' + day.dm + '</h3>' +
@@ -798,12 +996,13 @@
           html += '</div></section>';
           $("menuMain").innerHTML = html;
           bindSteppers(day);
+          applyDayLock(day);
           return;
         }
 
         /* (a) Cơm phần */
         html += '<section class="menu-section"><div class="sec-head"><h2>CƠM PHẦN</h2><div class="rule"></div></div>' +
-          '<div class="card comphan"><div class="cp-top"><h3>Cơm phần</h3><span class="cp-price">$10 <small>/ phần</small></span></div>' +
+          '<div class="card comphan">' + dishImg("Cơm phần", "cp-img") + '<div class="cp-top"><h3>Cơm phần</h3><span class="cp-price">$10 <small>/ phần</small></span></div>' +
           '<p>Một phần gồm cơm trắng kèm 1 món mặn, 1 món xào và 1 món canh — bạn tự chọn theo menu ' + day.wd + ' ' + day.dm + '.</p>' +
           '<div class="cp-parts"><span>1 Món mặn</span><span>1 Món xào</span><span>1 Món canh</span></div>' +
           '<button class="btn accent block" type="button" id="openCp">Chọn món cho cơm phần</button></div></section>';
@@ -826,7 +1025,7 @@
             var inCart = [];
             if (qtyOf(smallKey) > 0) inCart.push("Nhỏ × " + qtyOf(smallKey));
             if (qtyOf(bigKey) > 0) inCart.push("Lớn × " + qtyOf(bigKey));
-            html += '<div class="dish"><div class="d-info"><div class="d-name">' + esc(dishName) +
+            html += '<div class="dish">' + dishImg(dishName, "d-img") + '<div class="d-info"><div class="d-name">' + esc(dishName) +
               '<span class="tag">' + g[0] + '</span></div>' +
               (inCart.length ? '<div class="in-cart">Trong giỏ: ' + inCart.join(" · ") + '</div>' : "") +
               '</div><div class="add-pair">' +
@@ -847,6 +1046,7 @@
             addToCart(day, dish, big ? "Phần lớn" : "Phần nhỏ", big ? 10 : 5, 1);
           });
         });
+        applyDayLock(day);
       }
 
       function bindSteppers(day) {
@@ -884,8 +1084,9 @@
           html += '<div class="radio-group"><h4>' + g[0] + '</h4>';
           g[2].forEach(function (dish, i) {
             html += '<label class="radio-opt"><input type="radio" name="cp-' + g[1] + '" value="' + esc(dish) + '"' +
-              (i === 0 ? " checked" : "") + ' /> ' + esc(dish) + '</label>';
+              (i === 0 ? " checked" : "") + ' /> ' + dishImg(dish, "ro-img") + esc(dish) + '</label>';
           });
+          html += '<label class="radio-opt"><input type="radio" name="cp-' + g[1] + '" value="Không lấy" /> Không lấy</label>';
           html += '</div>';
         });
         $("cpBody").innerHTML = html;
@@ -924,6 +1125,7 @@
         if (cart.length === 0) {
           box.innerHTML = '<div class="empty-cart">Giỏ đang trống.<br />Đóng giỏ rồi chọn món ngon cho ngày bạn muốn nhé!</div>';
           $("checkoutZone").classList.add("hidden");
+          updateShiftCutoff();
           return;
         }
         $("checkoutZone").classList.remove("hidden");
@@ -955,6 +1157,87 @@
           btn.addEventListener("click", function () { setQty(btn.getAttribute("data-remove"), 0); });
         });
         renderTotals();
+        updateShiftCutoff();
+      }
+
+      /* ===== Cutoff theo ca ở bước thanh toán (chỉ áp cho giao hàng) ===== */
+      function cartDayList() {
+        var seen = {};
+        cart.forEach(function (l) { seen[l.day] = true; });
+        return Object.keys(seen).sort();
+      }
+
+      function cutoffBlockReason() {
+        if (method !== "delivery") return null; // Pick up không áp cutoff
+        var days = cartDayList();
+        if (!days.length) return null;
+        var locked = days.filter(function (d) { return dayLocked(d); });
+        if (locked.length) {
+          return "Món của " + locked.map(dayLabelOf).join(", ") + " đã qua giờ nhận đơn (cả 2 ca đều đã chốt) — bạn bỏ món ngày đó khỏi giỏ giúp tiệm nhé.";
+        }
+        var shiftEl = document.querySelector("input[name=shift]:checked");
+        var shift = shiftEl ? shiftEl.value : "";
+        for (var i = 0; i < days.length; i++) {
+          if (shift.indexOf("Sáng") === 0 && morningClosed(days[i])) {
+            return "Ca Sáng đã chốt đơn cho " + dayLabelOf(days[i]) + " (chốt 10:00 tối hôm trước). Bạn chọn Ca Tối hoặc bỏ món ngày đó nhé.";
+          }
+          if (shift.indexOf("Tối") === 0 && eveningClosed(days[i])) {
+            return "Ca Tối đã chốt đơn cho " + dayLabelOf(days[i]) + " (chốt 4:00 chiều cùng ngày). Bạn bỏ món ngày đó hoặc đặt ngày khác nhé.";
+          }
+        }
+        return null;
+      }
+
+      function updateShiftCutoff() {
+        var alertBox = $("shiftAlert");
+        if (!alertBox) return;
+        var radios = document.querySelectorAll("input[name=shift]");
+        checkoutBlocked = false;
+        if (method !== "delivery" || cart.length === 0) {
+          radios.forEach(function (r) {
+            r.disabled = false;
+            var lab = r.closest(".radio-opt");
+            if (lab) lab.classList.remove("disabled");
+          });
+          alertBox.classList.remove("show");
+          alertBox.textContent = "";
+          updateSubmitState();
+          return;
+        }
+        var days = cartDayList();
+        var mDays = days.filter(function (d) { return morningClosed(d); });
+        var eDays = days.filter(function (d) { return eveningClosed(d); });
+        var lockedDays = days.filter(function (d) { return dayLocked(d); });
+        radios.forEach(function (r) {
+          var blocked = (r.value.indexOf("Sáng") === 0 && mDays.length > 0) ||
+                        (r.value.indexOf("Tối") === 0 && eDays.length > 0);
+          r.disabled = blocked;
+          var lab = r.closest(".radio-opt");
+          if (lab) lab.classList.toggle("disabled", blocked);
+        });
+        var checked = document.querySelector("input[name=shift]:checked");
+        if (checked && checked.disabled) {
+          var other = document.querySelector("input[name=shift]:not(:disabled)");
+          if (other) other.checked = true;
+        }
+        var msgs = [];
+        if (lockedDays.length) {
+          msgs.push("Món của " + lockedDays.map(dayLabelOf).join(", ") + " đã qua giờ nhận đơn (cả 2 ca) — bạn bỏ món ngày đó khỏi giỏ giúp tiệm nhé.");
+          checkoutBlocked = true;
+        } else {
+          if (mDays.length) msgs.push("Ca Sáng đã chốt đơn cho " + mDays.map(dayLabelOf).join(", ") + " (chốt 10:00 tối hôm trước).");
+          if (eDays.length) msgs.push("Ca Tối đã chốt đơn cho " + eDays.map(dayLabelOf).join(", ") + " (chốt 4:00 chiều cùng ngày).");
+        }
+        var nowChecked = document.querySelector("input[name=shift]:checked");
+        if (!nowChecked || nowChecked.disabled) checkoutBlocked = true;
+        if (msgs.length) {
+          alertBox.innerHTML = msgs.map(esc).join("<br />");
+          alertBox.classList.add("show");
+        } else {
+          alertBox.classList.remove("show");
+          alertBox.textContent = "";
+        }
+        updateSubmitState();
       }
 
       function totals() {
@@ -999,6 +1282,7 @@
         $("deliveryZone").classList.toggle("hidden", m !== "delivery");
         if (m === "delivery") scheduleFeeCalc();
         else { feeSeq++; renderTotals(); }
+        updateShiftCutoff();
         updateSubmitState();
       }
 
@@ -1074,9 +1358,11 @@
         mark("fPhone", digits.length < 10 || digits.length > 15);
         if (method === "delivery") mark("fAddress", !order.address);
         if (cart.length === 0) ok = false;
+        var co = cutoffBlockReason();
+        if (co) ok = false;
         var alert = $("formAlert");
         if (!ok) {
-          alert.textContent = "Bạn kiểm tra lại giúp tiệm: còn thiếu tên, số điện thoại" + (method === "delivery" ? " hoặc địa chỉ giao hàng" : "") + " nhé.";
+          alert.textContent = co ? co : "Bạn kiểm tra lại giúp tiệm: còn thiếu tên, số điện thoại" + (method === "delivery" ? " hoặc địa chỉ giao hàng" : "") + " nhé.";
           alert.classList.add("show");
         } else {
           alert.classList.remove("show");
@@ -1219,6 +1505,20 @@
 
       function submitOrder(fromRetry) {
         var order = buildOrder();
+        var coReason = cutoffBlockReason();
+        if (coReason) {
+          if (fromRetry) {
+            $("resultView").classList.remove("show");
+            $("resultView").innerHTML = "";
+            $("menuView").classList.remove("hidden");
+          }
+          openCart();
+          updateShiftCutoff();
+          var coAlert = $("formAlert");
+          coAlert.textContent = coReason;
+          coAlert.classList.add("show");
+          return;
+        }
         if (!validate(order)) {
           if (fromRetry) { /* result view has no form; fall through with stored values */ }
           else { $("cartOverlay").querySelector(".sheet-body").scrollTo({ top: 0, behavior: "smooth" }); return; }
@@ -1226,15 +1526,18 @@
         var btn = $("submitBtn");
         btn.disabled = true;
         btn.textContent = "Đang gửi đơn…";
-        fetch(SUPABASE_URL, {
-          method: "POST",
-          headers: {
-            "apikey": SUPABASE_ANON,
-            "Authorization": "Bearer " + SUPABASE_ANON,
-            "Content-Type": "application/json",
-            "Prefer": "return=minimal"
-          },
-          body: JSON.stringify(order)
+        validSession().then(function (s) {
+          if (s) order.user_id = s.user_id;
+          return fetch(SUPABASE_URL, {
+            method: "POST",
+            headers: {
+              "apikey": SUPABASE_ANON,
+              "Authorization": "Bearer " + (s ? s.access_token : SUPABASE_ANON),
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify(order)
+          });
         }).then(function (res) {
           if (!res.ok) throw new Error("insert failed");
           pendingOrderId = null;
@@ -1289,6 +1592,245 @@
         });
       }
 
+      /* ================= TÀI KHOẢN KHÁCH (Supabase Auth) ================= */
+      var SESSION_KEY = "te_account_session";
+      var session = null; // {access_token, refresh_token, user_id, email, expires_at}
+      var authMode = "login";
+
+      function sessionFromAuth(d) {
+        return {
+          access_token: d.access_token,
+          refresh_token: d.refresh_token,
+          user_id: d.user ? d.user.id : null,
+          email: d.user ? d.user.email : "",
+          expires_at: Date.now() + ((d.expires_in || 3600) * 1000)
+        };
+      }
+      function loadSession() {
+        try {
+          var raw = localStorage.getItem(SESSION_KEY);
+          if (raw) session = JSON.parse(raw);
+        } catch (e) { session = null; }
+      }
+      function saveSession(s) {
+        session = s;
+        try {
+          if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+          else localStorage.removeItem(SESSION_KEY);
+        } catch (e) { /* trình duyệt chặn thì bỏ qua */ }
+        renderAcct();
+      }
+      function refreshSession() {
+        if (!session || !session.refresh_token) { saveSession(null); return Promise.resolve(null); }
+        return fetch(AUTH_URL + "/token?grant_type=refresh_token", {
+          method: "POST",
+          headers: { "apikey": SUPABASE_ANON, "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: session.refresh_token })
+        }).then(function (r) {
+          if (!r.ok) throw new Error("refresh failed");
+          return r.json();
+        }).then(function (d) {
+          var s = sessionFromAuth(d);
+          saveSession(s);
+          return s;
+        }).catch(function () {
+          saveSession(null);
+          return null;
+        });
+      }
+      function validSession() {
+        if (!session) return Promise.resolve(null);
+        if (session.expires_at && Date.now() < session.expires_at - 60000) return Promise.resolve(session);
+        return refreshSession();
+      }
+      function renderAcct() {
+        var box = $("acctRow");
+        if (!box) return;
+        if (session) {
+          box.innerHTML = '<span class="acct-email">👤 ' + esc(session.email) + '</span>' +
+            '<button type="button" class="acct-btn" id="myOrdersBtn">Đơn của tôi</button>' +
+            '<button type="button" class="acct-btn" id="logoutBtn">Đăng xuất</button>';
+          $("myOrdersBtn").addEventListener("click", openMyOrders);
+          $("logoutBtn").addEventListener("click", function () { saveSession(null); });
+        } else {
+          box.innerHTML = '<span class="acct-email">Có tài khoản? Đăng nhập để xem lại đơn đã đặt</span>' +
+            '<button type="button" class="acct-btn" id="loginBtn">Đăng nhập</button>';
+          $("loginBtn").addEventListener("click", function () { openAuth("login"); });
+        }
+      }
+      function openAuth(mode) {
+        setAuthMode(mode || "login");
+        $("authOverlay").classList.add("open");
+        document.body.style.overflow = "hidden";
+      }
+      function closeAuth() {
+        $("authOverlay").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+      function showAuthAlert(msg) {
+        var a = $("authAlert");
+        a.textContent = msg;
+        a.classList.add("show");
+        $("authOk").classList.remove("show");
+      }
+      function showAuthOk(msg) {
+        var o = $("authOk");
+        o.textContent = msg;
+        o.classList.add("show");
+        $("authAlert").classList.remove("show");
+      }
+      function hideAuthMsgs() {
+        $("authAlert").classList.remove("show");
+        $("authOk").classList.remove("show");
+      }
+      function setAuthMode(m) {
+        authMode = m;
+        $("tabLogin").classList.toggle("active", m === "login");
+        $("tabSignup").classList.toggle("active", m === "signup");
+        $("authTitle").textContent = m === "login" ? "Đăng nhập" : "Đăng ký tài khoản";
+        $("authSubmit").textContent = m === "login" ? "Đăng nhập" : "Đăng ký";
+        $("inPass").setAttribute("autocomplete", m === "login" ? "current-password" : "new-password");
+        $("authNote").textContent = m === "login"
+          ? "Chưa có tài khoản? Bấm tab Đăng ký ở trên để tạo mới."
+          : "Đã có tài khoản? Bấm tab Đăng nhập ở trên.";
+        hideAuthMsgs();
+      }
+      function authErrorText(data) {
+        var msg = "";
+        if (data) msg = String(data.msg || data.message || data.error_description || data.error || "");
+        var code = data && data.error_code ? String(data.error_code) : "";
+        var low = msg.toLowerCase();
+        if (code === "user_already_exists" || low.indexOf("already registered") >= 0 || low.indexOf("already been registered") >= 0)
+          return "Email này đã có tài khoản rồi — bạn bấm tab Đăng nhập nhé.";
+        if (low.indexOf("invalid login credentials") >= 0)
+          return "Email hoặc mật khẩu chưa đúng. Bạn kiểm tra lại giúp tiệm nhé.";
+        if (low.indexOf("at least 6 characters") >= 0 || code === "weak_password")
+          return "Mật khẩu cần ít nhất 6 ký tự.";
+        if (low.indexOf("validate email") >= 0 || low.indexOf("invalid format") >= 0 || code === "invalid_email")
+          return "Email chưa đúng định dạng. Bạn kiểm tra lại nhé.";
+        if (low.indexOf("not confirmed") >= 0 || code === "email_not_confirmed")
+          return "Email này chưa được xác nhận. Bạn mở hộp thư, bấm link xác nhận rồi đăng nhập lại nhé.";
+        if (low.indexOf("rate limit") >= 0 || low.indexOf("too many") >= 0)
+          return "Bạn thử nhiều lần quá — đợi ít phút rồi thử lại nhé.";
+        return "Có lỗi xảy ra. Bạn thử lại sau ít phút giúp tiệm nhé.";
+      }
+      function doAuth() {
+        var email = $("inEmail").value.trim();
+        var pass = $("inPass").value;
+        var badEmail = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        var badPass = pass.length < 6;
+        $("fEmail").classList.toggle("invalid", badEmail);
+        $("fPass").classList.toggle("invalid", badPass);
+        if (badEmail) { showAuthAlert("Email chưa đúng định dạng. Bạn kiểm tra lại nhé."); return; }
+        if (badPass) { showAuthAlert("Mật khẩu cần ít nhất 6 ký tự."); return; }
+        hideAuthMsgs();
+        var btn = $("authSubmit");
+        btn.disabled = true;
+        btn.textContent = "Đang xử lý…";
+        var url = authMode === "login" ? AUTH_URL + "/token?grant_type=password" : AUTH_URL + "/signup";
+        fetch(url, {
+          method: "POST",
+          headers: { "apikey": SUPABASE_ANON, "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email, password: pass })
+        }).then(function (r) {
+          return r.json().then(function (d) { return { ok: r.ok, d: d }; });
+        }).then(function (res) {
+          btn.disabled = false;
+          btn.textContent = authMode === "login" ? "Đăng nhập" : "Đăng ký";
+          if (!res.ok) { showAuthAlert(authErrorText(res.d)); return; }
+          var d = res.d;
+          if (d.access_token && d.user) {
+            saveSession(sessionFromAuth(d));
+            closeAuth();
+            prefillFromHistory();
+          } else if (authMode === "signup" && d.user) {
+            setAuthMode("login");
+            showAuthOk("Đăng ký thành công! Tiệm vừa gửi email xác nhận — bạn mở hộp thư, bấm link xác nhận rồi đăng nhập nhé.");
+          } else {
+            showAuthAlert("Có lỗi xảy ra. Bạn thử lại giúp tiệm nhé.");
+          }
+        }).catch(function () {
+          btn.disabled = false;
+          btn.textContent = authMode === "login" ? "Đăng nhập" : "Đăng ký";
+          showAuthAlert("Không kết nối được. Bạn kiểm tra mạng rồi thử lại nhé.");
+        });
+      }
+      function fetchMyOrders(s, limit) {
+        var q = SUPABASE_URL + "?user_id=eq." + encodeURIComponent(s.user_id) + "&order=created_at.desc" + (limit ? "&limit=" + limit : "");
+        return fetch(q, {
+          headers: { "apikey": SUPABASE_ANON, "Authorization": "Bearer " + s.access_token }
+        }).then(function (r) {
+          if (!r.ok) throw new Error("orders failed");
+          return r.json();
+        });
+      }
+      function prefillFromHistory() {
+        if (!session) return;
+        validSession().then(function (s) {
+          if (!s) return;
+          fetchMyOrders(s, 1).then(function (rows) {
+            if (rows && rows.length) {
+              var o = rows[0];
+              if (o.customer_name && !$("inName").value) $("inName").value = o.customer_name;
+              if (o.phone && !$("inPhone").value) $("inPhone").value = o.phone;
+            }
+          }).catch(function () { /* bỏ qua */ });
+        });
+      }
+      function orderCardHTML(o) {
+        var dm = "";
+        if (o.day) {
+          var a = String(o.day).split("-");
+          if (a.length === 3) dm = a[2] + "/" + a[1];
+        }
+        var dayLine = esc(o.weekday_label || "") + (dm ? " · " + dm : "");
+        var kitchen = o.status === "in_kitchen";
+        var meta;
+        if (o.method === "delivery") {
+          meta = "Giao hàng" + (o.shift ? " · Ca " + esc(o.shift) : "") + (o.address ? "<br />" + esc(o.address) : "");
+        } else {
+          meta = "Pick up: 14131 Roxanne Dr, Westminster" + (o.pickup_time ? " · Giờ lấy: " + esc(o.pickup_time) : "");
+        }
+        var items = "";
+        if (o.items && o.items.length) {
+          items = '<div class="o-items">' + o.items.map(function (it) {
+            return "<div>" + esc(it.name) + " × " + it.qty +
+              (it.detail ? '<span class="oi-detail">' + esc(it.detail) + "</span>" : "") + "</div>";
+          }).join("") + "</div>";
+        }
+        var feeLine = "";
+        if (o.delivery_fee != null) {
+          feeLine = '<div class="o-total"><span>Phí giao hàng</span><span>' + money(Number(o.delivery_fee)) + "</span></div>";
+        }
+        return '<div class="order-card"><div class="o-head"><span class="o-day">' + dayLine + '</span>' +
+          '<span class="o-badge' + (kitchen ? " kitchen" : "") + '">' + (kitchen ? "Đã vào bếp" : "Mới") + "</span></div>" +
+          '<div class="o-meta">' + meta + "</div>" + items + feeLine +
+          '<div class="o-total"><span>Tổng cộng</span><b>' + money(Number(o.total || 0)) + "</b></div></div>";
+      }
+      function openMyOrders() {
+        $("ordersOverlay").classList.add("open");
+        document.body.style.overflow = "hidden";
+        $("ordersSub").textContent = session ? session.email : "";
+        $("ordersBody").innerHTML = '<div class="empty-cart">Đang tải đơn của bạn…</div>';
+        validSession().then(function (s) {
+          if (!s) { closeOrders(); openAuth("login"); return; }
+          $("ordersSub").textContent = s.email;
+          fetchMyOrders(s, 0).then(function (rows) {
+            if (!rows || !rows.length) {
+              $("ordersBody").innerHTML = '<div class="empty-cart">Bạn chưa có đơn nào.<br />Đặt đơn đầu tiên ngay nhé!</div>';
+              return;
+            }
+            $("ordersBody").innerHTML = rows.map(orderCardHTML).join("");
+          }).catch(function () {
+            $("ordersBody").innerHTML = '<div class="empty-cart">Chưa tải được đơn. Bạn thử lại sau ít phút nhé.</div>';
+          });
+        });
+      }
+      function closeOrders() {
+        $("ordersOverlay").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
       /* ================= WIRING ================= */
       $("cpClose").addEventListener("click", closeCpPicker);
       $("cpOverlay").addEventListener("click", function (e) { if (e.target === $("cpOverlay")) closeCpPicker(); });
@@ -1319,6 +1861,30 @@
       $("inAddress").addEventListener("blur", function () {
         if (method === "delivery" && $("inAddress").value.trim()) calcDeliveryFee();
       });
+      document.querySelectorAll("input[name=shift]").forEach(function (r) {
+        r.addEventListener("change", updateShiftCutoff);
+      });
+
+      $("authClose").addEventListener("click", closeAuth);
+      $("authOverlay").addEventListener("click", function (e) { if (e.target === $("authOverlay")) closeAuth(); });
+      $("tabLogin").addEventListener("click", function () { setAuthMode("login"); });
+      $("tabSignup").addEventListener("click", function () { setAuthMode("signup"); });
+      $("authSubmit").addEventListener("click", doAuth);
+      $("inPass").addEventListener("keydown", function (e) { if (e.key === "Enter") doAuth(); });
+      ["inEmail", "inPass"].forEach(function (id) {
+        $(id).addEventListener("input", function () {
+          var f = $(id).closest(".field");
+          if (f) f.classList.remove("invalid");
+        });
+      });
+      $("ordersClose").addEventListener("click", closeOrders);
+      $("ordersOverlay").addEventListener("click", function (e) { if (e.target === $("ordersOverlay")) closeOrders(); });
+
+      loadSession();
+      renderAcct();
+      if (session) {
+        validSession().then(function (s) { if (s) prefillFromHistory(); });
+      }
 
       renderDayChips();
       renderMenu();
