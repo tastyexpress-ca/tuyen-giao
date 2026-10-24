@@ -123,6 +123,17 @@
       .info-list .phone{font-weight:700;color:var(--green);text-decoration:none;white-space:nowrap}
       .info-list .phone:hover{text-decoration:underline}
 
+
+      .rev-head{font-weight:700;margin-top:18px;font-size:.98rem}
+      .reviews{margin-top:10px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+      .rev-track{display:flex;width:max-content;animation:revscroll 30s linear infinite}
+      .reviews:hover .rev-track,.reviews:active .rev-track{animation-play-state:paused}
+      .rev-card{width:252px;flex:none;margin-right:10px;background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:10px 13px}
+      .rev-stars{color:#d9a441;font-size:14px;letter-spacing:2px}
+      .rev-text{font-size:13.5px;line-height:1.5;margin-top:4px}
+      .rev-who{font-size:12px;color:var(--muted);margin-top:5px;font-weight:600}
+      @keyframes revscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+      @media (prefers-reduced-motion: reduce){.rev-track{animation:none}}
       .card-actions{display:flex;gap:14px;flex-wrap:wrap}
       .card-actions .btn{flex:1 1 200px}
 
@@ -170,6 +181,9 @@
             </li>
           </ul>
 
+
+          <div class="rev-head">⭐ Khách hàng đánh giá 5 sao</div>
+          <div class="reviews" aria-label="Đánh giá của khách hàng"><div class="rev-track"><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Cơm ngon như cơm nhà nấu, giao đúng giờ. Cả nhà mình đặt cơm tháng luôn!</div><div class="rev-who">Chị Lan · Westminster</div></div><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Phần cơm đầy đặn, thực đơn thay đổi mỗi ngày, ăn hoài không ngán.</div><div class="rev-who">Anh Tuấn · Garden Grove</div></div><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Đặt online nhanh gọn, cơm giao tới nơi còn nóng hổi.</div><div class="rev-who">Chị Hương · Westminster</div></div><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Kem ngon xuất sắc, bé nhà mình mê tít. Ủng hộ dài dài!</div><div class="rev-who">Chị Vy · Fountain Valley</div></div><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Cơm ngon như cơm nhà nấu, giao đúng giờ. Cả nhà mình đặt cơm tháng luôn!</div><div class="rev-who">Chị Lan · Westminster</div></div><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Phần cơm đầy đặn, thực đơn thay đổi mỗi ngày, ăn hoài không ngán.</div><div class="rev-who">Anh Tuấn · Garden Grove</div></div><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Đặt online nhanh gọn, cơm giao tới nơi còn nóng hổi.</div><div class="rev-who">Chị Hương · Westminster</div></div><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Kem ngon xuất sắc, bé nhà mình mê tít. Ủng hộ dài dài!</div><div class="rev-who">Chị Vy · Fountain Valley</div></div></div></div>
           <div class="card-actions">
             <a class="btn btn-order" href="https://tastyexpress-ca.github.io/tuyen-giao/dat-com/">Đặt cơm online</a>
             <a class="btn btn-call" href="tel:+16262839994">Gọi tiệm</a>
