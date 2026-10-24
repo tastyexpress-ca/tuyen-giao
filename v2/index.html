@@ -3112,15 +3112,15 @@
            CHRIS PAGE — PASSWORD GATE. The page has its own lock on
            top of the shared app login, because the driver and the
            kitchen use the same login. ONLY a SHA-256 hash of the
-           password is ever stored — in the Supabase `states` table
-           under the reserved key day='__settings__',
-           card_key='chris_pass', toggle='hash', value=<hex hash> —
-           and the check happens here, client-side, against that
-           hash; the plaintext never leaves the device. With no hash
-           stored, the page opens on a first-run setup form (Chris
-           sets his own password); deleting the hash row in Supabase
-           returns the page to that setup form — the recovery path
-           if the password is forgotten. A correct entry unlocks the
+           password is ever stored — in the Supabase
+           `app_settings` table under the single row
+           key='chris_pass_hash', value=<hex hash> — and the check
+           happens here, client-side, against that hash; the
+           plaintext never leaves the device. With no hash stored,
+           the page opens on a first-run setup form (Chris sets his
+           own password); deleting the 'chris_pass_hash' row from
+           app_settings returns the page to that setup form — the
+           recovery path if the password is forgotten. A correct entry unlocks the
            page for this app session only (an in-memory flag,
            cleared on logout).
            ================================================================ */
@@ -3209,7 +3209,7 @@
         }
 
         function loadChrisHash() {
-          return dataGet("/rest/v1/states?select=value&day=eq.__settings__&card_key=eq.chris_pass&toggle=eq.hash")
+          return dataGet("/rest/v1/app_settings?select=value&key=eq.chris_pass_hash")
             .then(function (rows) {
               var v = (rows && rows[0]) ? rows[0].value : null;
               chrisHash = (typeof v === "string" && v) ? v : "";
@@ -3222,13 +3222,13 @@
             });
         }
         function saveChrisHash(hex) {
-          return apiFetch("/rest/v1/states", {
+          return apiFetch("/rest/v1/app_settings", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               "Prefer": "resolution=merge-duplicates"
             },
-            body: JSON.stringify({ day: "__settings__", card_key: "chris_pass", toggle: "hash", value: hex })
+            body: JSON.stringify({ key: "chris_pass_hash", value: hex })
           }).then(function (r) {
             if (!r.ok) throw new Error("save-failed");
             chrisHash = hex;
