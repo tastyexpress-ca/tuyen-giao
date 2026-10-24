@@ -166,16 +166,18 @@
         function render(signups, orders) {
           var pending = signups.filter(function (s) { return s.status === "new"; });
           var approved = signups.filter(function (s) { return s.status === "approved"; });
-          var revenue = orders.reduce(function (a, o) { return a + (Number(o.total) || 0); }, 0);
+          var paidOrders = orders.filter(function (o) { return o.paid === true; });
+          var unpaidCount = orders.length - paidOrders.length;
+          var revenue = paidOrders.reduce(function (a, o) { return a + (Number(o.total) || 0); }, 0);
           var t = todayPT();
-          var todayOrders = orders.filter(function (o) { return ptDate(o.created_at) === t; });
-          var todayRevenue = todayOrders.reduce(function (a, o) { return a + (Number(o.total) || 0); }, 0);
+          var todayPaid = paidOrders.filter(function (o) { return ptDate(o.created_at) === t; });
+          var todayRevenue = todayPaid.reduce(function (a, o) { return a + (Number(o.total) || 0); }, 0);
           var commissionPartner = 0; // tiệm đối tác chưa có đơn — khi có, tính 15% doanh thu của họ
 
           $("statsBox").innerHTML =
             stat("📝", pending.length, "Đăng ký chờ duyệt", approved.length + " tiệm đã duyệt") +
-            stat("🧾", orders.length, "Đơn online (tất cả)", todayOrders.length + " đơn hôm nay") +
-            stat("💰", money(revenue), "Doanh thu online", "Hôm nay: " + money(todayRevenue)) +
+            stat("🧾", paidOrders.length, "Đơn online đã thanh toán", todayPaid.length + " đơn hôm nay · " + unpaidCount + " đơn chưa thanh toán (không tính)") +
+            stat("💰", money(revenue), "Doanh thu online (đã thanh toán)", "Hôm nay: " + money(todayRevenue)) +
             stat("📈", money(commissionPartner), "Lời của app (commission 15%)", "Từ tiệm đối tác — chưa có tiệm nào bán");
 
           // signups
@@ -200,7 +202,7 @@
           // shops
           $("shopsBox").innerHTML =
             '<div class="card"><div class="row"><h3>Think\'s Kitchen</h3><span class="pill ok">Đang bán · Tiệm của anh</span></div>' +
-            '<div class="meta">Đơn online: <b>' + orders.length + '</b> · Doanh thu online: <b>' + money(revenue) + '</b><br />Tiệm đầu tiên trên Tasty Express — đơn chạy vào hệ thống bếp + tài xế của tiệm.</div></div>' +
+            '<div class="meta">Đơn online đã thanh toán: <b>' + paidOrders.length + '</b> · Doanh thu online: <b>' + money(revenue) + '</b>' + (unpaidCount ? ' · Đơn chưa thanh toán: ' + unpaidCount + ' (chưa tính)' : '') + '<br />Tiệm đầu tiên trên Tasty Express — đơn chạy vào hệ thống bếp + tài xế của tiệm.</div></div>' +
             '<div class="empty">Các tiệm đối tác được duyệt sẽ hiện ở đây với số đơn, doanh thu và commission 15% của họ.</div>';
 
           // recent orders
@@ -209,7 +211,8 @@
           } else {
             $("ordersBox").innerHTML = orders.slice(0, 10).map(function (o) {
               var left = "<b>" + esc(o.customer_name || "Khách") + "</b> · " + esc(o.weekday_label || "") + " " + esc(o.day || "") + "<br /><span class='meta'>" + (o.method === "delivery" ? "Giao hàng" : "Pick up") + (o.shift ? " · Ca " + esc(o.shift) : "") + " · " + fmtDate(o.created_at) + "</span>";
-              return '<div class="order"><div>' + left + '</div><div class="amt">' + money(o.total) + '</div></div>';
+              var pill = o.paid === true ? ' <span class="pill ok">Đã thanh toán</span>' : ' <span class="pill no">Chưa thanh toán</span>';
+              return '<div class="order"><div>' + left + pill + '</div><div class="amt">' + money(o.total) + '</div></div>';
             }).join("");
           }
         }
