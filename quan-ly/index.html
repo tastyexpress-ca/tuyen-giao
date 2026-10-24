@@ -60,6 +60,11 @@
       .submit:disabled{ opacity:.55; }
       .err{ display:none; margin-top:12px; background:#fdeceb; border:1px solid #e5a19b; color:#8f2a22; border-radius:11px; padding:10px 12px; font-size:.9rem; }
       .loading{ text-align:center; color:var(--muted); padding:30px 0; }
+      input.pct{ width:92px; display:inline-block; padding:8px 10px; }
+      .pct-save{ padding:8px 14px; font-size:.9rem; }
+      .cm-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+      .cm-row input{ width:110px; }
+      .saved-note{ color:var(--green-deep); font-weight:600; font-size:.9rem; }
     </style>
   </head>
   <body>
@@ -88,6 +93,9 @@
         </header>
 
         <div class="stats" id="statsBox"><div class="loading">Đang tải dữ liệu…</div></div>
+
+        <h2 class="sec">💸 Commission</h2>
+        <div id="cmBox"><div class="loading">Đang tải…</div></div>
 
         <h2 class="sec">🏪 Đơn đăng ký bán</h2>
         <div id="signupsBox"><div class="loading">Đang tải…</div></div>
@@ -152,9 +160,13 @@
           session = null; localStorage.removeItem(KEY); showLogin();
         });
 
+        var cmPct = 15;
         function loadAll() {
           var signups = [], orders = [];
-          api("/rest/v1/shop_signups?select=*&order=created_at.desc")
+          api("/rest/v1/app_settings?select=value&key=eq.commission_pct")
+            .then(function (rows) { if (rows && rows.length && !isNaN(parseFloat(rows[0].value))) cmPct = parseFloat(rows[0].value); })
+            .catch(function () {})
+            .then(function () { return api("/rest/v1/shop_signups?select=*&order=created_at.desc"); })
             .then(function (rows) { signups = rows || []; })
             .catch(function () { signups = []; })
             .then(function () { return api("/rest/v1/web_orders?select=*&order=created_at.desc&limit=1000"); })
@@ -178,7 +190,25 @@
             stat("📝", pending.length, "Đăng ký chờ duyệt", approved.length + " tiệm đã duyệt") +
             stat("🧾", paidOrders.length, "Đơn online đã thanh toán", todayPaid.length + " đơn hôm nay · " + unpaidCount + " đơn chưa thanh toán (không tính)") +
             stat("💰", money(revenue), "Doanh thu online (đã thanh toán)", "Hôm nay: " + money(todayRevenue)) +
-            stat("📈", money(commissionPartner), "Lời của app (commission 15%)", "Từ tiệm đối tác — chưa có tiệm nào bán");
+            stat("📈", money(commissionPartner), "Lời của app (commission " + cmPct + "%)", "Từ tiệm đối tác — chưa có tiệm nào bán");
+
+          // commission settings
+          $("cmBox").innerHTML =
+            '<div class="card"><h3>Mức commission chung: ' + cmPct + '%</h3>' +
+            '<div class="meta">Áp dụng cho mọi tiệm đối tác. Anh có thể đổi bất cứ lúc nào — và đặt % riêng cho từng tiệm ở thẻ của tiệm đó bên dưới (để trống = dùng mức chung).</div>' +
+            '<div class="cm-row"><input id="cmInput" type="number" min="0" max="100" step="0.5" value="' + cmPct + '" aria-label="Commission chung %" /><span>%</span><button class="btn btn-ok" id="cmSave" type="button">Lưu mức chung</button><span class="saved-note" id="cmSaved"></span></div></div>';
+          $("cmSave").addEventListener("click", function () {
+            var v = parseFloat($("cmInput").value);
+            if (isNaN(v) || v < 0 || v > 100) { alert("Anh nhập số từ 0 đến 100 nhé."); return; }
+            var btn = $("cmSave"); btn.disabled = true;
+            api("/rest/v1/app_settings?key=eq.commission_pct", { method: "PATCH", headers: { "Prefer": "return=representation" }, body: JSON.stringify({ value: String(v) }) })
+              .then(function (rows) {
+                if (rows && rows.length) return rows;
+                return api("/rest/v1/app_settings", { method: "POST", headers: { "Prefer": "resolution=merge-duplicates" }, body: JSON.stringify({ key: "commission_pct", value: String(v) }) });
+              })
+              .then(function () { cmPct = v; $("cmSaved").textContent = "✓ Đã lưu " + v + "%"; loadAll(); })
+              .catch(function () { btn.disabled = false; alert("Lưu chưa được — thử lại nhé."); });
+          });
 
           // signups
           if (!signups.length) {
@@ -187,9 +217,21 @@
             $("signupsBox").innerHTML = signups.map(function (s) {
               var pill = s.status === "approved" ? '<span class="pill ok">Đã duyệt</span>' : (s.status === "rejected" ? '<span class="pill no">Đã từ chối</span>' : '<span class="pill">Chờ duyệt</span>');
               var acts = s.status === "new" ? '<div class="actions"><button class="btn btn-ok" data-act="approved" data-id="' + s.id + '">✓ Duyệt tiệm</button><button class="btn btn-no" data-act="rejected" data-id="' + s.id + '">Từ chối</button></div>' : "";
+              var cmLine = s.status !== "rejected" ? '<div class="cm-row"><span class="meta">Commission riêng:</span><input class="pct" id="pct-' + s.id + '" type="number" min="0" max="100" step="0.5" value="' + (s.commission_pct != null ? s.commission_pct : "") + '" placeholder="chung ' + cmPct + '%" /><span>%</span><button class="btn btn-no pct-save" data-pct="' + s.id + '" type="button">Lưu %</button></div>' : "";
               return '<div class="card"><div class="row"><h3>' + esc(s.shop_name) + '</h3>' + pill + '</div>' +
-                '<div class="meta">Chủ tiệm: ' + esc(s.owner_name || "—") + ' · SĐT: ' + esc(s.phone) + '<br />Địa chỉ: ' + esc(s.address || "—") + '<br />Loại món: ' + esc(s.cuisine || "—") + (s.note ? '<br />Ghi chú: ' + esc(s.note) : '') + '<br />Đăng ký: ' + fmtDate(s.created_at) + '</div>' + acts + '</div>';
+                '<div class="meta">Chủ tiệm: ' + esc(s.owner_name || "—") + ' · SĐT: ' + esc(s.phone) + '<br />Địa chỉ: ' + esc(s.address || "—") + '<br />Loại món: ' + esc(s.cuisine || "—") + (s.note ? '<br />Ghi chú: ' + esc(s.note) : '') + '<br />Đăng ký: ' + fmtDate(s.created_at) + '</div>' + cmLine + acts + '</div>';
             }).join("");
+            Array.prototype.forEach.call($("signupsBox").querySelectorAll("button[data-pct]"), function (b) {
+              b.addEventListener("click", function () {
+                var id = b.getAttribute("data-pct");
+                var raw = $("pct-" + id).value.trim();
+                var val = raw === "" ? null : parseFloat(raw);
+                if (raw !== "" && (isNaN(val) || val < 0 || val > 100)) { alert("Anh nhập số từ 0 đến 100 nhé."); return; }
+                b.disabled = true;
+                api("/rest/v1/shop_signups?id=eq." + id, { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify({ commission_pct: val }) })
+                  .then(loadAll).catch(function () { b.disabled = false; alert("Lưu chưa được — thử lại nhé."); });
+              });
+            });
             Array.prototype.forEach.call($("signupsBox").querySelectorAll("button[data-act]"), function (b) {
               b.addEventListener("click", function () {
                 b.disabled = true;

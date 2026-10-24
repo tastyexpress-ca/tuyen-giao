@@ -56,7 +56,7 @@
     <div class="wrap">
       <a class="backlink" href="../home/">← Trang chính</a>
       <h1>🏪 Đăng Ký Bán Trên Tasty Express</h1>
-      <p class="intro">Điền thông tin tiệm của bạn bên dưới. Sau khi được duyệt, tiệm sẽ có <b>trang bán riêng</b> trên Tasty Express và <b>hệ thống quản lý đơn riêng</b> — đơn của khách đặt món tiệm bạn sẽ chạy thẳng về hệ thống của tiệm để tiệm tự quản lý. <b>Phí nền tảng: 15% trên mỗi đơn bán được — chỉ thu khi có đơn.</b></p>
+      <p class="intro">Điền thông tin tiệm của bạn bên dưới. Sau khi được duyệt, tiệm sẽ có <b>trang bán riêng</b> trên Tasty Express và <b>hệ thống quản lý đơn riêng</b> — đơn của khách đặt món tiệm bạn sẽ chạy thẳng về hệ thống của tiệm để tiệm tự quản lý. <b>Phí nền tảng: <span id="cmPct">15</span>% trên mỗi đơn bán được — chỉ thu khi có đơn.</b></p>
 
       <form id="signupForm" novalidate>
         <label for="fShop">Tên tiệm <span class="req">*</span></label>
@@ -133,6 +133,15 @@
             showErr("Gửi chưa được — bạn kiểm tra mạng rồi thử lại giúp nhé.");
           });
         });
+      })();
+    </script>
+      <script>
+      (function () {
+        var ANON2 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+        fetch("https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/app_settings?select=value&key=eq.commission_pct", { headers: { "apikey": ANON2, "Authorization": "Bearer " + ANON2 } })
+          .then(function (r) { return r.json(); })
+          .then(function (rows) { if (rows && rows.length) { var el = document.getElementById("cmPct"); if (el) el.textContent = rows[0].value; } })
+          .catch(function () {});
       })();
     </script>
   </body>
