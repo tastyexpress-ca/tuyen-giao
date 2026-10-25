@@ -1114,6 +1114,8 @@
           body: JSON.stringify({
             order_id: orderId,
             amount_cents: Math.round(order.total * 100),
+            shop: "ace-creamery",
+            tax_cents: Math.round(order.tax * 100),
             description: "ACE CREAMERY — Đơn kem online",
             success_url: CHECKOUT_SUCCESS_URL,
             cancel_url: CHECKOUT_CANCEL_URL

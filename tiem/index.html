@@ -1067,6 +1067,8 @@
           body: JSON.stringify({
             order_id: orderId,
             amount_cents: Math.round(order.total * 100),
+            shop: SLUG,
+            tax_cents: Math.round(order.tax * 100),
             description: (shop ? shop.shop_name : "Tasty Express") + " — Đơn đặt hàng online",
             success_url: CHECKOUT_SUCCESS_URL,
             cancel_url: CHECKOUT_CANCEL_URL

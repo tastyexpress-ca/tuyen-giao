@@ -365,6 +365,14 @@
               </span>
               <span class="section-arrow" aria-hidden="true">→</span>
             </button>
+            <button type="button" class="section-card" id="cardStripe">
+              <span class="section-icon" aria-hidden="true">💳</span>
+              <span>
+                <span class="section-title">Kết nối Stripe</span>
+                <span class="section-sub" id="stripeSub">Chưa kết nối — bấm để liên kết ngân hàng, nhận tiền tự động</span>
+              </span>
+              <span class="section-arrow" aria-hidden="true">→</span>
+            </button>
             <button type="button" class="section-card" id="cardShare">
               <span class="section-icon" aria-hidden="true">📤</span>
               <span>
@@ -523,6 +531,9 @@
         var dishCurrentImage = "";
         var dishFormHeading = "＋ Thêm món";
         var pendingDishDelete = null;
+        var stripeState = null; // {connected, charges_enabled, payouts_enabled, account_id} từ Edge Function connect-stripe
+        var stripeBusy = false; // đang gọi connect-stripe (start/status) từ thẻ Kết nối Stripe
+        var stripeReturnPending = false; // vừa quay về từ trang Stripe (?stripe=return trên URL)
 
         function $(id) { return document.getElementById(id); }
         function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -580,6 +591,7 @@
         function doLogout() {
           session = null; shop = null; orders = []; kitchenDay = null; driverDay = null; screen = "home"; cmGlobal = 15;
           products = []; dishFormOpen = false; editingDishId = null; dishPhotoFile = null; dishCurrentImage = ""; pendingDishDelete = null;
+          stripeState = null; stripeBusy = false; stripeReturnPending = false;
           localStorage.removeItem(KEY);
           closeDeleteConfirm();
           closeDishDelete();
@@ -749,6 +761,22 @@
           }
         })();
 
+        // Quay về từ trang đăng ký Stripe: URL có ?stripe=return → ghi
+        // nhận để kiểm tra lại trạng thái ngay khi vào app, rồi xoá
+        // marker khỏi URL (giữ lại các tham số khác nếu có).
+        (function checkStripeReturn() {
+          var q = window.location.search.replace(/^\?/, "");
+          if (!q) return;
+          var kept = [], found = false;
+          q.split("&").forEach(function (kv) {
+            if (kv.indexOf("stripe=") === 0) { found = true; return; }
+            if (kv) kept.push(kv);
+          });
+          if (!found) return;
+          stripeReturnPending = true;
+          try { history.replaceState(null, "", window.location.pathname + (kept.length ? "?" + kept.join("&") : "") + window.location.hash); } catch (e) { /* bỏ qua */ }
+        })();
+
         /* ---------- navigation (staff-app style: one screen per card,
            with a day-detail level under both Bếp and Tài Xế) ---------- */
         function el(tag, cls, text) {
@@ -843,6 +871,88 @@
           try { document.execCommand("copy"); } catch (e) {}
           document.body.removeChild(ta);
         }
+        /* ---------- Kết nối Stripe (Stripe Connect) ----------
+           Tiệm liên kết tài khoản Stripe của chính tiệm: tiền khách trả
+           tự về ngân hàng của tiệm, Tasty Express giữ hoa hồng tự động.
+           Mọi thao tác đi qua Edge Function connect-stripe bằng JWT của
+           người dùng đang đăng nhập; trạng thái live lấy từ action
+           "status", dữ kiện đã lưu trên hồ sơ tiệm (stripe_account_id /
+           stripe_onboarded) chỉ là phương án dự phòng khi chưa gọi được. */
+        function stripeCall(body) {
+          return fetch(BASE + "/functions/v1/connect-stripe", {
+            method: "POST",
+            headers: { "apikey": ANON, "Authorization": "Bearer " + (session ? session.access_token : ANON), "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          }).then(function (r) {
+            return r.json().catch(function () { return null; }).then(function (d) { return { ok: r.ok, d: d || {} }; });
+          });
+        }
+        function stripeSubText() {
+          if (stripeState) {
+            if (stripeState.connected) return "Đã kết nối ✅ — tiền tự về ngân hàng của tiệm";
+            if (stripeState.account_id) return "Đang chờ Stripe xác nhận… — bấm để kiểm tra lại";
+            return "Chưa kết nối — bấm để liên kết ngân hàng, nhận tiền tự động";
+          }
+          if (shop && shop.stripe_onboarded) return "Đã kết nối ✅ — tiền tự về ngân hàng của tiệm";
+          if (shop && shop.stripe_account_id) return "Đang chờ Stripe xác nhận… — bấm để kiểm tra lại";
+          return "Chưa kết nối — bấm để liên kết ngân hàng, nhận tiền tự động";
+        }
+        function paintStripeCard() {
+          var s = $("stripeSub");
+          if (s) s.textContent = stripeSubText();
+        }
+        function refreshStripeStatus(fromReturn) {
+          return stripeCall({ action: "status" })
+            .then(function (res) {
+              var d = res.d || {};
+              if (!res.ok || d.error) throw new Error(d.error || "status");
+              stripeState = { connected: !!d.connected, charges_enabled: !!d.charges_enabled, payouts_enabled: !!d.payouts_enabled, account_id: d.account_id || null };
+              paintStripeCard();
+              if (fromReturn) {
+                showToast(stripeState.connected ? "Đã kết nối Stripe thành công ✅" : "Stripe chưa xác nhận xong — thử lại sau ít phút nhé");
+              }
+              return stripeState;
+            })
+            .catch(function () {
+              // Không lấy được trạng thái live (function chưa sẵn sàng /
+              // mất mạng): hiển thị theo hồ sơ tiệm đã lưu, không để lỗi
+              // làm phiền — thẻ vẫn bấm thử lại được.
+              paintStripeCard();
+              if (fromReturn) showToast("Chưa kiểm tra được trạng thái Stripe — bấm thẻ Kết nối Stripe để kiểm tra lại nhé");
+              return null;
+            });
+        }
+        $("cardStripe").addEventListener("click", function () {
+          if (stripeBusy) return;
+          if (stripeState && stripeState.connected) {
+            // Đã kết nối: chỉ kiểm tra lại trạng thái, không chuyển trang.
+            stripeBusy = true;
+            refreshStripeStatus(false).then(function () {
+              stripeBusy = false;
+              showToast(stripeState && stripeState.connected ? "Đã kết nối Stripe ✅ — tiền tự về ngân hàng của tiệm" : "Stripe chưa xác nhận xong — thử lại sau ít phút nhé");
+            });
+            return;
+          }
+          stripeBusy = true;
+          var sub = $("stripeSub");
+          if (sub) sub.textContent = "Đang mở Stripe…";
+          stripeCall({ action: "start", return_url: shopPageUrl() + "?stripe=return" })
+            .then(function (res) {
+              var d = res.d || {};
+              if (res.ok && d.url) { window.location.href = d.url; return; }
+              stripeBusy = false;
+              if (sub) sub.textContent = "Chưa mở được Stripe — bấm để thử lại";
+              showToast("⚠️ " + (d.error ? String(d.error) : "Chưa kết nối được Stripe — thử lại sau ít phút nhé."));
+              setTimeout(paintStripeCard, 4000);
+            })
+            .catch(function () {
+              stripeBusy = false;
+              if (sub) sub.textContent = "Chưa mở được Stripe — bấm để thử lại";
+              showToast("⚠️ Không kết nối được Stripe — kiểm tra mạng rồi thử lại nhé.");
+              setTimeout(paintStripeCard, 4000);
+            });
+        });
+
         $("moneyBtn").addEventListener("click", openMoney);
         $("moneyCloseBtn").addEventListener("click", function () { $("moneyOverlay").hidden = true; });
         $("moneyOverlay").addEventListener("click", function (ev) { if (ev.target === $("moneyOverlay")) $("moneyOverlay").hidden = true; });
@@ -886,6 +996,9 @@
               fetchGlobalCommission();
               showView("dash");
               go("home");
+              paintStripeCard();
+              refreshStripeStatus(stripeReturnPending);
+              stripeReturnPending = false;
               setBrand("");
               document.title = (shop.shop_name || "Back Office") + " — Back Office · Tasty Express";
               loadOrders();
