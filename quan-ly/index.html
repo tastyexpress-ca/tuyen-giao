@@ -99,7 +99,7 @@
 
         <div class="stats" id="statsBox"><div class="loading">Đang tải dữ liệu…</div></div>
 
-        <h2 class="sec">💵 Tiền lời đơn app (nhập tay)</h2>
+        <h2 class="sec">💵 Tiền lời đồ ăn (nhập tay)</h2>
         <div id="salesBox"><div class="loading">Đang tải…</div></div>
 
         <h2 class="sec">💸 Commission</h2>
@@ -204,14 +204,14 @@
             stat("📝", pending.length, "Đăng ký chờ duyệt", approved.length + " tiệm đã duyệt") +
             stat("🧾", paidOrders.length, "Đơn online đã thanh toán", todayPaid.length + " đơn hôm nay · " + unpaidCount + " đơn chưa thanh toán (không tính)") +
             stat("💰", money(revenue), "Doanh thu online (đã thanh toán)", "Hôm nay: " + money(todayRevenue)) +
-            stat("💵", money(manualTotal), "Tiền lời đơn app đã nhập", "Hôm nay: " + money(manualToday) + " · Chỉ lời đồ ăn trên app — không tính kem") +
+            stat("💵", money(manualTotal), "Tiền lời đồ ăn đã nhập", "Hôm nay: " + money(manualToday) + " · Chỉ tiền lời đồ ăn — không tính kem") +
             stat("📈", money(commissionPartner), "Lời của app (commission " + cmPct + "%)", "Từ tiệm đối tác — chưa có tiệm nào bán");
 
           // manual sales: form + entries by day
           var CAT = { food: "Cơm", icecream: "Kem lẻ", wholesale: "Kem sỉ", other: "Khác" };
           var salesHtml =
-            '<div class="card"><h3>Nhập tiền lời đơn app</h3>' +
-            '<div class="meta">Chỉ nhập <b>tiền lời của anh</b> từ đơn <b>đồ ăn đặt trên app</b> — không nhập kem, không nhập doanh số gộp. Em sẽ nhập giúp anh mỗi ngày từ các đơn app đã thanh toán.</div>' +
+            '<div class="card"><h3>Nhập tiền lời đồ ăn</h3>' +
+            '<div class="meta">Chỉ nhập <b>tiền lời của anh</b> từ các <b>đơn đồ ăn</b> — không nhập kem, không nhập doanh số gộp. Em sẽ nhập giúp anh mỗi ngày theo kết quả chốt sổ.</div>' +
             '<div class="sale-form" style="margin-top:10px">' +
             '<input id="saleDay" type="date" value="' + t + '" aria-label="Ngày" />' +
             '<select id="saleCat" aria-label="Loại"><option value="food">Đồ ăn (app)</option><option value="other">Khác</option></select>' +
