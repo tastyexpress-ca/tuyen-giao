@@ -175,6 +175,21 @@
       .notes-list li::before{content:"";flex:0 0 auto}
       .notes-box .btn{width:100%;cursor:pointer}
 
+      /* ---- Shop search ---- */
+      .shop-search{
+        display:flex;align-items:center;gap:10px;
+        background:var(--card);border:1.5px solid var(--chip-line);border-radius:999px;
+        box-shadow:var(--shadow);
+        padding:12px 18px;margin:0 0 18px;
+      }
+      .shop-search .search-icon{flex:0 0 auto;font-size:1.05rem;line-height:1}
+      .shop-search input{
+        flex:1 1 auto;min-width:0;border:0;background:transparent;color:var(--ink);
+        font-family:inherit;font-size:1rem;font-weight:500;outline:none;
+      }
+      .shop-search input::placeholder{color:var(--muted)}
+      .search-noresult{color:var(--muted);font-size:.98rem;margin:0 0 18px;display:none}
+
       @media (prefers-reduced-motion: reduce){ .btn{transition:none} }
     </style>
   </head>
@@ -187,6 +202,11 @@
 
       <main>
         <p style="margin:0 0 14px"><a href="../home/" style="color:#8a4b12;font-weight:600;text-decoration:none">← Trang chính</a></p>
+        <div class="shop-search" role="search">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input type="search" id="shopSearch" placeholder="Tìm tiệm hoặc món ăn…" aria-label="Tìm tiệm hoặc món ăn" autocomplete="off" />
+        </div>
+        <p class="search-noresult" id="searchNoResult" role="status"></p>
         <article class="shop-card">
           <h1 class="shop-name">Think's Kitchen</h1>
           <p class="intro">Bếp chuyên cơm phần và cơm tháng kiểu cơm nhà: mỗi phần gồm cơm, 1 món mặn, 1 món xào và 1 canh, thực đơn thay đổi theo từng ngày trong tuần.</p>
@@ -308,6 +328,46 @@
         var step = 262;
         document.getElementById("revPrev").addEventListener("click", function () { strip.scrollBy({ left: -step, behavior: "smooth" }); });
         document.getElementById("revNext").addEventListener("click", function () { strip.scrollBy({ left: step, behavior: "smooth" }); });
+      })();
+    </script>
+    <script>
+      (function () {
+        var input = document.getElementById("shopSearch");
+        var noResult = document.getElementById("searchNoResult");
+        if (!input) return;
+        var cards = Array.prototype.slice.call(document.querySelectorAll(".shop-card"));
+        function fold(s) {
+          return (s || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/đ/g, "d")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+        var cardText = cards.map(function (c) {
+          var parts = [];
+          c.querySelectorAll(".shop-name, .tagline, .chip, .intro, .info-list").forEach(function (el) { parts.push(el.textContent); });
+          return fold(parts.length ? parts.join(" ") : c.textContent);
+        });
+        function applyFilter() {
+          var q = fold(input.value);
+          var visible = 0;
+          cards.forEach(function (card, i) {
+            var show = !q || cardText[i].indexOf(q) !== -1;
+            card.style.display = show ? "" : "none";
+            if (show) visible++;
+          });
+          if (noResult) {
+            if (q && visible === 0) {
+              noResult.textContent = "Không tìm thấy tiệm nào khớp với “" + input.value.trim() + "”.";
+              noResult.style.display = "block";
+            } else {
+              noResult.style.display = "none";
+            }
+          }
+        }
+        input.addEventListener("input", applyFilter);
       })();
     </script>
   </body>
