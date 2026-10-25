@@ -82,10 +82,17 @@
       .err{ display:none; margin-top:12px; background:#fdeceb; border:1px solid #e5a19b; color:#8f2a22; border-radius:11px; padding:10px 12px; font-size:.9rem; }
       .oknote{ display:none; margin-top:12px; background:#e9f5ec; border:1px solid #9fd0ab; color:#155830; border-radius:11px; padding:10px 12px; font-size:.9rem; }
       .loading{ text-align:center; color:var(--muted); padding:30px 0; }
-      /* view switcher + kitchen */
-      .viewtabs{ display:flex; gap:8px; margin:20px 0 2px; }
-      .viewtabs button{ flex:1; padding:11px; border-radius:999px; border:1.5px solid var(--line); background:none; color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
-      .viewtabs button.active{ background:var(--brown); border-color:var(--brown); color:#fdf3e0; }
+      /* home menu cards + screen nav */
+      .menucards{ display:flex; flex-direction:column; gap:14px; margin:20px 0 0; }
+      .menucard{ display:flex; align-items:center; gap:16px; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:24px; padding:20px 18px; box-shadow:var(--shadow); font:inherit; color:var(--ink); cursor:pointer; }
+      .menucard .mc-icon{ font-size:44px; line-height:1; flex:none; }
+      .menucard .mc-text{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+      .menucard .mc-title{ font-weight:800; font-size:1.28rem; color:var(--brown); line-height:1.2; }
+      .menucard .mc-desc{ color:var(--muted); font-size:.92rem; line-height:1.4; }
+      .menucard .mc-arrow{ margin-left:auto; flex:none; color:#e8710a; font-size:1.7rem; font-weight:800; line-height:1; }
+      .backpill{ display:inline-block; margin:18px 0 2px; padding:9px 16px; border-radius:999px; border:1.5px solid var(--line); background:var(--card); color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
+      .sharebtn{ width:100%; margin-top:14px; padding:13px; border-radius:999px; border:1.5px solid var(--line); background:var(--card); color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
+      /* kitchen */
       .daychips{ display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 12px; }
       .chipbtn{ padding:8px 14px; border-radius:999px; border:1.5px solid var(--chip-line); background:var(--chip); color:var(--ink); font:inherit; font-weight:600; font-size:.9rem; cursor:pointer; }
       .chipbtn.active{ background:var(--brown); border-color:var(--brown); color:#fdf3e0; }
@@ -158,18 +165,31 @@
 
         <div class="stats" id="statsBox"><div class="loading">Đang tải dữ liệu…</div></div>
 
-        <div class="viewtabs">
-          <button type="button" id="tabOrders" class="active">🧾 Đơn online</button>
-          <button type="button" id="tabKitchen">🍳 Bếp</button>
+        <div id="homeScreen">
+          <div class="menucards">
+            <button type="button" class="menucard" id="menuOrders">
+              <span class="mc-icon">🧾</span>
+              <span class="mc-text"><span class="mc-title">Đơn online</span><span class="mc-desc">Đơn khách đặt trên app</span></span>
+              <span class="mc-arrow">→</span>
+            </button>
+            <button type="button" class="menucard" id="menuKitchen">
+              <span class="mc-icon">🍳</span>
+              <span class="mc-text"><span class="mc-title">Bếp</span><span class="mc-desc">Order bếp cần làm theo ngày</span></span>
+              <span class="mc-arrow">→</span>
+            </button>
+          </div>
+          <button type="button" class="sharebtn" id="shareBtn">📤 Chia sẻ app</button>
         </div>
 
-        <div id="ordersSection">
-          <h2 class="sec">🧾 Đơn online của tiệm</h2>
+        <div id="ordersScreen" style="display:none">
+          <button type="button" class="backpill" data-back>← Trang chủ</button>
+          <h2 class="sec" style="margin-top:12px">🧾 Đơn online của tiệm</h2>
           <div id="ordersBox"><div class="loading">Đang tải…</div></div>
         </div>
 
-        <div id="kitchenSection" style="display:none">
-          <h2 class="sec">🍳 Bếp</h2>
+        <div id="kitchenScreen" style="display:none">
+          <button type="button" class="backpill" data-back>← Trang chủ</button>
+          <h2 class="sec" style="margin-top:12px">🍳 Bếp</h2>
           <div class="daychips" id="dayChips"></div>
           <div class="actions" style="margin:0 0 6px"><button class="btn btn-ok" id="cookBtn" type="button">🧮 Tổng món cần chuẩn bị</button></div>
           <div id="kitchenBox"><div class="loading">Đang tải…</div></div>
@@ -199,7 +219,7 @@
         var orders = [];
         var refreshTimer = null;
         var authMode = "login";
-        var view = "orders";
+        var view = "home";
         var kitchenDay = null;
 
         function $(id) { return document.getElementById(id); }
@@ -240,8 +260,9 @@
           localStorage.setItem(KEY, JSON.stringify(session));
         }
         function doLogout() {
-          session = null; shop = null; orders = []; kitchenDay = null;
+          session = null; shop = null; orders = []; kitchenDay = null; view = "home";
           localStorage.removeItem(KEY);
+          showScreen("home");
           showView("login");
         }
 
@@ -293,8 +314,34 @@
 
         $("logoutBtn").addEventListener("click", doLogout);
         $("noticeLogout").addEventListener("click", doLogout);
-        $("tabOrders").addEventListener("click", function () { setView("orders"); });
-        $("tabKitchen").addEventListener("click", function () { setView("kitchen"); });
+        $("menuOrders").addEventListener("click", function () { showScreen("orders"); });
+        $("menuKitchen").addEventListener("click", function () { showScreen("kitchen"); });
+        Array.prototype.forEach.call(document.querySelectorAll("[data-back]"), function (b) {
+          b.addEventListener("click", function () { showScreen("home"); });
+        });
+        $("shareBtn").addEventListener("click", function () {
+          var url = "https://tastyexpress-ca.github.io/tuyen-giao/doi-tac/";
+          var title = (shop && shop.shop_name) || "Tasty Express";
+          if (navigator.share) {
+            navigator.share({ title: title, text: "App quản lý tiệm — Tasty Express:", url: url }).catch(function () {});
+            return;
+          }
+          var btn = $("shareBtn"), old = btn.textContent;
+          var done = function () {
+            btn.textContent = "✅ Đã copy link app";
+            setTimeout(function () { btn.textContent = old; }, 2000);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(done).catch(function () { fallbackCopy(url); done(); });
+          } else { fallbackCopy(url); done(); }
+        });
+        function fallbackCopy(text) {
+          var ta = document.createElement("textarea");
+          ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+          document.body.appendChild(ta); ta.select();
+          try { document.execCommand("copy"); } catch (e) {}
+          document.body.removeChild(ta);
+        }
         $("cookBtn").addEventListener("click", openCook);
         $("cookCloseBtn").addEventListener("click", function () { $("cookOverlay").hidden = true; });
         $("cookOverlay").addEventListener("click", function (ev) { if (ev.target === $("cookOverlay")) $("cookOverlay").hidden = true; });
@@ -313,6 +360,7 @@
               }
               shop = row;
               showView("dash");
+              showScreen("home");
               $("shopName").textContent = shop.shop_name || "Tiệm của bạn";
               var bits = [];
               if (shop.cuisine) bits.push(shop.cuisine);
@@ -408,13 +456,13 @@
         /* ================= KITCHEN (BẾP) ================= */
         var FLAVORS = ["Coffee", "Chocolate", "Green Tea", "Thai Tea", "Ube", "Mango", "Strawberry", "Cookie", "Vanilla", "Sesame"];
 
-        function setView(v) {
-          view = v;
-          $("tabOrders").classList.toggle("active", v === "orders");
-          $("tabKitchen").classList.toggle("active", v === "kitchen");
-          $("ordersSection").style.display = v === "orders" ? "block" : "none";
-          $("kitchenSection").style.display = v === "kitchen" ? "block" : "none";
-          if (v === "kitchen") renderKitchen();
+        function showScreen(name) {
+          view = name;
+          $("homeScreen").style.display = name === "home" ? "block" : "none";
+          $("ordersScreen").style.display = name === "orders" ? "block" : "none";
+          $("kitchenScreen").style.display = name === "kitchen" ? "block" : "none";
+          if (name === "kitchen") renderKitchen();
+          window.scrollTo(0, 0);
         }
 
         function kitchenDays() {
@@ -464,7 +512,7 @@
           var html = '<div class="ksec">Đang làm (' + doing.length + ")</div>";
           html += doing.length
             ? doing.map(function (o) { return kitchenCard(o, false); }).join("")
-            : '<div class="empty">Chưa có đơn nào đang làm — qua tab 🧾 Đơn online bấm “➕ Đưa vào bếp” nhé.</div>';
+            : '<div class="empty">Chưa có đơn nào đang làm — về Trang chủ, vào mục 🧾 Đơn online bấm “➕ Đưa vào bếp” nhé.</div>';
           if (done.length) {
             html += '<div class="ksec">Đã xong (' + done.length + ")</div>";
             html += done.map(function (o) { return kitchenCard(o, true); }).join("");
