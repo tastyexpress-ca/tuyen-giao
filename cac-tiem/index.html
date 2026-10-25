@@ -149,6 +149,31 @@
       .app-promo{background:linear-gradient(135deg,#fdf3e3,#fde8d8);border:1.5px solid #f0c48f;border-radius:16px;padding:16px 18px;margin-bottom:18px}
       .app-promo h2{font-size:1.15rem;margin-bottom:6px;color:#8a4b12}
       .app-promo p{color:#6b4a2a;line-height:1.55;margin-bottom:12px}
+      /* ---- Customer notes ---- */
+      .btn-notes{
+        display:flex;width:100%;margin-top:20px;cursor:pointer;
+        background:var(--card);border:1.5px solid var(--chip-line);color:var(--ink);
+        box-shadow:var(--shadow);
+      }
+      .btn-notes:hover{transform:translateY(-1px)}
+      .notes-overlay{
+        position:fixed;inset:0;z-index:1000;display:none;
+        align-items:center;justify-content:center;padding:18px;
+        background:rgba(20,14,6,.5);
+      }
+      .notes-overlay.open{display:flex}
+      .notes-box{
+        background:var(--card);color:var(--ink);border:1px solid var(--line);
+        border-radius:20px;box-shadow:var(--shadow);
+        max-width:520px;width:100%;max-height:85svh;overflow-y:auto;
+        padding:26px 24px 24px;
+      }
+      .notes-title{font-family:"Playfair Display","Be Vietnam Pro",serif;font-weight:800;font-size:1.4rem;margin:0 0 16px}
+      .notes-list{list-style:none;margin:0 0 22px;padding:0;display:grid;gap:12px}
+      .notes-list li{display:flex;gap:10px;font-size:1rem;line-height:1.55}
+      .notes-list li::before{content:"";flex:0 0 auto}
+      .notes-box .btn{width:100%;cursor:pointer}
+
       @media (prefers-reduced-motion: reduce){ .btn{transition:none} }
     </style>
   </head>
@@ -216,7 +241,29 @@
             <a class="btn btn-call" href="tel:+16262839994">Gọi tiệm</a>
           </div>
         </article>
+
+        <button type="button" class="btn btn-notes" id="notesBtn">📌 Khách hàng lưu ý</button>
       </main>
+
+      <div class="notes-overlay" id="notesOverlay" role="dialog" aria-modal="true" aria-labelledby="notesTitle">
+        <div class="notes-box">
+          <h2 class="notes-title" id="notesTitle">📌 Khách hàng lưu ý — Điều khoản đặt hàng</h2>
+          <ul class="notes-list">
+            <li><span><strong>1. Xác nhận đơn:</strong> Đơn chỉ được chuẩn bị sau khi thanh toán thành công. Các món đều nấu mới theo đơn, vì vậy bạn vui lòng đặt trước để tiệm chuẩn bị.</span></li>
+            <li><span><strong>2. Huỷ đơn &amp; hoàn tiền:</strong> Đơn đã vào bếp (đang chuẩn bị) sẽ không được huỷ và không hoàn tiền. Nếu cần huỷ, vui lòng liên hệ tiệm ngay qua 626-283-9994 trước khi đơn vào bếp.</span></li>
+            <li><span><strong>3. Giao hàng:</strong> Khung giờ giao 9am–11am hoặc 7pm–9pm là khung giờ dự kiến; thời gian thực tế có thể thay đổi do giao thông và số lượng đơn trong chuyến.</span></li>
+            <li><span><strong>4. Nhận hàng:</strong> Bạn vui lòng có mặt và giữ điện thoại khi tài xế đến. Trường hợp tài xế không liên lạc được và không giao được hàng, đơn sẽ không được hoàn tiền.</span></li>
+            <li><span><strong>5. Thông tin giao hàng:</strong> Bạn chịu trách nhiệm về tính chính xác của địa chỉ và số điện thoại đã cung cấp. Phí giao hàng không được hoàn lại nếu giao không thành công do thông tin sai.</span></li>
+            <li><span><strong>6. Pick up:</strong> Bạn vui lòng đến lấy đơn trong giờ mở cửa của tiệm trong ngày. Đơn không được lấy trong ngày sẽ không được hoàn tiền vì món ăn được nấu tươi trong ngày.</span></li>
+            <li><span><strong>7. Dị ứng thực phẩm:</strong> Nếu bạn có dị ứng, vui lòng ghi rõ trong ghi chú khi đặt hàng. Các món được chế biến trong bếp dùng chung nên tiệm không cam kết tuyệt đối không tiếp xúc chéo với các nguyên liệu gây dị ứng.</span></li>
+            <li><span><strong>8. Chất lượng món:</strong> Nếu món ăn có vấn đề, bạn vui lòng liên hệ tiệm trong vòng 24 giờ kèm hình ảnh để được hỗ trợ tốt nhất.</span></li>
+            <li><span><strong>9. Giá &amp; thực đơn:</strong> Giá và thực đơn có thể thay đổi theo từng ngày; giá áp dụng là giá hiển thị tại thời điểm bạn đặt hàng.</span></li>
+            <li><span><strong>10. Thanh toán:</strong> Thanh toán online bằng thẻ qua hệ thống bảo mật; Tasty Express không lưu trữ thông tin thẻ của bạn.</span></li>
+            <li><span><strong>11. Về Tasty Express:</strong> Tasty Express là nền tảng kết nối bạn với các nhà hàng đối tác. Mỗi nhà hàng chịu trách nhiệm về món ăn của mình; Tasty Express hỗ trợ điều phối và xử lý các phản hồi của bạn.</span></li>
+          </ul>
+          <button type="button" class="btn btn-order" id="notesClose">Đóng</button>
+        </div>
+      </div>
     </div>
       <div id="installBar" style="display:none;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:999;background:#54301a;color:#fdf3e0;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.28);align-items:center;gap:10px;font-size:14px;line-height:1.45">
       <span style="flex:1">📲 <b>Cài app Tasty Express:</b> bấm nút <b>Chia sẻ</b> rồi chọn <b>“Thêm vào Màn hình chính”</b></span>
@@ -237,6 +284,19 @@
             localStorage.setItem("te_install_dismissed", "1");
           });
         } catch (e) {}
+      })();
+    </script>
+    <script>
+      (function () {
+        var overlay = document.getElementById("notesOverlay");
+        var btn = document.getElementById("notesBtn");
+        if (!overlay || !btn) return;
+        function openNotes() { overlay.classList.add("open"); }
+        function closeNotes() { overlay.classList.remove("open"); }
+        btn.addEventListener("click", openNotes);
+        document.getElementById("notesClose").addEventListener("click", closeNotes);
+        overlay.addEventListener("click", function (e) { if (e.target === overlay) closeNotes(); });
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeNotes(); });
       })();
     </script>
       <script>
