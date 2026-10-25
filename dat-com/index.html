@@ -807,7 +807,7 @@
       var cart = []; // {key, day, wd, dm, name, detail, qty, price}
       var dayIdx = defaultDayIndex();
       var method = "pickup";
-      var cpSel = { man: null, xao: null, canh: null, qty: 1 };
+      var cpSel = { man: null, xao: null, canh: null, rice: "Lấy cơm", qty: 1 };
 
       /* Phí giao hàng — $1/dặm lái xe thật từ tiệm, làm tròn lên (giống web Wix) */
       var SHOP_COORDS = { lat: 33.7513, lon: -117.9930 }; // 14131 Roxanne Dr, Westminster, CA 92683
@@ -1156,9 +1156,11 @@
       /* ================= CƠM PHẦN PICKER ================= */
       function openCpPicker() {
         var day = DAYS[dayIdx];
-        cpSel = { man: day.man[0], xao: day.xao[0], canh: day.canh[0], qty: 1 };
+        cpSel = { man: day.man[0], xao: day.xao[0], canh: day.canh[0], rice: "Lấy cơm", qty: 1 };
         $("cpDayLabel").textContent = day.wd + " " + day.dm + " · Chọn 1 món mặn · 1 món xào · 1 món canh";
-        var html = "";
+        var html = '<div class="radio-group"><h4>Cơm</h4>' +
+          '<label class="radio-opt"><input type="radio" name="cp-rice" value="Lấy cơm" checked /> Lấy cơm</label>' +
+          '<label class="radio-opt"><input type="radio" name="cp-rice" value="Không lấy cơm" /> Không lấy cơm</label></div>';
         [["Món mặn", "man", day.man], ["Món xào", "xao", day.xao], ["Món canh", "canh", day.canh]].forEach(function (g) {
           html += '<div class="radio-group"><h4>' + g[0] + '</h4>';
           g[2].forEach(function (dish, i) {
@@ -1174,6 +1176,7 @@
             if (r.name === "cp-man") cpSel.man = r.value;
             if (r.name === "cp-xao") cpSel.xao = r.value;
             if (r.name === "cp-canh") cpSel.canh = r.value;
+            if (r.name === "cp-rice") cpSel.rice = r.value;
           });
         });
         updateCpFoot();
@@ -1914,7 +1917,7 @@
       $("cpPlus").addEventListener("click", function () { if (cpSel.qty < 50) { cpSel.qty++; updateCpFoot(); } });
       $("cpAdd").addEventListener("click", function () {
         var day = DAYS[dayIdx];
-        var detail = "Mặn: " + cpSel.man + " · Xào: " + cpSel.xao + " · Canh: " + cpSel.canh;
+        var detail = "Cơm: " + cpSel.rice + " · Mặn: " + cpSel.man + " · Xào: " + cpSel.xao + " · Canh: " + cpSel.canh;
         addToCart(day, "Cơm phần", detail, 10, cpSel.qty);
         closeCpPicker();
         renderMenu();
