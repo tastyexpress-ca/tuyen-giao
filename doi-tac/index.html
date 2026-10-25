@@ -104,7 +104,6 @@
       .section-title{ display:block; font-size:1.3rem; font-weight:800; line-height:1.25; }
       .section-sub{ display:block; margin-top:2px; font-size:.93rem; color:var(--muted); font-weight:600; line-height:1.4; }
       .section-arrow{ margin-left:auto; flex:none; font-size:1.6rem; font-weight:900; color:var(--accent); line-height:1; }
-      .homenote{ display:none; margin-top:16px; background:#e9f5ec; border:1px solid #9fd0ab; color:#155830; border-radius:11px; padding:11px 13px; font-size:.93rem; font-weight:600; }
       /* day lists (staff-app pattern: Bếp + Tài Xế) */
       .day-list{ display:flex; flex-direction:column; gap:14px; padding:18px 0 6px; }
       .day-card{ display:block; width:100%; text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); cursor:pointer; color:var(--ink); }
@@ -145,11 +144,6 @@
       /* toast (staff-app copy-toast) */
       .copy-toast{ position:fixed; left:50%; bottom:calc(22px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(16px); background:var(--header-bg); color:var(--header-ink); font-size:15.5px; font-weight:700; padding:11px 18px; border-radius:999px; box-shadow:0 6px 22px rgba(0,0,0,.35); opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:50; white-space:nowrap; }
       .copy-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
-      /* entry form */
-      .entry-box{ max-width:560px; margin:18px auto 0; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:6px 20px 22px; box-shadow:var(--shadow); }
-      .seg{ display:flex; gap:8px; margin:2px 0 4px; }
-      .seg button{ flex:1; padding:11px; border-radius:999px; border:1.5px solid var(--line); background:none; color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
-      .seg button.active{ background:var(--brown); border-color:var(--brown); color:#fdf3e0; }
       /* kitchen day detail (staff-app k-card pattern) */
       .card.done{ opacity:.55; }
       #kitchenGroups{ display:flex; flex-direction:column; gap:14px; padding:16px 0 8px; }
@@ -297,7 +291,6 @@
 
         <!-- HOME -->
         <div id="scrHome">
-          <div class="homenote" id="homeNote"></div>
           <div class="section-list">
             <button type="button" class="section-card" id="cardDriver">
               <span class="section-icon" aria-hidden="true">🚗</span>
@@ -312,14 +305,6 @@
               <span>
                 <span class="section-title">Order Nhà Bếp</span>
                 <span class="section-sub">Danh sách order nấu theo ngày</span>
-              </span>
-              <span class="section-arrow" aria-hidden="true">→</span>
-            </button>
-            <button type="button" class="section-card" id="cardEntry">
-              <span class="section-icon" aria-hidden="true">✏️</span>
-              <span>
-                <span class="section-title">＋ Nhập order</span>
-                <span class="section-sub">Tự nhập order mới cho nhà bếp</span>
               </span>
               <span class="section-arrow" aria-hidden="true">→</span>
             </button>
@@ -355,34 +340,6 @@
           <div id="kitchenGroups"></div>
         </div>
 
-        <!-- MANUAL ORDER ENTRY -->
-        <div id="scrEntry" style="display:none">
-          <div class="entry-box">
-            <form id="entryForm" novalidate>
-              <label for="eName">Tên khách *</label>
-              <input id="eName" type="text" autocomplete="off" placeholder="Tên khách" />
-              <label for="ePhone">SĐT</label>
-              <input id="ePhone" type="text" inputmode="tel" autocomplete="tel" placeholder="Số điện thoại (không bắt buộc)" />
-              <label>Hình thức</label>
-              <div class="seg" role="group" aria-label="Hình thức">
-                <button type="button" class="seg-btn active" data-method="pickup">Pick up</button>
-                <button type="button" class="seg-btn" data-method="delivery">Giao hàng</button>
-              </div>
-              <div id="eAddressWrap" style="display:none">
-                <label for="eAddress">Địa chỉ giao</label>
-                <input id="eAddress" type="text" autocomplete="off" placeholder="Địa chỉ giao hàng" />
-              </div>
-              <label for="eDay">Ngày</label>
-              <input id="eDay" type="date" />
-              <label for="eItems">Món (mỗi dòng 1 món) *</label>
-              <textarea id="eItems" rows="4" placeholder="Mỗi dòng 1 món…"></textarea>
-              <label for="eNote">Ghi chú</label>
-              <input id="eNote" type="text" autocomplete="off" placeholder="Ghi chú thêm (không bắt buộc)" />
-              <div class="err" id="entryErr"></div>
-              <button class="submit" id="entrySaveBtn" type="submit">Lưu order</button>
-            </form>
-          </div>
-        </div>
       </div>
 
       <!-- COOK TALLY OVERLAY -->
@@ -438,8 +395,6 @@
         var screen = "home";
         var kitchenDay = null;
         var driverDay = null;
-        var entryMethod = "pickup";
-        var homeNoteTimer = null;
         var cmGlobal = 15; // global commission % (app_settings), refreshed on enter
 
         function $(id) { return document.getElementById(id); }
@@ -454,9 +409,6 @@
           var p = String(iso || "").split("-");
           if (p.length !== 3) return "";
           return WEEKDAYS[new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay()];
-        }
-        function todayLA() {
-          try { return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }); } catch (e) { return new Date().toISOString().slice(0, 10); }
         }
         function slugify(n) {
           return String(n || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -590,12 +542,10 @@
           $("scrDriver").style.display = (name === "driver" || name === "driverDay") ? "block" : "none";
           $("scrKitchen").style.display = name === "kitchen" ? "block" : "none";
           $("scrKitchenDay").style.display = name === "kitchenDay" ? "block" : "none";
-          $("scrEntry").style.display = name === "entry" ? "block" : "none";
           if (name === "home") setHeader({ title: "Trang chủ", sub: "Chọn mục cần xem bên dưới" });
           else if (name === "kitchen") { setHeader({ brand: "· NHÀ BẾP", title: "🍳 Order nhà bếp", sub: "Bấm vào một ngày để xem order nấu của ngày đó", home: true }); renderKitchenList(); }
           else if (name === "kitchenDay") { setHeader({ brand: "· NHÀ BẾP", title: "", sub: null, home: true, list: "← Danh sách ngày bếp" }); renderKitchenDay(); }
           else if (name === "driver" || name === "driverDay") { setHeader({ brand: "· TÀI XẾ", title: "🚗 Tuyến giao hàng", sub: "Bấm vào một ngày để xem tuyến giao của ngày đó", home: true, list: name === "driverDay" ? "← Danh sách ngày" : "" }); renderDriver(); }
-          else if (name === "entry") setHeader({ title: "Nhập order", sub: "Tự nhập order mới cho nhà bếp", home: true });
           window.scrollTo(0, 0);
         }
 
@@ -608,7 +558,6 @@
         });
         $("cardDriver").addEventListener("click", function () { driverDay = null; go("driver"); });
         $("cardKitchen").addEventListener("click", function () { go("kitchen"); });
-        $("cardEntry").addEventListener("click", function () { go("entry"); });
         $("cardShare").addEventListener("click", function () {
           var url = "https://tastyexpress-ca.github.io/tuyen-giao/doi-tac/";
           var title = (shop && shop.shop_name) || "Tasty Express";
@@ -652,71 +601,6 @@
           render();
           showToast("🗑 Đã xoá ngày khỏi máy này");
         });
-
-        /* ---------- manual entry form ---------- */
-        function setEntryMethod(m) {
-          entryMethod = m;
-          Array.prototype.forEach.call(document.querySelectorAll(".seg-btn"), function (b) {
-            b.classList.toggle("active", b.getAttribute("data-method") === m);
-          });
-          $("eAddressWrap").style.display = m === "delivery" ? "block" : "none";
-        }
-        Array.prototype.forEach.call(document.querySelectorAll(".seg-btn"), function (b) {
-          b.addEventListener("click", function () { setEntryMethod(b.getAttribute("data-method")); });
-        });
-        function showHomeNote(text) {
-          var n = $("homeNote");
-          n.textContent = text;
-          n.style.display = "block";
-          if (homeNoteTimer) clearTimeout(homeNoteTimer);
-          homeNoteTimer = setTimeout(function () { n.style.display = "none"; }, 5000);
-        }
-        $("entryForm").addEventListener("submit", function (ev) {
-          ev.preventDefault();
-          var err = $("entryErr");
-          err.style.display = "none";
-          var name = $("eName").value.trim();
-          var lines = $("eItems").value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
-          if (!name) { err.textContent = "Nhập tên khách giúp tiệm nhé."; err.style.display = "block"; return; }
-          if (!lines.length) { err.textContent = "Nhập ít nhất 1 món (mỗi dòng 1 món) nhé."; err.style.display = "block"; return; }
-          var day = $("eDay").value || todayLA();
-          var noteText = $("eNote").value.trim();
-          var btn = $("entrySaveBtn");
-          btn.disabled = true; btn.textContent = "Đang lưu…";
-          var payload = {
-            shop: shopSlug(),
-            customer_name: name,
-            phone: $("ePhone").value.trim(),
-            method: entryMethod,
-            address: entryMethod === "delivery" ? $("eAddress").value.trim() : "",
-            day: day,
-            weekday_label: weekdayOf(day),
-            items: lines.map(function (line) { return { name: line, qty: 1, price: 0, detail: "" }; }),
-            subtotal: 0,
-            delivery_fee: null,
-            tax: 0,
-            total: 0,
-            note: noteText ? noteText + " — nhập tay" : "nhập tay",
-            paid: false,
-            status: "in_kitchen"
-          };
-          api("/rest/v1/web_orders", { method: "POST", headers: { "Prefer": "return=minimal" }, body: JSON.stringify(payload) })
-            .then(function () {
-              btn.disabled = false; btn.textContent = "Lưu order";
-              $("entryForm").reset();
-              $("eDay").value = todayLA();
-              setEntryMethod("pickup");
-              loadOrders();
-              go("home");
-              showHomeNote("✅ Đã lưu order cho " + name + " — order đã vào bếp ngày " + fmtDay(day) + ".");
-            })
-            .catch(function () {
-              btn.disabled = false; btn.textContent = "Lưu order";
-              err.textContent = "Lưu chưa được — kiểm tra mạng rồi thử lại nhé.";
-              err.style.display = "block";
-            });
-        });
-        $("eDay").value = todayLA();
 
         // Resolve the signed-in account to its approved shop row, then load the shop's orders
         function enterApp() {
