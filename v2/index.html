@@ -1842,6 +1842,14 @@
             </span>
             <span class="section-arrow" aria-hidden="true">→</span>
           </button>
+          <button type="button" class="section-card" id="openChrisMonthBtn">
+            <span class="section-icon" aria-hidden="true">💵</span>
+            <span>
+              <span class="section-title">Chris all month</span>
+              <span class="section-sub">Tổng tiền lời của Thinh trong tháng</span>
+            </span>
+            <span class="section-arrow" aria-hidden="true">→</span>
+          </button>
           <button type="button" class="section-card" id="openDishesBtn">
             <span class="section-icon" aria-hidden="true">🍽</span>
             <span>
@@ -2079,6 +2087,48 @@
       </div>
     </div>
 
+    <!-- ================= CHRIS ALL MONTH VIEW (monthly profit, same password gate as TIỀN CỦA THINH) ================= -->
+    <div id="chrisMonthView" hidden>
+      <header>
+        <div class="wrap">
+          <button type="button" class="back-btn" id="chrisMonthBackBtn">← Trang chủ</button>
+          <div class="brand">Think's Kitchen <span class="route-name">· Chris all month</span></div>
+          <div class="dayline">Chris all month</div>
+          <div class="origin" id="chrisMonthLine"></div>
+        </div>
+      </header>
+      <div class="wrap">
+        <main>
+          <div class="totals-card" id="chrisMonthGateCard" hidden>
+            <div class="totals-sub" id="chrisMonthGateLoading">Đang kiểm tra mật khẩu…</div>
+            <form id="cmSetupForm" hidden novalidate>
+              <div class="totals-big">🔒 Tạo mật khẩu cho trang này</div>
+              <label class="login-label" for="cmNewPass">Mật khẩu mới
+                <input type="password" id="cmNewPass" class="login-input" autocomplete="new-password" enterkeyhint="next" />
+              </label>
+              <label class="login-label" for="cmNewPass2">Nhập lại mật khẩu
+                <input type="password" id="cmNewPass2" class="login-input" autocomplete="new-password" enterkeyhint="go" />
+              </label>
+              <div class="login-error" id="cmSetupError" hidden></div>
+              <button type="submit" class="btn-login" id="cmSetupBtn">Lưu mật khẩu</button>
+            </form>
+            <form id="cmLockForm" hidden novalidate>
+              <div class="totals-big">🔒 Trang này cần mật khẩu</div>
+              <label class="login-label" for="cmPassInput">Mật khẩu
+                <input type="password" id="cmPassInput" class="login-input" autocomplete="current-password" enterkeyhint="go" />
+              </label>
+              <div class="login-error" id="cmLockError" hidden>Sai mật khẩu, thử lại nhé</div>
+              <button type="submit" class="btn-login" id="cmUnlockBtn">Mở trang</button>
+            </form>
+          </div>
+          <div class="totals-card" id="chrisMonthContentCard" hidden>
+            <div id="chrisMonthBody"></div>
+            <div class="chris-summary" id="chrisMonthSummary"></div>
+          </div>
+        </main>
+      </div>
+    </div>
+
     <!-- ================= KITCHEN DAY LIST VIEW ================= -->
     <div id="kitchenListView" hidden>
       <header>
@@ -2292,6 +2342,22 @@
         var chrisChgNew2 = document.getElementById("chrisChgNew2");
         var chrisChangeError = document.getElementById("chrisChangeError");
         var chrisChangeSaveBtn = document.getElementById("chrisChangeSaveBtn");
+        var chrisMonthView = document.getElementById("chrisMonthView");
+        var chrisMonthLine = document.getElementById("chrisMonthLine");
+        var chrisMonthGateCard = document.getElementById("chrisMonthGateCard");
+        var chrisMonthGateLoading = document.getElementById("chrisMonthGateLoading");
+        var cmSetupForm = document.getElementById("cmSetupForm");
+        var cmNewPass = document.getElementById("cmNewPass");
+        var cmNewPass2 = document.getElementById("cmNewPass2");
+        var cmSetupError = document.getElementById("cmSetupError");
+        var cmSetupBtn = document.getElementById("cmSetupBtn");
+        var cmLockForm = document.getElementById("cmLockForm");
+        var cmPassInput = document.getElementById("cmPassInput");
+        var cmLockError = document.getElementById("cmLockError");
+        var cmUnlockBtn = document.getElementById("cmUnlockBtn");
+        var chrisMonthContentCard = document.getElementById("chrisMonthContentCard");
+        var chrisMonthBody = document.getElementById("chrisMonthBody");
+        var chrisMonthSummary = document.getElementById("chrisMonthSummary");
         var kitchenListView = document.getElementById("kitchenListView");
         var kitchenView = document.getElementById("kitchenView");
         var entryView = document.getElementById("entryView");
@@ -2321,7 +2387,7 @@
         var dynamicPageStyle = document.getElementById("dynamicPageStyle");
         var toastTimer = null;
 
-        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenTotalsView, chrisView, kitchenListView, kitchenView, entryView, dishesView, dishFormView];
+        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenTotalsView, chrisView, chrisMonthView, kitchenListView, kitchenView, entryView, dishesView, dishFormView];
         var currentView = null;
         function showView(v) {
           currentView = v;
@@ -3565,6 +3631,9 @@
                 currentKitchenDay && currentKitchenDay.day === dayStr) {
               renderChrisPage();
             }
+            if (currentView === chrisMonthView && chrisUnlocked) {
+              renderChrisMonth();
+            }
           }, function () {
             chrisStopsPending[dayStr] = false;
           });
@@ -3875,6 +3944,160 @@
             fail(err && err.message === "wrong-current"
               ? "Mật khẩu hiện tại chưa đúng."
               : "⚠️ Chưa lưu được — kiểm tra mạng rồi thử lại nhé.");
+          });
+        });
+
+        /* ================================================================
+           CHRIS ALL MONTH — the 💵 Chris page's numbers, aggregated
+           over the CURRENT month: one row per kitchen day in the
+           month that has earnings, each row's amount being EXACTLY
+           chrisDayProfit(day).grandTotal — the same figure the
+           TIỀN CỦA THINH page shows for that day (lời món + ship
+           của Thinh − phí Wix) — so the month total is the sum of
+           the daily Chris-page totals, never a second formula.
+           The page sits behind the SAME password gate as the Chris
+           page: one shared in-memory unlock (chrisUnlocked) and the
+           same stored hash (chris_pass_hash); unlocking either page
+           unlocks both for the session, and logout clears both.
+           ================================================================ */
+        function chrisCurrentMonth() {
+          var now = new Date();
+          var m = now.getMonth() + 1;
+          return {
+            prefix: now.getFullYear() + "-" + (m < 10 ? "0" : "") + m,
+            label: "Tháng " + m + "/" + now.getFullYear()
+          };
+        }
+
+        function renderChrisMonth() {
+          var month = chrisCurrentMonth();
+          chrisMonthLine.textContent = month.label;
+          /* kitchenDays is loaded newest first (day.desc), so the
+             rows come out newest first with no extra sort. A day is
+             listed only when chrisDayProfit finds earnings rows for
+             it (food orders); days with no orders are absent. */
+          var rows = [];
+          var total = 0;
+          kitchenDays.forEach(function (kd) {
+            if (String(kd.day || "").indexOf(month.prefix) !== 0) return;
+            ensureChrisDayStops(kd.day);
+            var res = chrisDayProfit(kd.day);
+            if (!res.rows.length) return;
+            rows.push({ label: kitchenDayLabel(kd), amount: res.grandTotal });
+            total += res.grandTotal;
+          });
+          total = Math.round(total * 100) / 100;
+          chrisMonthBody.innerHTML = "";
+          if (rows.length) {
+            var list = el("div", "chris-list");
+            rows.forEach(function (r) {
+              var line = el("div", "chris-line");
+              line.appendChild(el("span", "chris-name", r.label));
+              line.appendChild(el("span", "chris-amt", fmtUsd2(r.amount)));
+              list.appendChild(line);
+            });
+            chrisMonthBody.appendChild(list);
+          } else {
+            chrisMonthBody.appendChild(el("div", "kt-empty", "Chưa có dữ liệu tháng này"));
+          }
+          chrisMonthSummary.innerHTML = "";
+          chrisMonthSummary.appendChild(el("div", "chris-grand", "Tổng tiền lời tháng này: " + fmtUsd2(total)));
+        }
+
+        /* Same gate states as renderChrisGate (loading / first-run
+           setup / lock prompt / content), driving this view's own
+           forms but the shared chrisUnlocked / chrisHash state. */
+        function renderChrisMonthGate() {
+          chrisMonthLine.textContent = chrisCurrentMonth().label;
+          if (chrisUnlocked) {
+            chrisMonthGateCard.hidden = true;
+            chrisMonthContentCard.hidden = false;
+            renderChrisMonth();
+            return;
+          }
+          chrisMonthContentCard.hidden = true;
+          chrisMonthGateCard.hidden = false;
+          chrisMonthGateLoading.hidden = chrisHash !== null;
+          cmSetupForm.hidden = !(chrisHash === "");
+          cmLockForm.hidden = !(typeof chrisHash === "string" && chrisHash !== "");
+          cmSetupError.hidden = true;
+          cmLockError.hidden = true;
+        }
+
+        function openChrisMonthPage() {
+          showView(chrisMonthView);
+          renderChrisMonthGate();
+          if (!chrisUnlocked) {
+            /* Same re-read-on-open as the Chris page, so the
+               forgotten-password recovery (hash row deleted) also
+               lands this gate on the setup form. */
+            loadChrisHash().then(function () {
+              if (currentView === chrisMonthView) renderChrisMonthGate();
+            });
+          }
+        }
+
+        function unlockChrisMonthPage() {
+          chrisUnlocked = true;
+          cmPassInput.value = "";
+          renderChrisMonthGate();
+        }
+
+        cmSetupForm.addEventListener("submit", function (ev) {
+          ev.preventDefault();
+          if (chrisGateBusy) return;
+          var p1 = cmNewPass.value;
+          var p2 = cmNewPass2.value;
+          cmSetupError.hidden = true;
+          if (!p1) {
+            cmSetupError.textContent = "Vui lòng nhập mật khẩu mới nhé.";
+            cmSetupError.hidden = false;
+            return;
+          }
+          if (p1 !== p2) {
+            cmSetupError.textContent = "Hai mật khẩu chưa khớp, nhập lại nhé.";
+            cmSetupError.hidden = false;
+            return;
+          }
+          chrisGateBusy = true;
+          cmSetupBtn.disabled = true;
+          cmSetupBtn.textContent = "Đang lưu…";
+          sha256Hex(p1).then(function (hex) {
+            return saveChrisHash(hex);
+          }).then(function () {
+            chrisGateBusy = false;
+            cmSetupBtn.disabled = false;
+            cmSetupBtn.textContent = "Lưu mật khẩu";
+            cmNewPass.value = "";
+            cmNewPass2.value = "";
+            showToast("🔒 Đã tạo mật khẩu cho trang TIỀN CỦA THINH");
+            unlockChrisMonthPage();
+          }, function () {
+            chrisGateBusy = false;
+            cmSetupBtn.disabled = false;
+            cmSetupBtn.textContent = "Lưu mật khẩu";
+            cmSetupError.textContent = "⚠️ Chưa lưu được — kiểm tra mạng rồi thử lại nhé.";
+            cmSetupError.hidden = false;
+          });
+        });
+
+        cmLockForm.addEventListener("submit", function (ev) {
+          ev.preventDefault();
+          if (chrisGateBusy) return;
+          cmLockError.hidden = true;
+          chrisGateBusy = true;
+          cmUnlockBtn.disabled = true;
+          cmUnlockBtn.textContent = "Đang mở…";
+          sha256Hex(cmPassInput.value).then(function (hex) {
+            chrisGateBusy = false;
+            cmUnlockBtn.disabled = false;
+            cmUnlockBtn.textContent = "Mở trang";
+            if (hex === chrisHash) {
+              unlockChrisMonthPage();
+            } else {
+              cmPassInput.value = "";
+              cmLockError.hidden = false;
+            }
           });
         });
 
@@ -4798,6 +5021,9 @@
           renderKitchenList();
           showView(kitchenListView);
         });
+        document.getElementById("openChrisMonthBtn").addEventListener("click", function () {
+          openChrisMonthPage();
+        });
         document.getElementById("kitchenBackBtn").addEventListener("click", function () {
           showView(homeView);
         });
@@ -5199,6 +5425,9 @@
         });
         document.getElementById("chrisBackBtn").addEventListener("click", function () {
           showView(kitchenView);
+        });
+        document.getElementById("chrisMonthBackBtn").addEventListener("click", function () {
+          showView(homeView);
         });
         document.getElementById("logoutBtn").addEventListener("click", function () {
           teardownRealtime();
@@ -5602,6 +5831,12 @@
                wipe a password the user is halfway through typing. */
             if (chrisUnlocked) renderChrisPage();
             else chrisDayline.textContent = kitchenDayLabel(currentKitchenDay);
+          } else if (currentView === chrisMonthView) {
+            /* Chris all month: same rule as the Chris page — only
+               the unlocked view re-renders on refresh, so a
+               password the user is halfway through typing is never
+               wiped. */
+            if (chrisUnlocked) renderChrisMonth();
           } else if (currentView === dishesView) {
             /* Quản lý món: keep the dish list fresh on the same 30s /
                realtime cadence. loadTkProducts itself refuses to run
