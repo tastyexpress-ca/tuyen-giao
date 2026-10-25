@@ -99,7 +99,7 @@
 
         <div class="stats" id="statsBox"><div class="loading">Đang tải dữ liệu…</div></div>
 
-        <h2 class="sec">💵 Doanh số nhập tay</h2>
+        <h2 class="sec">💵 Tiền lời đơn app (nhập tay)</h2>
         <div id="salesBox"><div class="loading">Đang tải…</div></div>
 
         <h2 class="sec">💸 Commission</h2>
@@ -204,24 +204,23 @@
             stat("📝", pending.length, "Đăng ký chờ duyệt", approved.length + " tiệm đã duyệt") +
             stat("🧾", paidOrders.length, "Đơn online đã thanh toán", todayPaid.length + " đơn hôm nay · " + unpaidCount + " đơn chưa thanh toán (không tính)") +
             stat("💰", money(revenue), "Doanh thu online (đã thanh toán)", "Hôm nay: " + money(todayRevenue)) +
-            stat("💵", money(manualTotal), "Doanh số nhập tay", "Hôm nay: " + money(manualToday) + " · Bắt đầu 24/10/2026") +
-            stat("🏦", money(revenue + manualTotal), "TỔNG DOANH THU THẬT", "Online + nhập tay · Hôm nay: " + money(todayRevenue + manualToday)) +
+            stat("💵", money(manualTotal), "Tiền lời đơn app đã nhập", "Hôm nay: " + money(manualToday) + " · Chỉ lời đồ ăn trên app — không tính kem") +
             stat("📈", money(commissionPartner), "Lời của app (commission " + cmPct + "%)", "Từ tiệm đối tác — chưa có tiệm nào bán");
 
           // manual sales: form + entries by day
           var CAT = { food: "Cơm", icecream: "Kem lẻ", wholesale: "Kem sỉ", other: "Khác" };
           var salesHtml =
-            '<div class="card"><h3>Nhập doanh số mới</h3>' +
-            '<div class="meta">Bán tại tiệm, qua Messenger/điện thoại hay kem sỉ — nhập vào đây để trang hiện doanh thu thật. Em cũng sẽ nhập giúp anh mỗi ngày.</div>' +
+            '<div class="card"><h3>Nhập tiền lời đơn app</h3>' +
+            '<div class="meta">Chỉ nhập <b>tiền lời của anh</b> từ đơn <b>đồ ăn đặt trên app</b> — không nhập kem, không nhập doanh số gộp. Em sẽ nhập giúp anh mỗi ngày từ các đơn app đã thanh toán.</div>' +
             '<div class="sale-form" style="margin-top:10px">' +
             '<input id="saleDay" type="date" value="' + t + '" aria-label="Ngày" />' +
-            '<select id="saleCat" aria-label="Loại"><option value="food">Cơm</option><option value="icecream">Kem lẻ</option><option value="wholesale">Kem sỉ</option><option value="other">Khác</option></select>' +
-            '<input id="saleLabel" class="full" type="text" placeholder="Nội dung — vd: Kem lẻ 8497, 1 combo (Zelle)" />' +
+            '<select id="saleCat" aria-label="Loại"><option value="food">Đồ ăn (app)</option><option value="other">Khác</option></select>' +
+            '<input id="saleLabel" class="full" type="text" placeholder="Nội dung — vd: Tiền lời đơn app 24/10 — 3 đơn" />' +
             '<input id="saleAmt" type="number" min="0" step="0.01" placeholder="Số tiền $" aria-label="Số tiền" />' +
-            '<button class="btn btn-ok" id="saleAdd" type="button">＋ Thêm doanh số</button>' +
+            '<button class="btn btn-ok" id="saleAdd" type="button">＋ Thêm tiền lời</button>' +
             '</div><span class="saved-note" id="saleSaved"></span></div>';
           if (!sales.length) {
-            salesHtml += '<div class="empty">Chưa có doanh số nhập tay nào.</div>';
+            salesHtml += '<div class="empty">Chưa có tiền lời nào được nhập.</div>';
           } else {
             var byDay = {};
             sales.forEach(function (s) { (byDay[s.day] = byDay[s.day] || []).push(s); });
