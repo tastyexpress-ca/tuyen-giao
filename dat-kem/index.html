@@ -195,6 +195,7 @@
       .dish .d-price { font-weight: 800; color: var(--accent-ink); font-size: 15px; white-space: nowrap; }
       .dish.small { padding: 9px 12px; border-radius: 12px; box-shadow: none; }
       .dish.small .d-name { font-size: 14px; }
+      .dish .d-photo { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; flex: none; background: var(--surface-2); }
 
       .stepper { display: inline-flex; align-items: center; gap: 2px; flex: none; }
       .stepper button {
@@ -503,6 +504,7 @@
 
       var TAX_RATE = 0.0875;
       var SUPABASE_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/web_orders";
+      var PRODUCTS_URL = SUPABASE_URL.replace(/\/web_orders$/, "/shop_products") + "?shop=eq.ace-creamery&available=eq.true&order=sort.asc,created_at.asc";
       var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
       var CHECKOUT_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/functions/v1/create-checkout";
       var CHECKOUT_SUCCESS_URL = "https://tastyexpress-ca.github.io/tuyen-giao/dat-kem/?paid=1";
@@ -538,6 +540,7 @@
 
       /* ================= STATE ================= */
       var cart = []; // {key, day, wd, dm, name, detail, qty, price, unit}
+      var extraProducts = []; // món thêm do tiệm tự đăng (shop_products) — đã lọc trùng menu có sẵn
       var method = "pickup";
       var comboMode = "mix"; // mix | custom
       var comboQty = 1;
@@ -597,6 +600,33 @@
         refreshCartUI();
       }
 
+      /* ============ MÓN THÊM DO TIỆM TỰ ĐĂNG (shop_products) ============ */
+      function normalizeDishName(s) { return String(s == null ? "" : s).trim().toLowerCase(); }
+      function filterExtraProducts(rows) {
+        var builtIn = {};
+        FLAVORS.forEach(function (f) { builtIn[normalizeDishName(f)] = true; });
+        builtIn[normalizeDishName("Combo 18 ly")] = true;
+        if (!rows || !rows.length) return [];
+        return rows.filter(function (p) {
+          if (!p || !p.name) return false;
+          if (builtIn[normalizeDishName(p.name)]) return false;
+          var price = Number(p.price);
+          if (!isFinite(price) || price < 0) return false;
+          return true;
+        });
+      }
+      function loadExtraProducts() {
+        fetch(PRODUCTS_URL, {
+          headers: { "apikey": SUPABASE_ANON, "Authorization": "Bearer " + SUPABASE_ANON }
+        }).then(function (r) {
+          if (!r.ok) throw new Error("products failed");
+          return r.json();
+        }).then(function (rows) {
+          extraProducts = filterExtraProducts(rows || []);
+          if (extraProducts.length) renderMenu();
+        }).catch(function () { /* im lặng — trang vẫn chạy với menu có sẵn như bình thường */ });
+      }
+
       /* ================= MENU RENDER ================= */
       function stepperHTML(dataAttr, key, q, small) {
         return '<div class="stepper">' +
@@ -653,6 +683,25 @@
         });
         html += '</div></section>';
 
+        /* (c) Món thêm do tiệm tự đăng */
+        if (extraProducts.length) {
+          html += '<section class="menu-section"><div class="sec-head"><h2>🍽 Món thêm của tiệm</h2><div class="rule"></div></div><div class="dish-list">';
+          extraProducts.forEach(function (p) {
+            var detail = p.description ? String(p.description) : "";
+            var price = Number(p.price);
+            var key = keyOf(p.name, detail);
+            var q = qtyOf(key);
+            html += '<div class="dish">' +
+              (p.image_url ? '<img class="d-photo" src="' + esc(p.image_url) + '" alt="" loading="lazy" />' : "") +
+              '<div class="d-info"><div class="d-name">' + esc(p.name) + '</div>' +
+              (detail ? '<div class="d-detail">' + esc(detail) + '</div>' : "") +
+              (q > 0 ? '<div class="in-cart">Trong giỏ: ' + q + '</div>' : "") +
+              '</div><span class="d-price">' + money(price) + '</span>' +
+              stepperHTML("xstep", key, q, false) + '</div>';
+          });
+          html += '</div></section>';
+        }
+
         $("menuMain").innerHTML = html;
 
         /* wiring combo */
@@ -690,6 +739,22 @@
             if (line) { setQty(key, line.qty + delta); renderMenu(); return; }
             var parts = key.split("|");
             addToCart(parts[1], parts.slice(2).join("|"), CUP_PRICE, "ly", delta);
+            renderMenu();
+          });
+        });
+
+        /* wiring món thêm của tiệm */
+        $("menuMain").querySelectorAll("[data-xstep]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var key = btn.getAttribute("data-key");
+            var delta = parseInt(btn.getAttribute("data-xstep"), 10);
+            var line = findLine(key);
+            if (line) { setQty(key, line.qty + delta); renderMenu(); return; }
+            for (var i = 0; i < extraProducts.length; i++) {
+              var p = extraProducts[i];
+              var detail = p.description ? String(p.description) : "";
+              if (keyOf(p.name, detail) === key) { addToCart(p.name, detail, Number(p.price), "phần", delta); break; }
+            }
             renderMenu();
           });
         });
@@ -1156,6 +1221,7 @@
 
       renderMenu();
       refreshCartUI();
+      loadExtraProducts();
       handlePaidReturn();
     </script>
     <div id="installBar" style="display:none;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:999;background:#54301a;color:#fdf3e0;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.28);align-items:center;gap:10px;font-size:14px;line-height:1.45">
