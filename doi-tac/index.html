@@ -221,6 +221,10 @@
       .cook-line{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:7px 2px; border-bottom:1px dashed var(--line); font-size:1rem; font-weight:600; }
       .cook-line .q{ font-weight:800; white-space:nowrap; }
       .cook-empty{ font-size:.95rem; color:var(--muted); font-weight:600; padding:6px 2px; }
+      .hdr-btn-row .btn-print-all{ font-size:14px; line-height:1.25; padding:6px 4px; }
+      .money-total{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:12px 2px 2px; margin-top:8px; border-top:2px solid var(--ink); font-size:1.18rem; font-weight:800; }
+      .money-total .q{ white-space:nowrap; }
+      .cook-muted{ margin-top:12px; font-size:.9rem; color:var(--muted); font-weight:600; }
       .cook-close{ width:100%; margin-top:16px; padding:12px; border:0; border-radius:999px; background:var(--brown); color:#fdf3e0; font:inherit; font-weight:700; cursor:pointer; }
     </style>
   </head>
@@ -280,6 +284,7 @@
           <div class="chips" id="hdrChips" style="display:none"></div>
           <div class="hdr-btn-row" id="hdrBtnRow" style="display:none">
             <button type="button" class="btn-print-all" id="printAllBtn">🖨 In tất cả</button>
+            <button type="button" class="btn-print-all" id="moneyBtn">💰 Tổng tiền</button>
             <button type="button" class="btn-print-all" id="cookBtn">🍳 Tổng món cần nấu</button>
           </div>
           <div class="progress-row" id="hdrProgress" style="display:none">
@@ -390,6 +395,15 @@
         </div>
       </div>
 
+      <!-- MONEY BREAKDOWN OVERLAY -->
+      <div class="cook-overlay" id="moneyOverlay" hidden>
+        <div class="cook-box" role="dialog" aria-modal="true" aria-labelledby="moneyTitle">
+          <div class="cook-title" id="moneyTitle">💰 Tổng tiền</div>
+          <div id="moneyBody"></div>
+          <button type="button" class="cook-close" id="moneyCloseBtn">Đóng</button>
+        </div>
+      </div>
+
       <!-- DELETE-DAY CONFIRM (staff-app pattern) -->
       <div class="confirm-overlay" id="deleteConfirm" hidden>
         <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="deleteConfirmTitle" aria-describedby="deleteConfirmText">
@@ -426,6 +440,7 @@
         var driverDay = null;
         var entryMethod = "pickup";
         var homeNoteTimer = null;
+        var cmGlobal = 15; // global commission % (app_settings), refreshed on enter
 
         function $(id) { return document.getElementById(id); }
         function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -448,6 +463,21 @@
         }
         function shopSlug() { return (shop && shop.slug) || (shop ? slugify(shop.shop_name) : ""); }
 
+        // Global commission % lives in app_settings (public-read policy for
+        // this key only, anon key). Falls back to 15 when unreadable.
+        function fetchGlobalCommission() {
+          return fetch(BASE + "/rest/v1/app_settings?key=eq.commission_pct&select=value", { headers: { "apikey": ANON, "Authorization": "Bearer " + ANON } })
+            .then(function (r) { return r.ok ? r.json() : []; })
+            .then(function (rows) { if (rows && rows.length && !isNaN(parseFloat(rows[0].value))) cmGlobal = parseFloat(rows[0].value); })
+            .catch(function () {});
+        }
+        // The shop's own rate wins when set; otherwise the global rate.
+        function commissionRate() {
+          if (shop && shop.commission_pct != null && shop.commission_pct !== "" && !isNaN(parseFloat(shop.commission_pct))) return parseFloat(shop.commission_pct);
+          return cmGlobal;
+        }
+        function fmtRate(r) { return String(Math.round((Number(r) || 0) * 100) / 100); }
+
         // REST with the signed-in user's token (RLS scopes rows to their shop)
         function api(path, opts) {
           opts = opts || {};
@@ -468,7 +498,7 @@
           localStorage.setItem(KEY, JSON.stringify(session));
         }
         function doLogout() {
-          session = null; shop = null; orders = []; kitchenDay = null; driverDay = null; screen = "home";
+          session = null; shop = null; orders = []; kitchenDay = null; driverDay = null; screen = "home"; cmGlobal = 15;
           localStorage.removeItem(KEY);
           closeDeleteConfirm();
           go("home");
@@ -602,6 +632,9 @@
           try { document.execCommand("copy"); } catch (e) {}
           document.body.removeChild(ta);
         }
+        $("moneyBtn").addEventListener("click", openMoney);
+        $("moneyCloseBtn").addEventListener("click", function () { $("moneyOverlay").hidden = true; });
+        $("moneyOverlay").addEventListener("click", function (ev) { if (ev.target === $("moneyOverlay")) $("moneyOverlay").hidden = true; });
         $("cookBtn").addEventListener("click", openCook);
         $("cookCloseBtn").addEventListener("click", function () { $("cookOverlay").hidden = true; });
         $("cookOverlay").addEventListener("click", function (ev) { if (ev.target === $("cookOverlay")) $("cookOverlay").hidden = true; });
@@ -698,6 +731,7 @@
                 return;
               }
               shop = row;
+              fetchGlobalCommission();
               showView("dash");
               go("home");
               setBrand("");
@@ -1126,6 +1160,63 @@
           });
           return { flavors: flavors, others: others };
         }
+        /* ---- Money waterfall for one day (paid orders only) ----
+           Commission is charged on (total − tax); Stripe takes
+           2.9% + $0.30 per paid order. Displayed lines are rounded
+           to cents and the net is built from the displayed values
+           so the visible math adds up exactly. */
+        function computeMoney(dayOrders, rate) {
+          var r2 = function (n) { return Math.round(n * 100) / 100; };
+          var paid = dayOrders.filter(function (o) { return o.paid === true; });
+          var unpaid = dayOrders.filter(function (o) { return o.paid !== true; });
+          var G = 0, T = 0, F = 0;
+          paid.forEach(function (o) {
+            var total = Number(o.total) || 0;
+            G += total;
+            T += Number(o.tax) || 0;
+            F += total * 0.029 + 0.30;
+          });
+          var Gd = r2(G), Td = r2(T);
+          var Cd = r2((G - T) * (Number(rate) || 0) / 100);
+          var Fd = r2(F);
+          var unpaidTotal = r2(unpaid.reduce(function (a, o) { return a + (Number(o.total) || 0); }, 0));
+          return {
+            paidCount: paid.length, G: Gd, T: Td, C: Cd, F: Fd,
+            net: r2(Gd - Td - Cd - Fd),
+            unpaidCount: unpaid.length, unpaidTotal: unpaidTotal
+          };
+        }
+
+        function renderMoney() {
+          var dayOrders = orders.filter(function (o) { return (o.day || "") === kitchenDay; });
+          var rate = commissionRate();
+          var m = computeMoney(dayOrders, rate);
+          $("moneyTitle").textContent = "💰 Tổng tiền — " + dayLabel(kitchenDay, dayOrders);
+          var html = "";
+          if (!m.paidCount) {
+            html += '<div class="cook-empty">Chưa có đơn nào đã thanh toán trong ngày này.</div>';
+          } else {
+            html += '<div class="cook-line"><span>Tiền đơn (' + m.paidCount + ' đơn đã thanh toán)</span><span class="q">' + money(m.G) + "</span></div>";
+            html += '<div class="cook-line"><span>Thuế (đã gồm trong tiền đơn)</span><span class="q">− ' + money(m.T) + "</span></div>";
+            html += '<div class="cook-line"><span>Commission Tasty Express (' + fmtRate(rate) + '%)</span><span class="q">− ' + money(m.C) + "</span></div>";
+            html += '<div class="cook-line"><span>Phí Stripe (2.9% + $0.30/đơn)</span><span class="q">− ' + money(m.F) + "</span></div>";
+            html += '<div class="money-total"><span>TIỆM CÒN</span><span class="q">' + money(m.net) + "</span></div>";
+          }
+          if (m.unpaidCount) {
+            html += '<div class="cook-muted">Chưa thanh toán: ' + m.unpaidCount + " đơn — " + money(m.unpaidTotal) + " (chưa tính ở trên)</div>";
+          }
+          $("moneyBody").innerHTML = html;
+        }
+
+        function openMoney() {
+          if (!kitchenDay) { alert("Chưa có ngày nào có đơn."); return; }
+          renderMoney();
+          $("moneyOverlay").hidden = false;
+          // Refresh the global rate in the background; re-render if the
+          // overlay is still open so the numbers never sit stale.
+          fetchGlobalCommission().then(function () { if (!$("moneyOverlay").hidden) renderMoney(); });
+        }
+
         function openCook() {
           if (!kitchenDay) { alert("Chưa có ngày nào có đơn."); return; }
           var list = orders.filter(function (o) { return (o.day || "") === kitchenDay && (o.status || "new") === "in_kitchen"; });
