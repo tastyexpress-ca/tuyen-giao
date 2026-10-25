@@ -356,7 +356,7 @@
         <div id="scrDriver" style="display:none">
           <div class="day-list" id="driverDayList"></div>
           <div id="driverDayDetail" style="display:none">
-            <div class="trip-btn-wrap"><button type="button" class="btn-print-all" id="tripBtn">💰 Tổng chuyến đi</button></div>
+            <div class="trip-btn-wrap"><button type="button" class="btn-print-all" id="tripBtn">💰 Tổng tiền</button></div>
             <div id="driverStops" style="padding-top:14px"></div>
           </div>
         </div>
@@ -398,7 +398,7 @@
       <!-- TRIP TOTAL OVERLAY -->
       <div class="cook-overlay" id="tripOverlay" hidden>
         <div class="cook-box" role="dialog" aria-modal="true" aria-labelledby="tripTitle">
-          <div class="cook-title" id="tripTitle">🚗 Tổng chuyến đi</div>
+          <div class="cook-title" id="tripTitle">🚗 Tổng tiền</div>
           <div id="tripBody"></div>
           <button type="button" class="cook-close" id="tripCloseBtn">Đóng</button>
         </div>
@@ -936,7 +936,7 @@
           if (!driverDay) return;
           var dayStops = orders.filter(function (o) { return o.method === "delivery" && (o.day || "") === driverDay; });
           var t = computeTripTotals(dayStops);
-          $("tripTitle").textContent = "🚗 Tổng chuyến đi — " + dayLabel(driverDay, dayStops);
+          $("tripTitle").textContent = "🚗 Tổng tiền — " + dayLabel(driverDay, dayStops);
           var html = "";
           html += '<div class="cook-line"><span>Số điểm giao</span><span class="q">' + t.count + "</span></div>";
           html += '<div class="cook-line"><span>Tổng tiền chuyến</span><span class="q">' + money(t.total) + "</span></div>";
