@@ -189,6 +189,12 @@
       }
       .shop-search input::placeholder{color:var(--muted)}
       .search-noresult{color:var(--muted);font-size:.98rem;margin:0 0 18px;display:none}
+      .dish-match{
+        background:var(--chip);border:1px solid var(--chip-line);border-radius:12px;
+        font-size:.95rem;font-weight:600;line-height:1.5;
+        padding:10px 14px;margin:0 0 22px;
+      }
+      .dish-match[hidden]{display:none}
 
       @media (prefers-reduced-motion: reduce){ .btn{transition:none} }
     </style>
@@ -207,9 +213,11 @@
           <input type="search" id="shopSearch" placeholder="Tìm tiệm hoặc món ăn…" aria-label="Tìm tiệm hoặc món ăn" autocomplete="off" />
         </div>
         <p class="search-noresult" id="searchNoResult" role="status"></p>
-        <article class="shop-card">
+        <article class="shop-card" data-shop="thinks-kitchen">
           <h1 class="shop-name">Think's Kitchen</h1>
           <p class="intro">Bếp chuyên cơm phần và cơm tháng kiểu cơm nhà: mỗi phần gồm cơm, 1 món mặn, 1 món xào và 1 canh, thực đơn thay đổi theo từng ngày trong tuần.</p>
+
+          <p class="dish-match" hidden></p>
 
           <ul class="info-list">
             <li>
@@ -239,9 +247,11 @@
           </div>
         </article>
 
-        <article class="shop-card">
+        <article class="shop-card" data-shop="ace-creamery">
           <h1 class="shop-name">ACE CREAMERY — Ice cream</h1>
           <p class="intro">Kem nhà làm 10 vị: Coffee, Chocolate, Green Tea, Thai Tea, Ube, Mango, Strawberry, Cookie, Vanilla, Sesame. Ly lẻ $2 — Combo 18 ly $25.</p>
+
+          <p class="dish-match" hidden></p>
 
           <ul class="info-list">
             <li>
@@ -350,13 +360,59 @@
           c.querySelectorAll(".shop-name, .tagline, .chip, .intro, .info-list").forEach(function (el) { parts.push(el.textContent); });
           return fold(parts.length ? parts.join(" ") : c.textContent);
         });
+        var DISH_INDEX = {
+          "thinks-kitchen": [
+            "Trứng chiên thịt bằm", "Cá kho tộ", "Đùi gà, cánh gà chiên nước mắm tỏi",
+            "Thịt kho trứng", "Gà kho gừng", "Su su xào", "Bắp cải xào",
+            "Canh cà rốt, khoai tây", "Canh cải bẹ xanh", "Tôm kho tàu", "Gà kho sả",
+            "Cánh gà, đùi gà chiên nước mắm", "Cá nục kho thơm", "Thịt ba rọi kho mắm ruốc",
+            "Giá hẹ xào", "Bông cải xào", "Canh khổ qua dồi thịt", "Canh cải thảo",
+            "Mắm chưng", "Sườn non xào chua ngọt", "Bò xào cà chua củ hành",
+            "Canh bầu nấu tôm", "Canh cải chua sườn non", "Tôm rim thịt ba rọi",
+            "Cá kèo kho rau răm", "Kho quẹt chấm rau luộc", "Cải ngọt xào",
+            "Canh khoai mỡ", "Canh mồng tơi mướp", "Sườn kho tiêu", "Gà rô ti",
+            "Cá ngừ kho thơm", "Cá nục chiên", "Khổ qua xào trứng", "Canh bí đỏ",
+            "Canh chua tôm", "Bún bò Huế", "Cháo lòng", "Cơm phần", "Cơm tháng",
+            "Gỏi gà", "Bò kho", "Cà ri gà", "Mì xào bò", "Nui xào bò",
+            "Mì xào hải sản", "Nui xào hải sản", "Mực lăn bột", "Tôm lăn bột",
+            "Gỏi đu đủ tôm thịt", "Bánh tráng trộn", "Chả giò", "Gỏi cuốn tôm thịt",
+            "Cánh gà chiên nước mắm", "Gỏi bò ngũ sắc", "Gỏi củ cải cà rốt tôm thịt",
+            "Cơm chiên tỏi trứng", "Cơm chiên Dương Châu", "Cơm chiên hải sản"
+          ],
+          "ace-creamery": [
+            "Coffee", "Chocolate", "Green Tea", "Thai Tea", "Ube", "Mango",
+            "Strawberry", "Cookie", "Vanilla", "Sesame", "Combo 18 ly", "Kem ly"
+          ]
+        };
+        var cardDishes = cards.map(function (c) {
+          var list = DISH_INDEX[c.getAttribute("data-shop")] || [];
+          return list.map(function (d) { return { name: d, folded: fold(d) }; });
+        });
+        var dishEls = cards.map(function (c) { return c.querySelector(".dish-match"); });
         function applyFilter() {
           var q = fold(input.value);
           var visible = 0;
           cards.forEach(function (card, i) {
-            var show = !q || cardText[i].indexOf(q) !== -1;
+            var textMatch = !q || cardText[i].indexOf(q) !== -1;
+            var hits = [];
+            if (q) {
+              cardDishes[i].forEach(function (d) {
+                if (d.folded.indexOf(q) !== -1 || q.indexOf(d.folded) !== -1) hits.push(d.name);
+              });
+            }
+            var show = textMatch || hits.length > 0;
             card.style.display = show ? "" : "none";
             if (show) visible++;
+            var el = dishEls[i];
+            if (el) {
+              if (show && hits.length) {
+                el.textContent = "🍽 Có món: " + hits.slice(0, 4).join(", ") + (hits.length > 4 ? ", …" : "");
+                el.hidden = false;
+              } else {
+                el.hidden = true;
+                el.textContent = "";
+              }
+            }
           });
           if (noResult) {
             if (q && visible === 0) {
