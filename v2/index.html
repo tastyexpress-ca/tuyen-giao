@@ -1129,6 +1129,77 @@
       .section-sub { display: block; margin-top: 2px; font-size: 15px; color: var(--muted); font-weight: 600; }
       .section-arrow { margin-left: auto; font-size: 24px; font-weight: 900; color: var(--accent); flex: 0 0 auto; }
 
+      /* ---------- Home: quick entries under the section cards ---------- */
+      .home-quick {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 0 14px 30px;
+        margin-top: -14px;
+      }
+      .quick-btn {
+        flex: 1 1 40%;
+        min-height: 52px;
+        border-radius: 12px;
+        font-size: 15.5px;
+        font-weight: 800;
+        background: var(--card);
+        color: var(--ink);
+        border: 1.5px solid var(--line);
+        box-shadow: var(--shadow);
+        cursor: pointer;
+        padding: 8px 10px;
+      }
+      .quick-btn:active { background: var(--accent-soft); }
+
+      /* ---------- Dish manager (Quản lý món) ---------- */
+      .dish-wrap { padding: 16px 14px 30px; display: flex; flex-direction: column; gap: 14px; }
+      .dish-add-btn {
+        width: 100%;
+        min-height: 54px;
+        border-radius: 12px;
+        font-size: 17px;
+        font-weight: 900;
+        background: var(--accent);
+        color: #fff;
+        border: 2px solid var(--accent);
+        cursor: pointer;
+      }
+      .dish-add-btn:active { transform: scale(0.99); }
+      #dishList { display: flex; flex-direction: column; gap: 14px; }
+      .dish-card { background: var(--card); border: 1.5px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); }
+      .dish-row { display: flex; gap: 12px; align-items: flex-start; }
+      .dish-thumb { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex: 0 0 auto; border: 1.5px solid var(--line); background: var(--accent-soft); }
+      .dish-thumb-ph { display: flex; align-items: center; justify-content: center; font-size: 30px; }
+      .dish-main { flex: 1; min-width: 0; }
+      .dish-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+      .dish-name { font-weight: 800; font-size: 17px; overflow-wrap: anywhere; }
+      .dish-price { font-weight: 800; color: var(--paid-ink); white-space: nowrap; }
+      .dish-desc { color: var(--muted); font-size: 14.5px; line-height: 1.45; margin-top: 2px; overflow-wrap: anywhere; }
+      .dish-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+      .avail { border-radius: 999px; padding: 8px 13px; font-size: 13.5px; font-weight: 800; cursor: pointer; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); }
+      .avail.on { background: var(--paid-bg); color: var(--paid-ink); border-color: var(--paid-line); }
+      .avail.off { background: var(--unknown-bg); color: var(--unknown-ink); border-color: var(--unknown-line); }
+      .avail:disabled { opacity: 0.55; }
+      .dish-act { border-radius: 999px; padding: 8px 15px; font-size: 13.5px; font-weight: 800; cursor: pointer; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); }
+      .dish-act:active { background: var(--accent-soft); }
+      .dish-del { color: var(--collect-ink); border-color: var(--collect-line); }
+      .dish-empty { color: var(--muted); font-weight: 600; font-size: 15.5px; padding: 8px 2px; }
+      .dish-preview { display: block; max-width: 180px; max-height: 180px; border-radius: 12px; border: 1.5px solid var(--line); margin: -4px 0 14px; object-fit: cover; }
+      .dish-hint { font-size: 13.5px; color: var(--muted); font-weight: 600; margin: -8px 0 14px; }
+      .dish-cancel-btn {
+        width: 100%;
+        min-height: 52px;
+        margin-top: 10px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 800;
+        background: var(--card);
+        color: var(--ink);
+        border: 1.5px solid var(--line);
+        cursor: pointer;
+      }
+
       /* ---------- Kitchen views ---------- */
       .day-badge.kitchen {
         background: var(--accent-soft);
@@ -1771,11 +1842,11 @@
             </span>
             <span class="section-arrow" aria-hidden="true">→</span>
           </button>
-          <button type="button" class="section-card" id="openEntryBtn">
-            <span class="section-icon" aria-hidden="true">✏️</span>
+          <button type="button" class="section-card" id="openDishesBtn">
+            <span class="section-icon" aria-hidden="true">🍽</span>
             <span>
-              <span class="section-title">＋ Nhập order</span>
-              <span class="section-sub">Tự nhập order mới cho nhà bếp</span>
+              <span class="section-title">Quản lý món</span>
+              <span class="section-sub">Tự đăng món bán trên trang của tiệm</span>
             </span>
             <span class="section-arrow" aria-hidden="true">→</span>
           </button>
@@ -1787,6 +1858,12 @@
             </span>
             <span class="section-arrow" aria-hidden="true">→</span>
           </button>
+        </div>
+        <div class="home-quick">
+          <button type="button" class="quick-btn" id="openEntryBtn">✏️ ＋ Nhập order</button>
+          <button type="button" class="quick-btn" id="openImportBtn">📷 Nhập từ hình</button>
+          <button type="button" class="quick-btn" id="homeTotalsBtn">💰 Thanh toán với tiệm</button>
+          <button type="button" class="quick-btn" id="homeChrisBtn">💵 Chris</button>
         </div>
       </div>
     </div>
@@ -2066,6 +2143,63 @@
       </div>
     </div>
 
+    <!-- ================= DISH MANAGER VIEW (Quản lý món) ================= -->
+    <div id="dishesView" hidden>
+      <header>
+        <div class="wrap">
+          <button type="button" class="back-btn" id="dishesBackBtn">← Trang chủ</button>
+          <div class="brand">Think's Kitchen <span class="route-name">· Quản lý món</span></div>
+          <div class="dayline">🍽 Quản lý món</div>
+          <div class="origin">Món tự đăng sẽ hiện trên trang bán của tiệm</div>
+        </div>
+      </header>
+      <div class="wrap">
+        <div class="dish-wrap">
+          <button type="button" class="dish-add-btn" id="addDishBtn">＋ Thêm món</button>
+          <div class="login-error" id="dishErr" hidden></div>
+          <div id="dishList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= DISH FORM VIEW (thêm / sửa món) ================= -->
+    <div id="dishFormView" hidden>
+      <header>
+        <div class="wrap">
+          <button type="button" class="back-btn" id="dishFormBackBtn">← Danh sách món</button>
+          <div class="brand">Think's Kitchen <span class="route-name">· Quản lý món</span></div>
+          <div class="dayline" id="dishFormDayline">＋ Thêm món</div>
+          <div class="origin">Món lưu xong sẽ hiện ngay trên trang bán của tiệm</div>
+        </div>
+      </header>
+      <div class="wrap">
+        <div class="login-wrap">
+          <form class="login-card" id="dishForm" novalidate>
+            <label class="login-label" for="dfName">Tên món *
+              <input type="text" id="dfName" class="login-input" autocomplete="off" placeholder="Ví dụ: Phở bò tái" />
+            </label>
+            <label class="login-label" for="dfPrice">Giá ($) *
+              <input type="number" id="dfPrice" class="login-input" inputmode="decimal" step="0.01" min="0" placeholder="Ví dụ: 12.50" />
+            </label>
+            <label class="login-label" for="dfDesc">Mô tả
+              <textarea id="dfDesc" class="login-input entry-area" rows="3" placeholder="Mô tả ngắn về món (không bắt buộc)"></textarea>
+            </label>
+            <label class="login-label" for="dfImage">Hình món
+              <input type="file" id="dfImage" class="login-input" accept="image/*" />
+            </label>
+            <img id="dfPreview" class="dish-preview" alt="Hình món" hidden />
+            <div class="dish-hint" id="dfImageHint" hidden>Món đã có hình — chọn hình mới nếu muốn thay.</div>
+            <label class="login-label" for="dfSort">Thứ tự hiển thị
+              <input type="number" id="dfSort" class="login-input" inputmode="numeric" step="1" min="0" />
+            </label>
+            <div class="login-error" id="dfErr" hidden></div>
+            <button type="submit" class="btn-login" id="dfSave">Lưu món</button>
+            <button type="button" class="dish-cancel-btn" id="dfCancel">Huỷ</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <div class="confirm-overlay" id="deleteConfirm" hidden>
       <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="deleteConfirmTitle" aria-describedby="deleteConfirmText">
         <div class="confirm-title" id="deleteConfirmTitle"></div>
@@ -2073,6 +2207,17 @@
         <div class="confirm-actions">
           <button type="button" class="confirm-cancel" id="deleteCancelBtn">Huỷ</button>
           <button type="button" class="confirm-delete" id="deleteOkBtn">🗑 Xoá ngày</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="confirm-overlay" id="dishDeleteConfirm" hidden>
+      <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="dishDeleteTitle">
+        <div class="confirm-title" id="dishDeleteTitle"></div>
+        <div class="confirm-text">Món này sẽ bị xoá khỏi trang bán của tiệm.</div>
+        <div class="confirm-actions">
+          <button type="button" class="confirm-cancel" id="dishDeleteCancelBtn">Huỷ</button>
+          <button type="button" class="confirm-delete" id="dishDeleteOkBtn">🗑 Xoá món</button>
         </div>
       </div>
     </div>
@@ -2157,6 +2302,8 @@
         var kitchenListView = document.getElementById("kitchenListView");
         var kitchenView = document.getElementById("kitchenView");
         var entryView = document.getElementById("entryView");
+        var dishesView = document.getElementById("dishesView");
+        var dishFormView = document.getElementById("dishFormView");
         var dayList = document.getElementById("dayList");
         var stopList = document.getElementById("stopList");
         var routeDayline = document.getElementById("routeDayline");
@@ -2181,7 +2328,7 @@
         var dynamicPageStyle = document.getElementById("dynamicPageStyle");
         var toastTimer = null;
 
-        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenTotalsView, chrisView, kitchenListView, kitchenView, entryView];
+        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenTotalsView, chrisView, kitchenListView, kitchenView, entryView, dishesView, dishFormView];
         var currentView = null;
         function showView(v) {
           currentView = v;
@@ -4668,6 +4815,335 @@
         document.getElementById("kvBackHomeBtn").addEventListener("click", function () {
           showView(homeView);
         });
+
+        /* ================================================================
+           HOME — quick entries under the big section cards.
+           📷 Nhập từ hình opens the same order-entry screen as
+           ✏️ ＋ Nhập order (the photo-import button sits at the top of
+           that form). 💰 Thanh toán với tiệm / 💵 Chris normally live
+           in the kitchen day header and work on the OPEN kitchen day;
+           from home they open the LATEST kitchen day (kitchenDays is
+           newest-first) straight into the settlement / Chris page —
+           the day view is rendered first, exactly as if the day had
+           been tapped and then the header button, so the settlement's
+           and Chris page's back buttons land on that day as usual.
+           All settlement math and the Chris password gate are the
+           existing openKitchenTotals() / openChrisPage(), untouched.
+           ================================================================ */
+        document.getElementById("openImportBtn").addEventListener("click", function () {
+          resetEntryForm();
+          showView(entryView);
+        });
+        function openLatestKitchenDayThen(fn) {
+          var kd = kitchenDays.length ? kitchenDays[0] : null;
+          if (!kd) {
+            renderKitchenList();
+            showView(kitchenListView);
+            showToast("Chưa có ngày bếp nào");
+            return;
+          }
+          openKitchenDay(kd);
+          fn();
+        }
+        document.getElementById("homeTotalsBtn").addEventListener("click", function () {
+          openLatestKitchenDayThen(openKitchenTotals);
+        });
+        document.getElementById("homeChrisBtn").addEventListener("click", function () {
+          openLatestKitchenDayThen(openChrisPage);
+        });
+
+        /* ================================================================
+           DISH MANAGER — 🍽 Quản lý món: Think's Kitchen's OWN back
+           office for its selling page. Dishes live in shop_products
+           under shop = "thinks-kitchen"; the ordering page reads the
+           same table, so a dish posted here appears on the shop's page
+           automatically. Images go to the public `dish-images` storage
+           bucket under thinks-kitchen/. Behaviour mirrors the partner
+           back office's dish manager exactly; data flows through this
+           app's apiFetch/dataGet/dataPost with the signed-in team
+           session (RLS grants the team full product + storage access).
+           ================================================================ */
+        var TK_SHOP_SLUG = "thinks-kitchen";
+        var tkProducts = [];
+        var dishFormOpen = false;
+        var editingDishId = null;
+        var dishPhotoFile = null;
+        var dishCurrentImage = "";
+        var pendingDishDelete = null;
+
+        var dishListBox = document.getElementById("dishList");
+        var dishErrBox = document.getElementById("dishErr");
+        var dishForm = document.getElementById("dishForm");
+        var dishFormDayline = document.getElementById("dishFormDayline");
+        var dfName = document.getElementById("dfName");
+        var dfPrice = document.getElementById("dfPrice");
+        var dfDesc = document.getElementById("dfDesc");
+        var dfImage = document.getElementById("dfImage");
+        var dfPreview = document.getElementById("dfPreview");
+        var dfImageHint = document.getElementById("dfImageHint");
+        var dfSort = document.getElementById("dfSort");
+        var dfErr = document.getElementById("dfErr");
+        var dfSave = document.getElementById("dfSave");
+        var dishDeleteConfirm = document.getElementById("dishDeleteConfirm");
+        var dishDeleteTitle = document.getElementById("dishDeleteTitle");
+
+        function dishMoney(n) {
+          return "$" + (Math.round((Number(n) || 0) * 100) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function dishTruncate(s, n) { return s.length > n ? s.slice(0, n) + "…" : s; }
+        function dishSlugify(s) {
+          return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+        }
+        function dishErr(msg) {
+          if (msg) {
+            dishErrBox.textContent = msg;
+            dishErrBox.hidden = false;
+          } else {
+            dishErrBox.hidden = true;
+          }
+        }
+        function dishPatch(id, payload) {
+          return apiFetch("/rest/v1/shop_products?id=eq." + encodeURIComponent(id), {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify(payload)
+          }).then(function (r) {
+            if (!r.ok) throw new Error("http-" + r.status);
+          });
+        }
+        function loadTkProducts(silent) {
+          if (dishFormOpen) return; // never disturb an open add/edit form
+          dataGet("/rest/v1/shop_products?shop=eq." + TK_SHOP_SLUG + "&order=sort.asc,created_at.asc&select=*").then(function (rows) {
+            tkProducts = rows || [];
+            dishErr(null);
+            renderDishList();
+          }, function () {
+            if (!silent) dishErr("Tải danh sách món chưa được — kiểm tra mạng rồi thử lại nhé.");
+            renderDishList();
+          });
+        }
+        function dishCard(p) {
+          var card = el("div", "dish-card");
+          var row = el("div", "dish-row");
+          if (p.image_url) {
+            var img = el("img", "dish-thumb");
+            img.src = p.image_url;
+            img.alt = p.name || "Món";
+            img.loading = "lazy";
+            row.appendChild(img);
+          } else {
+            row.appendChild(el("div", "dish-thumb dish-thumb-ph", "🍽"));
+          }
+          var main = el("div", "dish-main");
+          var top = el("div", "dish-top");
+          top.appendChild(el("span", "dish-name", p.name || "Món"));
+          top.appendChild(el("span", "dish-price", dishMoney(p.price)));
+          main.appendChild(top);
+          if (p.description) main.appendChild(el("div", "dish-desc", dishTruncate(String(p.description), 90)));
+          var acts = el("div", "dish-actions");
+          var isOn = p.available !== false;
+          var tog = el("button", "avail " + (isOn ? "on" : "off"), isOn ? "✅ Đang bán" : "⏸ Tạm ẩn");
+          tog.type = "button";
+          tog.setAttribute("aria-pressed", isOn ? "true" : "false");
+          tog.addEventListener("click", function () { toggleDishAvailable(p, tog); });
+          acts.appendChild(tog);
+          var ed = el("button", "dish-act", "Sửa");
+          ed.type = "button";
+          ed.addEventListener("click", function () { openDishForm(p); });
+          acts.appendChild(ed);
+          var del = el("button", "dish-act dish-del", "Xoá");
+          del.type = "button";
+          del.addEventListener("click", function () { askDeleteDish(p); });
+          acts.appendChild(del);
+          main.appendChild(acts);
+          row.appendChild(main);
+          card.appendChild(row);
+          return card;
+        }
+        function renderDishList() {
+          dishListBox.innerHTML = "";
+          if (!tkProducts.length) {
+            dishListBox.appendChild(el("div", "dish-empty", "Chưa có món nào — bấm ＋ Thêm món để đăng món đầu tiên."));
+            return;
+          }
+          tkProducts.forEach(function (p) { dishListBox.appendChild(dishCard(p)); });
+        }
+        function toggleDishAvailable(p, btn) {
+          var next = !(p.available !== false);
+          btn.disabled = true;
+          dishPatch(p.id, { available: next }).then(function () {
+            p.available = next;
+            dishErr(null);
+            renderDishList();
+            showToast(next ? "✅ Đang bán: " + (p.name || "Món") : "⏸ Đã tạm ẩn: " + (p.name || "Món"));
+          }, function () {
+            btn.disabled = false;
+            dishErr("Đổi trạng thái món chưa được — kiểm tra mạng rồi thử lại nhé.");
+          });
+        }
+        /* ---------- add / edit form ---------- */
+        function nextDishSort() {
+          var m = 0;
+          tkProducts.forEach(function (p) { var s = Number(p.sort) || 0; if (s > m) m = s; });
+          return m + 1;
+        }
+        function safeFileName(name) {
+          var base = dishSlugify(String(name || "dish").replace(/\.[^.]*$/, "")) || "dish";
+          var m = String(name || "").match(/\.([a-zA-Z0-9]+)$/);
+          return base + (m ? "." + m[1].toLowerCase() : ".jpg");
+        }
+        function uploadDishImage(file) {
+          var fname = Date.now() + "-" + safeFileName(file.name || "dish.jpg");
+          var path = TK_SHOP_SLUG + "/" + fname;
+          return apiFetch("/storage/v1/object/dish-images/" + TK_SHOP_SLUG + "/" + encodeURIComponent(fname), {
+            method: "POST",
+            headers: { "x-upsert": "true", "Content-Type": file.type || "application/octet-stream" },
+            body: file
+          }).then(function (r) {
+            if (!r.ok) throw new Error("upload-" + r.status);
+            return SUPABASE_URL + "/storage/v1/object/public/dish-images/" + path;
+          });
+        }
+        function updateDishPreview() {
+          if (dishPhotoFile) {
+            try { dfPreview.src = URL.createObjectURL(dishPhotoFile); } catch (e) { /* ignore */ }
+            dfPreview.hidden = false;
+          } else if (dishCurrentImage) {
+            dfPreview.src = dishCurrentImage;
+            dfPreview.hidden = false;
+          } else {
+            dfPreview.removeAttribute("src");
+            dfPreview.hidden = true;
+          }
+          dfImageHint.hidden = !(!dishPhotoFile && dishCurrentImage);
+        }
+        function openDishForm(p) {
+          dishFormOpen = true;
+          editingDishId = p ? p.id : null;
+          dishPhotoFile = null;
+          dishCurrentImage = p ? (p.image_url || "") : "";
+          dishFormDayline.textContent = p ? "✏️ Sửa món" : "＋ Thêm món";
+          dfName.value = p ? (p.name || "") : "";
+          dfPrice.value = p && p.price != null ? p.price : "";
+          dfDesc.value = p ? (p.description || "") : "";
+          dfSort.value = p ? (p.sort != null ? p.sort : "") : nextDishSort();
+          dfImage.value = "";
+          dfErr.hidden = true;
+          updateDishPreview();
+          showView(dishFormView);
+        }
+        function closeDishForm() {
+          dishFormOpen = false;
+          editingDishId = null;
+          dishPhotoFile = null;
+          dishCurrentImage = "";
+        }
+        function saveDish() {
+          function fail(msg) {
+            dfErr.textContent = msg;
+            dfErr.hidden = false;
+          }
+          var name = dfName.value.replace(/^\s+|\s+$/g, "");
+          var priceRaw = dfPrice.value;
+          var price = parseFloat(priceRaw);
+          if (!name) { fail("Chưa nhập tên món."); return; }
+          if (priceRaw === "" || isNaN(price) || price < 0) { fail("Giá món chưa đúng — nhập số tiền, ví dụ 12.50."); return; }
+          var desc = dfDesc.value.replace(/^\s+|\s+$/g, "");
+          var sortVal = parseInt(dfSort.value, 10);
+          if (isNaN(sortVal)) sortVal = editingDishId ? 0 : nextDishSort();
+          var oldTxt = dfSave.textContent;
+          dfSave.disabled = true;
+          dfSave.textContent = "Đang lưu…";
+          dfErr.hidden = true;
+          var imgPromise = dishPhotoFile ? uploadDishImage(dishPhotoFile) : Promise.resolve(dishCurrentImage || null);
+          imgPromise.then(function (imgUrl) {
+            var payload = { name: name, price: price, description: desc || null, image_url: imgUrl, sort: sortVal };
+            if (editingDishId) {
+              return dishPatch(editingDishId, payload);
+            }
+            payload.shop = TK_SHOP_SLUG;
+            payload.available = true;
+            return dataPost("/rest/v1/shop_products", payload);
+          }).then(function () {
+            dfSave.disabled = false;
+            dfSave.textContent = oldTxt;
+            closeDishForm();
+            showView(dishesView);
+            loadTkProducts();
+            showToast("✅ Đã lưu món");
+          }, function () {
+            dfSave.disabled = false;
+            dfSave.textContent = oldTxt;
+            fail("Lưu món chưa được — kiểm tra mạng rồi thử lại nhé.");
+          });
+        }
+        /* ---------- delete dish (confirm dialog, same pattern as
+           delete-day: the sandboxed frame blocks native confirm) ---------- */
+        function askDeleteDish(p) {
+          pendingDishDelete = p;
+          dishDeleteTitle.textContent = "Xoá món “" + (p.name || "Món") + "”?";
+          dishDeleteConfirm.hidden = false;
+        }
+        function closeDishDelete() {
+          pendingDishDelete = null;
+          dishDeleteConfirm.hidden = true;
+        }
+        function confirmDeleteDish() {
+          if (!pendingDishDelete) { closeDishDelete(); return; }
+          var p = pendingDishDelete;
+          var btn = document.getElementById("dishDeleteOkBtn");
+          btn.disabled = true;
+          apiFetch("/rest/v1/shop_products?id=eq." + encodeURIComponent(p.id), {
+            method: "DELETE",
+            headers: { "Prefer": "return=minimal" }
+          }).then(function (r) {
+            if (!r.ok) throw new Error("http-" + r.status);
+            btn.disabled = false;
+            closeDishDelete();
+            loadTkProducts();
+            showToast("🗑 Đã xoá món");
+          }, function () {
+            btn.disabled = false;
+            closeDishDelete();
+            dishErr("Xoá món chưa được — kiểm tra mạng rồi thử lại nhé.");
+          });
+        }
+
+        document.getElementById("openDishesBtn").addEventListener("click", function () {
+          dishErr(null);
+          showView(dishesView);
+          loadTkProducts();
+        });
+        document.getElementById("dishesBackBtn").addEventListener("click", function () {
+          showView(homeView);
+        });
+        document.getElementById("addDishBtn").addEventListener("click", function () {
+          openDishForm(null);
+        });
+        document.getElementById("dishFormBackBtn").addEventListener("click", function () {
+          closeDishForm();
+          showView(dishesView);
+        });
+        document.getElementById("dfCancel").addEventListener("click", function () {
+          closeDishForm();
+          showView(dishesView);
+        });
+        dfImage.addEventListener("change", function () {
+          dishPhotoFile = (this.files && this.files[0]) || null;
+          updateDishPreview();
+        });
+        dishForm.addEventListener("submit", function (ev) {
+          ev.preventDefault();
+          saveDish();
+        });
+        document.getElementById("dishDeleteCancelBtn").addEventListener("click", closeDishDelete);
+        dishDeleteConfirm.addEventListener("click", function (ev) {
+          if (ev.target === dishDeleteConfirm) closeDishDelete();
+        });
+        document.getElementById("dishDeleteOkBtn").addEventListener("click", confirmDeleteDish);
         /* ---------- 🍳 Tổng món cần nấu: day-wide dish tally so the
            kitchen cooks enough. Cơm phần lines split into Mặn / Xào /
            Canh component counts; every other dish line tallies as-is.
@@ -4778,6 +5254,12 @@
           kitchenOrdersByDay = {};
           webOrdersByDay = {};
           stateMap = {};
+          tkProducts = [];
+          dishFormOpen = false;
+          editingDishId = null;
+          dishPhotoFile = null;
+          dishCurrentImage = "";
+          closeDishDelete();
           showLogin();
         });
         document.getElementById("retryBtn").addEventListener("click", function () {
@@ -5163,6 +5645,12 @@
                wipe a password the user is halfway through typing. */
             if (chrisUnlocked) renderChrisPage();
             else chrisDayline.textContent = kitchenDayLabel(currentKitchenDay);
+          } else if (currentView === dishesView) {
+            /* Quản lý món: keep the dish list fresh on the same 30s /
+               realtime cadence. loadTkProducts itself refuses to run
+               while the add/edit form is open, and dishFormView matches
+               no branch here, so a form in progress is never disturbed. */
+            loadTkProducts(true);
           }
           if (y) window.scrollTo(0, y);
         }
