@@ -769,6 +769,7 @@
       var TAX_RATE = 0.0875;
       var SUPABASE_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/web_orders";
       var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+      var PRODUCTS_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/shop_products";
       var CHECKOUT_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/functions/v1/create-checkout";
       var CHECKOUT_SUCCESS_URL = "https://tastyexpress-ca.github.io/tuyen-giao/dat-com/?paid=1";
       var CHECKOUT_CANCEL_URL = "https://tastyexpress-ca.github.io/tuyen-giao/dat-com/?paid=0";
@@ -847,6 +848,7 @@
       var dayIdx = defaultDayIndex();
       var method = "pickup";
       var cpSel = { man: null, xao: null, canh: null, rice: "Lấy cơm", qty: 1 };
+      var EXTRA_PRODUCTS = []; // món tiệm tự đăng (shop_products · shop='thinks-kitchen'), đã lọc trùng menu có sẵn
 
       /* Phí giao hàng — $1/dặm lái xe thật từ tiệm, làm tròn lên (giống web Wix) */
       var SHOP_COORDS = { lat: 33.7513, lon: -117.9930 }; // 14131 Roxanne Dr, Westminster, CA 92683
@@ -1108,6 +1110,7 @@
             '<div class="dish-list">';
           day.trays.forEach(function (t) { html += dishRow(day, t, "Tray", "1 tray · 4–5 người"); });
           html += '</div></section>';
+          html += extrasSectionHTML(day);
           $("menuMain").innerHTML = html;
           bindSteppers(day);
           applyDayLock(day);
@@ -1153,6 +1156,7 @@
           });
         });
         html += '</div></section>';
+        html += extrasSectionHTML(day);
 
         $("menuMain").innerHTML = html;
         bindSteppers(day);
@@ -1186,10 +1190,85 @@
       function priceFor(day, name, detail) {
         var i, pool = day.tray ? day.trays : STANDING.concat(day.specials || []);
         for (i = 0; i < pool.length; i++) if (pool[i].name === name) return pool[i].price;
+        for (i = 0; i < EXTRA_PRODUCTS.length; i++) if (EXTRA_PRODUCTS[i].name === name) return EXTRA_PRODUCTS[i].price;
         if (detail === "Phần nhỏ") return 5;
         if (detail === "Phần lớn") return 10;
         if (name === "Cơm phần") return 10;
         return null;
+      }
+
+      /* ================= MÓN THÊM CỦA TIỆM (tự đăng qua shop_products) ================= */
+      /* Bỏ dấu tiếng Việt để so trùng tên món: thường hoá, tách dấu (NFD), đ→d. */
+      function foldName(s) {
+        return String(s == null ? "" : s).toLowerCase().normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "d").trim();
+      }
+
+      var BUILTIN_NAMES = null;
+      function builtinNameSet() {
+        if (BUILTIN_NAMES) return BUILTIN_NAMES;
+        var set = {};
+        function add(n) { if (n) set[foldName(n)] = true; }
+        add("Cơm phần");
+        STANDING.forEach(function (it) { add(it.name); });
+        DAYS.forEach(function (d) {
+          (d.man || []).forEach(add);
+          (d.xao || []).forEach(add);
+          (d.canh || []).forEach(add);
+          (d.specials || []).forEach(function (it) { add(it.name); });
+          (d.trays || []).forEach(function (it) { add(it.name); });
+        });
+        BUILTIN_NAMES = set;
+        return set;
+      }
+
+      /* Lọc bỏ món tự đăng trùng với bất kỳ món nào đã có sẵn trên trang. */
+      function filterExtraProducts(rows) {
+        var builtins = builtinNameSet();
+        var seen = {}, out = [];
+        (rows || []).forEach(function (p) {
+          if (!p || !p.name) return;
+          var price = Number(p.price);
+          if (!isFinite(price)) return;
+          var f = foldName(p.name);
+          if (!f || builtins[f] || seen[f]) return;
+          seen[f] = true;
+          out.push({ name: p.name, price: price, description: p.description || "", image_url: p.image_url || "" });
+        });
+        return out;
+      }
+
+      function extraDishRow(day, p) {
+        var detail = p.description || "";
+        var key = keyOf(day.date, p.name, detail);
+        var img = p.image_url
+          ? '<img class="d-img" src="' + esc(p.image_url) + '" alt="' + esc(p.name) + '" loading="lazy" />'
+          : dishImg(p.name, "d-img");
+        return '<div class="dish">' + img + '<div class="d-info"><div class="d-name">' + esc(p.name) +
+          '</div>' + (detail ? '<div class="d-detail">' + esc(detail) + '</div>' : "") +
+          '</div><span class="d-price">' + money(p.price) + '</span>' +
+          stepperHTML(key) + '</div>';
+      }
+
+      function extrasSectionHTML(day) {
+        if (!EXTRA_PRODUCTS.length) return "";
+        var html = '<section class="menu-section"><div class="sec-head"><h2>🍽 Món thêm của tiệm</h2><div class="rule"></div></div><div class="dish-list">';
+        EXTRA_PRODUCTS.forEach(function (p) { html += extraDishRow(day, p); });
+        html += '</div></section>';
+        return html;
+      }
+
+      /* Nạp món tiệm tự đăng; lỗi mạng/không có món thì trang chạy y như cũ. */
+      function loadExtraProducts() {
+        var url = PRODUCTS_URL + "?shop=eq.thinks-kitchen&available=eq.true&order=sort.asc,created_at.asc" +
+          "&select=id,shop,name,price,description,image_url,available,sort,created_at";
+        fetch(url, { headers: { "apikey": SUPABASE_ANON, "Authorization": "Bearer " + SUPABASE_ANON } })
+          .then(function (r) { if (!r.ok) throw new Error("shop_products failed"); return r.json(); })
+          .then(function (rows) {
+            EXTRA_PRODUCTS = filterExtraProducts(rows || []);
+            if (EXTRA_PRODUCTS.length) renderMenu();
+          })
+          .catch(function () { /* bỏ qua — không có mục món thêm */ });
       }
 
       /* ================= CƠM PHẦN PICKER ================= */
@@ -2183,6 +2262,7 @@
       renderDayChips();
       renderMenu();
       refreshCartUI();
+      loadExtraProducts();
       handlePaidReturn();
     </script>
       <div id="installBar" style="display:none;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:999;background:#54301a;color:#fdf3e0;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.28);align-items:center;gap:10px;font-size:14px;line-height:1.45">
