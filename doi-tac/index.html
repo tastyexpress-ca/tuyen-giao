@@ -122,7 +122,8 @@
       .day-delete:active{ background:var(--collect-bg); }
       .hint-line{ background:var(--accent-soft); border:1.5px solid var(--line); border-radius:12px; padding:10px 13px; font-size:15px; font-weight:600; color:var(--ink); }
       /* driver day detail: trip-total button + overlay */
-      .trip-btn-wrap{ padding-top:16px; }
+      .trip-btn-wrap{ padding-top:16px; display:flex; gap:8px; }
+      .trip-btn-wrap .btn-print-all{ flex:1; }
       .trip-collect{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:12px 2px 2px; margin-top:8px; border-top:2px solid var(--ink); font-size:1.1rem; font-weight:800; }
       .trip-collect .q{ color:var(--green-deep); white-space:nowrap; }
       /* delete-day confirm dialog (staff-app copy) */
@@ -356,7 +357,7 @@
         <div id="scrDriver" style="display:none">
           <div class="day-list" id="driverDayList"></div>
           <div id="driverDayDetail" style="display:none">
-            <div class="trip-btn-wrap"><button type="button" class="btn-print-all" id="tripBtn">💰 Tổng tiền</button></div>
+            <div class="trip-btn-wrap"><button type="button" class="btn-print-all" id="tripBtn">💰 Tổng tiền</button><button type="button" class="btn-print-all" id="routeBtn">🚗 Tổng chuyến đi</button></div>
             <div id="driverStops" style="padding-top:14px"></div>
           </div>
         </div>
@@ -401,6 +402,15 @@
           <div class="cook-title" id="tripTitle">🚗 Tổng tiền</div>
           <div id="tripBody"></div>
           <button type="button" class="cook-close" id="tripCloseBtn">Đóng</button>
+        </div>
+      </div>
+
+      <!-- ROUTE TOTAL OVERLAY (distance + time, shop → all stops) -->
+      <div class="cook-overlay" id="routeOverlay" hidden>
+        <div class="cook-box" role="dialog" aria-modal="true" aria-labelledby="routeTitle">
+          <div class="cook-title" id="routeTitle">🚗 Tổng chuyến đi</div>
+          <div id="routeBody"></div>
+          <button type="button" class="cook-close" id="routeCloseBtn">Đóng</button>
         </div>
       </div>
 
@@ -750,6 +760,9 @@
         $("tripBtn").addEventListener("click", openTrip);
         $("tripCloseBtn").addEventListener("click", function () { $("tripOverlay").hidden = true; });
         $("tripOverlay").addEventListener("click", function (ev) { if (ev.target === $("tripOverlay")) $("tripOverlay").hidden = true; });
+        $("routeBtn").addEventListener("click", openRoute);
+        $("routeCloseBtn").addEventListener("click", function () { $("routeOverlay").hidden = true; });
+        $("routeOverlay").addEventListener("click", function (ev) { if (ev.target === $("routeOverlay")) $("routeOverlay").hidden = true; });
         $("printAllBtn").addEventListener("click", printAllKitchenOrders);
         $("kitchenSearch").addEventListener("input", applyKitchenFilter);
         $("deleteCancelBtn").addEventListener("click", closeDeleteConfirm);
@@ -949,6 +962,75 @@
           renderTrip();
           $("tripOverlay").hidden = false;
         }
+        /* ------- Route total: distance + time, from the shop's address
+           through the day's delivery stops in display order (one-way). ------- */
+        var geoCache = new Map();
+        function geocodeCached(address) {
+          var key = String(address || "").trim().toLowerCase();
+          if (!key) return Promise.reject(new Error("empty address"));
+          if (geoCache.has(key)) return geoCache.get(key);
+          var p = fetch("https://photon.komoot.io/api/?q=" + encodeURIComponent(address) + "&limit=1")
+            .then(function (r) { if (!r.ok) throw new Error("photon failed"); return r.json(); })
+            .then(function (d) {
+              if (!d || !d.features || !d.features.length) throw new Error("photon empty");
+              var c = d.features[0].geometry.coordinates;
+              var pt = { lon: parseFloat(c[0]), lat: parseFloat(c[1]) };
+              if (!isFinite(pt.lon) || !isFinite(pt.lat)) throw new Error("bad coords");
+              return pt;
+            });
+          geoCache.set(key, p);
+          // Failed lookups are not cached, so the next open can retry.
+          p.catch(function () { if (geoCache.get(key) === p) geoCache.delete(key); });
+          return p;
+        }
+        function routeTripTotals(meters, seconds, stopCount) {
+          var driveMins = Math.round(seconds / 60);
+          var stopMins = 5 * stopCount;
+          return { miles: meters / 1609.34, driveMins: driveMins, stopMins: stopMins, totalMins: driveMins + stopMins };
+        }
+        function fmtMins(mins) {
+          if (mins < 60) return mins + " phút";
+          var h = Math.floor(mins / 60), m = mins % 60;
+          return m ? h + " giờ " + m + " phút" : h + " giờ";
+        }
+        function openRoute() {
+          if (!driverDay) return;
+          var forDay = driverDay;
+          var dayStops = orders.filter(function (o) { return o.method === "delivery" && (o.day || "") === forDay; });
+          $("routeTitle").textContent = "🚗 Tổng chuyến đi — " + dayLabel(forDay, dayStops);
+          var body = $("routeBody");
+          $("routeOverlay").hidden = false;
+          if (!dayStops.length) {
+            body.innerHTML = '<div class="cook-line"><span>Ngày này chưa có điểm giao.</span></div>';
+            return;
+          }
+          var stopLine = '<div class="cook-line"><span>Số điểm giao</span><span class="q">' + dayStops.length + "</span></div>";
+          body.innerHTML = stopLine + '<div class="cook-line"><span>Đang tính tuyến đường…</span></div>';
+          var originAddr = (shop && shop.address) || "";
+          var addrs = [originAddr].concat(dayStops.map(function (o) { return o.address || ""; }));
+          var stillCurrent = function () { return !$("routeOverlay").hidden && driverDay === forDay; };
+          Promise.all(addrs.map(geocodeCached))
+            .then(function (pts) {
+              var coordStr = pts.map(function (p) { return p.lon + "," + p.lat; }).join(";");
+              return fetch("https://router.project-osrm.org/route/v1/driving/" + coordStr + "?overview=false");
+            })
+            .then(function (r) { if (!r.ok) throw new Error("osrm failed"); return r.json(); })
+            .then(function (data) {
+              if (!data || !data.routes || !data.routes.length) throw new Error("no route");
+              if (!stillCurrent()) return;
+              var t = routeTripTotals(data.routes[0].distance, data.routes[0].duration, dayStops.length);
+              var html = stopLine;
+              html += '<div class="cook-line"><span>Tổng quãng đường</span><span class="q">' + t.miles.toFixed(1) + " mi</span></div>";
+              html += '<div class="cook-line"><span>Thời gian lái xe</span><span class="q">~' + t.driveMins + " phút</span></div>";
+              html += '<div class="cook-line"><span>Dừng giao hàng</span><span class="q">5 phút × ' + dayStops.length + " điểm = " + t.stopMins + " phút</span></div>";
+              html += '<div class="trip-collect"><span>Tổng thời gian chuyến</span><span class="q">~' + fmtMins(t.totalMins) + "</span></div>";
+              body.innerHTML = html;
+            })
+            .catch(function () {
+              if (!stillCurrent()) return;
+              body.innerHTML = stopLine + '<div class="cook-line"><span>Chưa tính được quãng đường (địa chỉ chưa tra được) — thử lại sau.</span></div>';
+            });
+        }
         function renderDriver() {
           var listBox = $("driverDayList"), detailBox = $("driverDayDetail");
           if (!listBox || !detailBox) return;
@@ -999,6 +1081,8 @@
           listBox.style.display = "none";
           detailBox.style.display = "block";
           var dayStops = dd.byDay[driverDay];
+          var routeBtnEl = $("routeBtn");
+          if (routeBtnEl) routeBtnEl.style.display = dayStops.length ? "" : "none";
           if (screen === "driverDay") {
             $("screenTitle").textContent = dayLabel(driverDay, dayStops);
             var sub = $("screenSub");
