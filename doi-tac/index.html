@@ -69,6 +69,7 @@
       .items li:first-child{ border-top:0; }
       .items .dtl{ color:var(--muted); font-size:.86rem; }
       .amt{ font-weight:800; white-space:nowrap; font-size:1.02rem; }
+      .order-total{ margin-top:10px; font-size:17px; font-weight:700; color:var(--ink); }
       /* login */
       .login-box{ max-width:420px; margin:6vh auto 0; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:24px 20px; box-shadow:var(--shadow); }
       .login-box .logo{ display:flex; align-items:center; gap:11px; margin-bottom:8px; }
@@ -762,7 +763,7 @@
             ? '<button class="btn btn-no" data-status="in_kitchen" data-id="' + o.id + '" type="button">↩ Hoàn tác</button>'
             : '<button class="btn btn-ok" data-status="done" data-id="' + o.id + '" type="button">✓ ĐÃ GIAO</button>';
           acts += "</div>";
-          return '<div class="card' + (isDone ? " done" : "") + '"><h3>' + esc(o.customer_name || "Khách") + '</h3><div class="meta">' + lines.join("<br />") + "</div>" + orderItems(o) + acts + "</div>";
+          return '<div class="card' + (isDone ? " done" : "") + '"><h3>' + esc(o.customer_name || "Khách") + '</h3><div class="meta">' + lines.join("<br />") + "</div>" + orderItems(o) + '<div class="order-total">Tổng: ' + money(o.total) + "</div>" + acts + "</div>";
         }
         // Trip total for the whole day route (delivered stops still count —
         // the box describes the entire trip, not what is left to deliver).
@@ -935,6 +936,7 @@
             }).join("") + "</div>";
           }
           if (o.note) html += '<div class="note-line">' + esc(o.note) + "</div>";
+          html += '<div class="order-total">Tổng: ' + money(o.total) + "</div>";
           html += '<div class="k-actions">' +
             '<button type="button" class="btn-received' + (isRecv ? " on" : "") + '" data-toggle="recv" data-id="' + o.id + '" aria-pressed="' + (isRecv ? "true" : "false") + '">' + (isRecv ? "✅ BẾP ĐÃ NHẬN" : "☐ BẾP ĐÃ NHẬN") + "</button>" +
             '<button type="button" class="btn-done" data-toggle="done" data-id="' + o.id + '" aria-pressed="' + (isDone ? "true" : "false") + '">' + (isDone ? "✅ XONG" : "☐ XONG") + "</button>" +
