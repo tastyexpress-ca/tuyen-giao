@@ -28,25 +28,16 @@
         --red:#b3352b; --red-deep:#8f2a22; --green:#1d6b3a; --green-deep:#155830;
         --line:#e4d9c4; --chip:#f5e7cd; --chip-line:#d9a441; --shadow:0 10px 26px rgba(64,48,20,.14);
         --brown:#54301a;
+        --header-bg:#3a2110; --header-ink:#fff7ec; --header-muted:#e8c9a8; --header-chip:rgba(255,247,236,.14);
+        --accent:#c2410c;
+        --web-line:#b9d4f2;
       }
       @media (prefers-color-scheme: dark){
-        :root{ --bg:#16140f; --card:#201d16; --ink:#f0e9da; --muted:#b8ae99; --red:#c94f42; --red-deep:#b3352b; --green:#5cb87e; --green-deep:#7ccb97; --line:#38322a; --chip:#2c2517; --chip-line:#a07d2e; --shadow:0 10px 26px rgba(0,0,0,.5); --brown:#d9b98c; }
+        :root{ --bg:#16140f; --card:#201d16; --ink:#f0e9da; --muted:#b8ae99; --red:#c94f42; --red-deep:#b3352b; --green:#5cb87e; --green-deep:#7ccb97; --line:#38322a; --chip:#2c2517; --chip-line:#a07d2e; --shadow:0 10px 26px rgba(0,0,0,.5); --brown:#d9b98c; --header-bg:#120b06; --header-muted:#c8a586; --accent:#fb923c; --web-line:#26507c; }
       }
       *{box-sizing:border-box}
       body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif; min-height:100svh; -webkit-font-smoothing:antialiased; }
       .wrap{max-width:860px;margin:0 auto;padding:20px 18px 48px}
-      header.site{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; padding:6px 0 18px; flex-wrap:wrap; }
-      .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
-      .brand img{ width:46px; height:46px; border-radius:12px; object-fit:contain; background:#fff; border:1px solid var(--line); }
-      .brand .name{ font-family:"Playfair Display","Be Vietnam Pro",serif; font-weight:800; font-size:1.3rem; line-height:1.2; }
-      .brand .sub{ color:var(--muted); font-size:.88rem; margin-top:2px; line-height:1.45; }
-      .logout{ background:none; border:1.5px solid var(--line); color:var(--ink); border-radius:999px; padding:9px 16px; font:inherit; font-weight:600; cursor:pointer; flex:none; }
-      h2.sec{ font-size:1.12rem; margin:26px 0 10px; }
-      .stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
-      .stat{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 15px; box-shadow:var(--shadow); }
-      .stat .num{ font-size:1.45rem; font-weight:800; margin-top:2px; }
-      .stat .lbl{ color:var(--muted); font-size:.85rem; font-weight:600; }
-      .stat .sub{ color:var(--muted); font-size:.8rem; margin-top:2px; }
       .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:15px 16px; box-shadow:var(--shadow); margin-bottom:12px; }
       .card h3{ margin:0 0 4px; font-size:1.05rem; }
       .meta{ color:var(--muted); font-size:.9rem; line-height:1.55; }
@@ -56,7 +47,7 @@
       .pill.no{ border-color:var(--red); color:var(--red-deep); background:none; }
       .pills{ display:flex; gap:6px; flex-wrap:wrap; }
       .actions{ display:flex; gap:9px; margin-top:11px; flex-wrap:wrap; }
-      .btn{ padding:10px 18px; border-radius:999px; border:0; font:inherit; font-weight:700; cursor:pointer; }
+      .btn{ display:inline-block; padding:10px 18px; border-radius:999px; border:0; font:inherit; font-weight:700; cursor:pointer; text-decoration:none; }
       .btn-ok{ background:var(--green); color:#fff; }
       .btn-no{ background:none; border:1.5px solid var(--line); color:var(--ink); }
       .btn:disabled{ opacity:.55; }
@@ -76,28 +67,54 @@
       .tabs button{ flex:1; padding:10px; border-radius:999px; border:1.5px solid var(--line); background:none; color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
       .tabs button.active{ background:var(--brown); border-color:var(--brown); color:#fdf3e0; }
       label{ display:block; font-weight:600; font-size:.92rem; margin:12px 0 6px; }
-      input{ width:100%; padding:12px 13px; border:1.5px solid var(--line); border-radius:11px; font:inherit; font-size:1rem; background:var(--bg); color:var(--ink); }
+      input, textarea{ width:100%; padding:12px 13px; border:1.5px solid var(--line); border-radius:11px; font:inherit; font-size:1rem; background:var(--bg); color:var(--ink); }
+      textarea{ resize:vertical; line-height:1.5; }
       .submit{ width:100%; margin-top:18px; padding:14px; border:0; border-radius:999px; background:var(--red); color:#fff; font:inherit; font-weight:700; font-size:1.02rem; cursor:pointer; }
       .submit:disabled{ opacity:.55; }
       .err{ display:none; margin-top:12px; background:#fdeceb; border:1px solid #e5a19b; color:#8f2a22; border-radius:11px; padding:10px 12px; font-size:.9rem; }
       .oknote{ display:none; margin-top:12px; background:#e9f5ec; border:1px solid #9fd0ab; color:#155830; border-radius:11px; padding:10px 12px; font-size:.9rem; }
       .loading{ text-align:center; color:var(--muted); padding:30px 0; }
-      /* home menu cards + screen nav */
-      .menucards{ display:flex; flex-direction:column; gap:14px; margin:20px 0 0; }
-      .menucard{ display:flex; align-items:center; gap:16px; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:24px; padding:20px 18px; box-shadow:var(--shadow); font:inherit; color:var(--ink); cursor:pointer; }
-      .menucard .mc-icon{ font-size:44px; line-height:1; flex:none; }
-      .menucard .mc-text{ display:flex; flex-direction:column; gap:3px; min-width:0; }
-      .menucard .mc-title{ font-weight:800; font-size:1.28rem; color:var(--brown); line-height:1.2; }
-      .menucard .mc-desc{ color:var(--muted); font-size:.92rem; line-height:1.4; }
-      .menucard .mc-arrow{ margin-left:auto; flex:none; color:#e8710a; font-size:1.7rem; font-weight:800; line-height:1; }
-      .backpill{ display:inline-block; margin:18px 0 2px; padding:9px 16px; border-radius:999px; border:1.5px solid var(--line); background:var(--card); color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
-      .sharebtn{ width:100%; margin-top:14px; padding:13px; border-radius:999px; border:1.5px solid var(--line); background:var(--card); color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
+      /* app header (staff-app pattern: sticky dark-brown bar) */
+      header.app{ position:sticky; top:0; z-index:20; background:var(--header-bg); color:var(--header-ink); margin:-20px -18px 0; padding:12px 18px 14px; box-shadow:0 2px 12px rgba(0,0,0,.25); }
+      .brand-line{ font-size:.78rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; line-height:1.3; }
+      .head-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+      .logout-btn{ background:var(--header-chip); color:var(--header-ink); border:1px solid rgba(255,247,236,.3); border-radius:999px; padding:5px 13px; font:inherit; font-size:.82rem; font-weight:800; cursor:pointer; flex:none; }
+      .logout-btn:active{ background:rgba(255,247,236,.28); }
+      .back-btn{ background:var(--header-chip); color:var(--header-ink); border:1px solid rgba(255,247,236,.3); border-radius:999px; padding:5px 12px; font:inherit; font-size:.82rem; font-weight:800; cursor:pointer; margin-bottom:7px; }
+      .back-btn:active{ background:rgba(255,247,236,.28); }
+      .dayline{ font-size:1.5rem; font-weight:800; margin-top:2px; line-height:1.2; }
+      .origin{ margin-top:2px; font-size:.86rem; color:var(--header-muted); }
+      /* home: section entry cards */
+      .section-list{ display:flex; flex-direction:column; gap:14px; padding:18px 0 6px; }
+      .section-card{ display:flex; align-items:center; gap:16px; width:100%; text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:24px; padding:20px 18px; box-shadow:var(--shadow); font:inherit; color:var(--ink); cursor:pointer; }
+      .section-card:active{ background:var(--chip); }
+      .section-icon{ font-size:44px; line-height:1; flex:none; }
+      .section-title{ display:block; font-size:1.3rem; font-weight:800; line-height:1.25; }
+      .section-sub{ display:block; margin-top:2px; font-size:.93rem; color:var(--muted); font-weight:600; line-height:1.4; }
+      .section-arrow{ margin-left:auto; flex:none; font-size:1.6rem; font-weight:900; color:var(--accent); line-height:1; }
+      .homenote{ display:none; margin-top:16px; background:#e9f5ec; border:1px solid #9fd0ab; color:#155830; border-radius:11px; padding:11px 13px; font-size:.93rem; font-weight:600; }
+      /* driver: day list */
+      .day-list{ display:flex; flex-direction:column; gap:14px; padding:18px 0 6px; }
+      .day-card{ display:block; width:100%; text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); font:inherit; cursor:pointer; color:var(--ink); }
+      .day-card:active{ background:var(--chip); }
+      .day-card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+      .day-date{ font-size:1.28rem; font-weight:800; line-height:1.25; }
+      .day-badge{ flex:none; font-size:.74rem; font-weight:900; letter-spacing:.04em; padding:5px 10px; border-radius:999px; border:1.5px solid var(--green); color:var(--green-deep); }
+      .day-summary{ margin-top:6px; font-size:.97rem; color:var(--muted); font-weight:600; }
+      .day-open{ margin-top:10px; font-size:.97rem; font-weight:800; color:var(--accent); }
+      .backpill{ display:inline-block; margin:16px 0 12px; padding:9px 16px; border-radius:999px; border:1.5px solid var(--line); background:var(--card); color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
+      /* entry form */
+      .entry-box{ max-width:560px; margin:18px auto 0; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:6px 20px 22px; box-shadow:var(--shadow); }
+      .seg{ display:flex; gap:8px; margin:2px 0 4px; }
+      .seg button{ flex:1; padding:11px; border-radius:999px; border:1.5px solid var(--line); background:none; color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
+      .seg button.active{ background:var(--brown); border-color:var(--brown); color:#fdf3e0; }
       /* kitchen */
-      .daychips{ display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 12px; }
+      .daychips{ display:flex; gap:8px; flex-wrap:wrap; margin:16px 0 12px; }
       .chipbtn{ padding:8px 14px; border-radius:999px; border:1.5px solid var(--chip-line); background:var(--chip); color:var(--ink); font:inherit; font-weight:600; font-size:.9rem; cursor:pointer; }
       .chipbtn.active{ background:var(--brown); border-color:var(--brown); color:#fdf3e0; }
       .ksec{ font-size:1rem; font-weight:800; margin:16px 0 8px; }
       .card.done{ opacity:.55; }
+      .card.online{ border-color:var(--web-line); border-width:1.5px; }
       .cook-overlay{ position:fixed; inset:0; background:rgba(20,10,4,.55); display:flex; align-items:flex-start; justify-content:center; padding:14px; z-index:60; overflow-y:auto; }
       .cook-overlay[hidden]{ display:none; }
       .cook-box{ background:var(--card); color:var(--ink); border-radius:18px; padding:18px 16px; max-width:460px; width:100%; box-shadow:0 10px 34px rgba(0,0,0,.35); margin:auto 0; }
@@ -152,47 +169,98 @@
 
       <!-- DASHBOARD -->
       <div id="dashView" style="display:none">
-        <header class="site">
-          <div class="brand">
-            <img src="../assets/logo.png" alt="Tasty Express" />
-            <div>
-              <div class="name" id="shopName">Tiệm của bạn</div>
-              <div class="sub" id="shopSub"></div>
-            </div>
+        <header class="app">
+          <button type="button" class="back-btn" id="backBtn" style="display:none">← Trang chủ</button>
+          <div class="head-row">
+            <div class="brand-line" id="brandLine">Tiệm của bạn</div>
+            <button type="button" class="logout-btn" id="logoutBtn">Đăng xuất</button>
           </div>
-          <button class="logout" id="logoutBtn" type="button">Đăng xuất</button>
+          <div class="dayline" id="screenTitle">Trang chủ</div>
+          <div class="origin" id="screenSub">Chọn mục cần xem bên dưới</div>
         </header>
 
-        <div class="stats" id="statsBox"><div class="loading">Đang tải dữ liệu…</div></div>
-
-        <div id="homeScreen">
-          <div class="menucards">
-            <button type="button" class="menucard" id="menuOrders">
-              <span class="mc-icon">🧾</span>
-              <span class="mc-text"><span class="mc-title">Đơn online</span><span class="mc-desc">Đơn khách đặt trên app</span></span>
-              <span class="mc-arrow">→</span>
+        <!-- HOME -->
+        <div id="scrHome">
+          <div class="homenote" id="homeNote"></div>
+          <div class="section-list">
+            <button type="button" class="section-card" id="cardDriver">
+              <span class="section-icon" aria-hidden="true">🚗</span>
+              <span>
+                <span class="section-title">Tài Xế Giao Hàng</span>
+                <span class="section-sub">Lịch sử tuyến giao theo ngày</span>
+              </span>
+              <span class="section-arrow" aria-hidden="true">→</span>
             </button>
-            <button type="button" class="menucard" id="menuKitchen">
-              <span class="mc-icon">🍳</span>
-              <span class="mc-text"><span class="mc-title">Bếp</span><span class="mc-desc">Order bếp cần làm theo ngày</span></span>
-              <span class="mc-arrow">→</span>
+            <button type="button" class="section-card" id="cardKitchen">
+              <span class="section-icon" aria-hidden="true">🍳</span>
+              <span>
+                <span class="section-title">Order Nhà Bếp</span>
+                <span class="section-sub">Danh sách order nấu theo ngày</span>
+              </span>
+              <span class="section-arrow" aria-hidden="true">→</span>
+            </button>
+            <button type="button" class="section-card" id="cardEntry">
+              <span class="section-icon" aria-hidden="true">✏️</span>
+              <span>
+                <span class="section-title">＋ Nhập order</span>
+                <span class="section-sub">Tự nhập order mới cho nhà bếp</span>
+              </span>
+              <span class="section-arrow" aria-hidden="true">→</span>
+            </button>
+            <button type="button" class="section-card" id="cardShare">
+              <span class="section-icon" aria-hidden="true">📤</span>
+              <span>
+                <span class="section-title">Chia sẻ app</span>
+                <span class="section-sub" id="shareSub">Gửi link app cho tài xế / nhà bếp</span>
+              </span>
+              <span class="section-arrow" aria-hidden="true">→</span>
             </button>
           </div>
-          <button type="button" class="sharebtn" id="shareBtn">📤 Chia sẻ app</button>
         </div>
 
-        <div id="ordersScreen" style="display:none">
-          <button type="button" class="backpill" data-back>← Trang chủ</button>
-          <h2 class="sec" style="margin-top:12px">🧾 Đơn online của tiệm</h2>
-          <div id="ordersBox"><div class="loading">Đang tải…</div></div>
+        <!-- DRIVER -->
+        <div id="scrDriver" style="display:none">
+          <div class="day-list" id="driverDayList"></div>
+          <div id="driverDayDetail" style="display:none">
+            <button type="button" class="backpill" id="driverBackDays">← Danh sách ngày</button>
+            <div id="driverStops"></div>
+          </div>
         </div>
 
-        <div id="kitchenScreen" style="display:none">
-          <button type="button" class="backpill" data-back>← Trang chủ</button>
-          <h2 class="sec" style="margin-top:12px">🍳 Bếp</h2>
+        <!-- KITCHEN -->
+        <div id="scrKitchen" style="display:none">
           <div class="daychips" id="dayChips"></div>
           <div class="actions" style="margin:0 0 6px"><button class="btn btn-ok" id="cookBtn" type="button">🧮 Tổng món cần chuẩn bị</button></div>
           <div id="kitchenBox"><div class="loading">Đang tải…</div></div>
+        </div>
+
+        <!-- MANUAL ORDER ENTRY -->
+        <div id="scrEntry" style="display:none">
+          <div class="entry-box">
+            <form id="entryForm" novalidate>
+              <label for="eName">Tên khách *</label>
+              <input id="eName" type="text" autocomplete="off" placeholder="Tên khách" />
+              <label for="ePhone">SĐT</label>
+              <input id="ePhone" type="text" inputmode="tel" autocomplete="tel" placeholder="Số điện thoại (không bắt buộc)" />
+              <label>Hình thức</label>
+              <div class="seg" role="group" aria-label="Hình thức">
+                <button type="button" class="seg-btn active" data-method="pickup">Pick up</button>
+                <button type="button" class="seg-btn" data-method="delivery">Giao hàng</button>
+              </div>
+              <div id="eAddressWrap" style="display:none">
+                <label for="eAddress">Địa chỉ giao</label>
+                <input id="eAddress" type="text" autocomplete="off" placeholder="Địa chỉ giao hàng" />
+              </div>
+              <label for="eDay">Ngày</label>
+              <input id="eDay" type="date" />
+              <label for="eItems">Món (mỗi dòng 1 món) *</label>
+              <textarea id="eItems" rows="4" placeholder="Mỗi dòng 1 món…"></textarea>
+              <label for="eNote">Ghi chú</label>
+              <input id="eNote" type="text" autocomplete="off" placeholder="Ghi chú thêm (không bắt buộc)" />
+              <div class="err" id="entryErr"></div>
+              <button class="submit" id="entrySaveBtn" type="submit">Lưu order</button>
+            </form>
+          </div>
         </div>
       </div>
 
@@ -215,18 +283,33 @@
         var session = null;
         try { session = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { session = null; }
         var shop = null;
-        var cmGlobal = 15;
         var orders = [];
         var refreshTimer = null;
         var authMode = "login";
-        var view = "home";
+        var screen = "home";
         var kitchenDay = null;
+        var driverDay = null;
+        var entryMethod = "pickup";
+        var homeNoteTimer = null;
 
         function $(id) { return document.getElementById(id); }
         function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
         function money(n) { return "$" + (Math.round((Number(n) || 0) * 100) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
         function fmtDate(iso) {
           try { return new Date(iso).toLocaleString("vi-VN", { timeZone: "America/Los_Angeles", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; }
+        }
+        function fmtDay(iso) {
+          var p = String(iso || "").split("-");
+          return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : String(iso || "");
+        }
+        var WEEKDAYS = ["Chủ Nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+        function weekdayOf(iso) {
+          var p = String(iso || "").split("-");
+          if (p.length !== 3) return "";
+          return WEEKDAYS[new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay()];
+        }
+        function todayLA() {
+          try { return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }); } catch (e) { return new Date().toISOString().slice(0, 10); }
         }
         function slugify(n) {
           return String(n || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -241,13 +324,6 @@
           return fetch(BASE + path, { method: opts.method || "GET", headers: headers, body: opts.body || undefined })
             .then(function (r) { if (!r.ok) throw new Error("api " + r.status); return r.status === 204 ? null : r.json().catch(function () { return null; }); });
         }
-        // Public read of the global commission (anon key only, no user token)
-        function fetchGlobalCommission() {
-          return fetch(BASE + "/rest/v1/app_settings?key=eq.commission_pct&select=value", { headers: { "apikey": ANON, "Authorization": "Bearer " + ANON } })
-            .then(function (r) { return r.ok ? r.json() : []; })
-            .then(function (rows) { if (rows && rows.length && !isNaN(parseFloat(rows[0].value))) cmGlobal = parseFloat(rows[0].value); })
-            .catch(function () {});
-        }
 
         function showView(which) {
           $("loginView").style.display = which === "login" ? "block" : "none";
@@ -260,9 +336,9 @@
           localStorage.setItem(KEY, JSON.stringify(session));
         }
         function doLogout() {
-          session = null; shop = null; orders = []; kitchenDay = null; view = "home";
+          session = null; shop = null; orders = []; kitchenDay = null; driverDay = null; screen = "home";
           localStorage.removeItem(KEY);
-          showScreen("home");
+          go("home");
           showView("login");
         }
 
@@ -312,24 +388,45 @@
             });
         });
 
+        /* ---------- navigation (staff-app style: one screen per card) ---------- */
+        var SCREEN_TITLES = {
+          home: ["Trang chủ", "Chọn mục cần xem bên dưới"],
+          driver: ["Tài Xế Giao Hàng", "Lịch sử tuyến giao theo ngày"],
+          kitchen: ["Order Nhà Bếp", "Danh sách order nấu theo ngày"],
+          entry: ["Nhập order", "Tự nhập order mới cho nhà bếp"]
+        };
+        function go(name) {
+          screen = name;
+          $("scrHome").style.display = name === "home" ? "block" : "none";
+          $("scrDriver").style.display = name === "driver" ? "block" : "none";
+          $("scrKitchen").style.display = name === "kitchen" ? "block" : "none";
+          $("scrEntry").style.display = name === "entry" ? "block" : "none";
+          $("backBtn").style.display = name === "home" ? "none" : "inline-block";
+          var t = SCREEN_TITLES[name] || SCREEN_TITLES.home;
+          $("screenTitle").textContent = t[0];
+          $("screenSub").textContent = t[1];
+          if (name === "kitchen") renderKitchen();
+          if (name === "driver") renderDriver();
+          window.scrollTo(0, 0);
+        }
+
         $("logoutBtn").addEventListener("click", doLogout);
         $("noticeLogout").addEventListener("click", doLogout);
-        $("menuOrders").addEventListener("click", function () { showScreen("orders"); });
-        $("menuKitchen").addEventListener("click", function () { showScreen("kitchen"); });
-        Array.prototype.forEach.call(document.querySelectorAll("[data-back]"), function (b) {
-          b.addEventListener("click", function () { showScreen("home"); });
-        });
-        $("shareBtn").addEventListener("click", function () {
+        $("backBtn").addEventListener("click", function () { go("home"); });
+        $("cardDriver").addEventListener("click", function () { driverDay = null; go("driver"); });
+        $("cardKitchen").addEventListener("click", function () { go("kitchen"); });
+        $("cardEntry").addEventListener("click", function () { go("entry"); });
+        $("cardShare").addEventListener("click", function () {
           var url = "https://tastyexpress-ca.github.io/tuyen-giao/doi-tac/";
           var title = (shop && shop.shop_name) || "Tasty Express";
           if (navigator.share) {
             navigator.share({ title: title, text: "App quản lý tiệm — Tasty Express:", url: url }).catch(function () {});
             return;
           }
-          var btn = $("shareBtn"), old = btn.textContent;
+          var sub = $("shareSub"), old = sub.textContent;
           var done = function () {
-            btn.textContent = "✅ Đã copy link app";
-            setTimeout(function () { btn.textContent = old; }, 2000);
+            sub.textContent = "✅ Đã copy link app";
+            setTimeout(function () { sub.textContent = old; }, 2000);
           };
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(url).then(done).catch(function () { fallbackCopy(url); done(); });
@@ -345,6 +442,72 @@
         $("cookBtn").addEventListener("click", openCook);
         $("cookCloseBtn").addEventListener("click", function () { $("cookOverlay").hidden = true; });
         $("cookOverlay").addEventListener("click", function (ev) { if (ev.target === $("cookOverlay")) $("cookOverlay").hidden = true; });
+        $("driverBackDays").addEventListener("click", function () { driverDay = null; renderDriver(); go("driver"); });
+
+        /* ---------- manual entry form ---------- */
+        function setEntryMethod(m) {
+          entryMethod = m;
+          Array.prototype.forEach.call(document.querySelectorAll(".seg-btn"), function (b) {
+            b.classList.toggle("active", b.getAttribute("data-method") === m);
+          });
+          $("eAddressWrap").style.display = m === "delivery" ? "block" : "none";
+        }
+        Array.prototype.forEach.call(document.querySelectorAll(".seg-btn"), function (b) {
+          b.addEventListener("click", function () { setEntryMethod(b.getAttribute("data-method")); });
+        });
+        function showHomeNote(text) {
+          var n = $("homeNote");
+          n.textContent = text;
+          n.style.display = "block";
+          if (homeNoteTimer) clearTimeout(homeNoteTimer);
+          homeNoteTimer = setTimeout(function () { n.style.display = "none"; }, 5000);
+        }
+        $("entryForm").addEventListener("submit", function (ev) {
+          ev.preventDefault();
+          var err = $("entryErr");
+          err.style.display = "none";
+          var name = $("eName").value.trim();
+          var lines = $("eItems").value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+          if (!name) { err.textContent = "Nhập tên khách giúp tiệm nhé."; err.style.display = "block"; return; }
+          if (!lines.length) { err.textContent = "Nhập ít nhất 1 món (mỗi dòng 1 món) nhé."; err.style.display = "block"; return; }
+          var day = $("eDay").value || todayLA();
+          var noteText = $("eNote").value.trim();
+          var btn = $("entrySaveBtn");
+          btn.disabled = true; btn.textContent = "Đang lưu…";
+          var payload = {
+            shop: shopSlug(),
+            customer_name: name,
+            phone: $("ePhone").value.trim(),
+            method: entryMethod,
+            address: entryMethod === "delivery" ? $("eAddress").value.trim() : "",
+            day: day,
+            weekday_label: weekdayOf(day),
+            items: lines.map(function (line) { return { name: line, qty: 1, price: 0, detail: "" }; }),
+            subtotal: 0,
+            delivery_fee: null,
+            tax: 0,
+            total: 0,
+            note: noteText ? noteText + " — nhập tay" : "nhập tay",
+            paid: false,
+            status: "in_kitchen"
+          };
+          api("/rest/v1/web_orders", { method: "POST", headers: { "Prefer": "return=minimal" }, body: JSON.stringify(payload) })
+            .then(function () {
+              btn.disabled = false; btn.textContent = "Lưu order";
+              $("entryForm").reset();
+              $("eDay").value = todayLA();
+              setEntryMethod("pickup");
+              loadOrders();
+              go("home");
+              showHomeNote("✅ Đã lưu order cho " + name + " — order đã vào bếp ngày " + fmtDay(day) + ".");
+            })
+            .catch(function () {
+              btn.disabled = false; btn.textContent = "Lưu order";
+              err.textContent = "Lưu chưa được — kiểm tra mạng rồi thử lại nhé.";
+              err.style.display = "block";
+            });
+        });
+        $("eDay").value = todayLA();
 
         // Resolve the signed-in account to its approved shop row, then load the shop's orders
         function enterApp() {
@@ -360,15 +523,9 @@
               }
               shop = row;
               showView("dash");
-              showScreen("home");
-              $("shopName").textContent = shop.shop_name || "Tiệm của bạn";
-              var bits = [];
-              if (shop.cuisine) bits.push(shop.cuisine);
-              if (shop.address) bits.push(shop.address);
-              if (shop.phone) bits.push("SĐT: " + shop.phone);
-              $("shopSub").textContent = bits.join(" · ");
+              go("home");
+              $("brandLine").textContent = shop.shop_name || "Tiệm của bạn";
               document.title = (shop.shop_name || "Back Office") + " — Back Office · Tasty Express";
-              fetchGlobalCommission().then(loadOrders);
               loadOrders();
               if (refreshTimer) clearInterval(refreshTimer);
               refreshTimer = setInterval(function () { if (shop) loadOrders(true); }, 30000);
@@ -388,11 +545,6 @@
             .catch(function () { if (!silent) { orders = []; render(); } });
         }
 
-        function myCommission() {
-          if (shop && shop.commission_pct != null && !isNaN(parseFloat(shop.commission_pct))) return { pct: parseFloat(shop.commission_pct), own: true };
-          return { pct: cmGlobal, own: false };
-        }
-
         function statusInfo(o) {
           var s = o.status || "new";
           if (s === "in_kitchen") return { label: "Đang làm", cls: "" };
@@ -409,61 +561,92 @@
             return "<li>" + line + "</li>";
           }).join("") + "</ul>";
         }
-
-        function render() {
-          var paidOrders = orders.filter(function (o) { return o.paid === true; });
-          var revenue = paidOrders.reduce(function (a, o) { return a + (Number(o.total) || 0); }, 0);
-          var cm = myCommission();
-          var net = revenue * (100 - cm.pct) / 100;
-          $("statsBox").innerHTML =
-            stat("🧾", paidOrders.length, "Đơn đã thanh toán", orders.length + " đơn online tất cả") +
-            stat("💰", money(revenue), "Doanh thu online", "Chỉ tính đơn đã thanh toán") +
-            stat("💸", cm.pct + "%", "Commission", cm.own ? "Mức riêng của tiệm bạn" : "Mức chung của Tasty Express") +
-            stat("🏪", money(net), "Tiệm thực nhận", "Ước tính theo mức commission " + cm.pct + "%");
-          renderOrdersList();
-          renderKitchen();
+        function patchStatus(id, status, btn) {
+          if (btn) btn.disabled = true;
+          return api("/rest/v1/web_orders?id=eq." + id, { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify({ status: status }) })
+            .then(function () { loadOrders(); })
+            .catch(function () { if (btn) btn.disabled = false; alert("Cập nhật chưa được — thử lại nhé."); });
         }
-        function renderOrdersList() {
-          if (!orders.length) {
-            $("ordersBox").innerHTML = '<div class="empty">Chưa có đơn online nào.</div>';
-            return;
-          }
-          $("ordersBox").innerHTML = orders.map(function (o) {
-            var st = statusInfo(o);
-            var paidPill = o.paid === true ? '<span class="pill ok">Đã thanh toán</span>' : '<span class="pill no">Chưa thanh toán</span>';
-            var method = o.method === "delivery" ? "Giao hàng" : "Pick up";
-            var meta = method + (o.weekday_label ? " · " + esc(o.weekday_label) : "") + (o.day ? " " + esc(o.day) : "") + " · " + fmtDate(o.created_at);
-            if (o.phone) meta += "<br />SĐT khách: " + esc(o.phone);
-            if (o.method === "delivery" && o.address) meta += "<br />Giao đến: " + esc(o.address);
-            if (o.note) meta += "<br />Ghi chú: " + esc(o.note);
-            var acts = "";
-            var s = o.status || "new";
-            if (s !== "in_kitchen" && s !== "done") acts = '<div class="actions"><button class="btn btn-ok" data-status="in_kitchen" data-id="' + o.id + '" type="button">➕ Đưa vào bếp</button></div>';
-            else if (s === "in_kitchen") acts = '<div class="actions"><button class="btn btn-ok" data-status="done" data-id="' + o.id + '" type="button">✓ Đã xong</button></div>';
-            return '<div class="card"><div class="row"><div><h3>' + esc(o.customer_name || "Khách") + '</h3><div class="meta">' + meta + '</div></div>' +
-              '<div style="text-align:right"><div class="amt">' + money(o.total) + '</div><div class="pills" style="margin-top:5px;justify-content:flex-end">' + paidPill + '<span class="pill ' + st.cls + '">' + st.label + "</span></div></div></div>" +
-              orderItems(o) + acts + "</div>";
-          }).join("");
-          Array.prototype.forEach.call($("ordersBox").querySelectorAll("button[data-status]"), function (b) {
-            b.addEventListener("click", function () {
-              b.disabled = true;
-              api("/rest/v1/web_orders?id=eq." + b.getAttribute("data-id"), { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify({ status: b.getAttribute("data-status") }) })
-                .then(function () { loadOrders(); })
-                .catch(function () { b.disabled = false; alert("Cập nhật chưa được — thử lại nhé."); });
-            });
+        function bindStatusButtons(container) {
+          Array.prototype.forEach.call(container.querySelectorAll("button[data-status]"), function (b) {
+            b.addEventListener("click", function () { patchStatus(b.getAttribute("data-id"), b.getAttribute("data-status"), b); });
           });
         }
+
+        function render() {
+          renderDriver();
+          renderKitchen();
+        }
+
+        /* ================= DRIVER (TÀI XẾ) ================= */
+        function driverDaysData() {
+          var byDay = {}, days = [];
+          orders.forEach(function (o) {
+            if (o.method !== "delivery") return;
+            var d = o.day || "";
+            if (!d) return;
+            if (!byDay[d]) { byDay[d] = []; days.push(d); }
+            byDay[d].push(o);
+          });
+          days.sort(); days.reverse();
+          return { days: days, byDay: byDay };
+        }
+        function dayFullLabel(o, d) {
+          var wd = (o && o.weekday_label) || weekdayOf(d);
+          return (wd ? wd + ", " : "") + fmtDay(d);
+        }
+        function stopCard(o) {
+          var isDone = (o.status || "new") === "done";
+          var lines = [];
+          if (o.address) lines.push("Địa chỉ: " + esc(o.address));
+          if (o.phone) lines.push("SĐT: " + esc(o.phone));
+          if (o.note) lines.push("Ghi chú: " + esc(o.note));
+          var acts = '<div class="actions">';
+          if (o.address) acts += '<a class="btn btn-no" href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(o.address) + '" target="_blank" rel="noopener">🗺 Chỉ đường</a>';
+          acts += isDone
+            ? '<button class="btn btn-no" data-status="in_kitchen" data-id="' + o.id + '" type="button">↩ Hoàn tác</button>'
+            : '<button class="btn btn-ok" data-status="done" data-id="' + o.id + '" type="button">✓ ĐÃ GIAO</button>';
+          acts += "</div>";
+          return '<div class="card' + (isDone ? " done" : "") + '"><h3>' + esc(o.customer_name || "Khách") + '</h3><div class="meta">' + lines.join("<br />") + "</div>" + orderItems(o) + acts + "</div>";
+        }
+        function renderDriver() {
+          var listBox = $("driverDayList"), detailBox = $("driverDayDetail");
+          if (!listBox || !detailBox) return;
+          var dd = driverDaysData();
+          if (driverDay && !dd.byDay[driverDay]) driverDay = null;
+          if (!driverDay) {
+            detailBox.style.display = "none";
+            listBox.style.display = "flex";
+            if (screen === "driver") { $("screenTitle").textContent = "Tài Xế Giao Hàng"; $("screenSub").textContent = "Lịch sử tuyến giao theo ngày"; }
+            if (!dd.days.length) {
+              listBox.innerHTML = '<div class="empty">Chưa có ngày nào có đơn giao hàng.</div>';
+              return;
+            }
+            listBox.innerHTML = dd.days.map(function (d, i) {
+              var stops = dd.byDay[d];
+              var doneN = stops.filter(function (o) { return (o.status || "new") === "done"; }).length;
+              var badge = i === 0 ? '<span class="day-badge">MỚI NHẤT</span>' : "";
+              var summary = stops.length + " điểm giao · Đã giao " + doneN + "/" + stops.length;
+              return '<button type="button" class="day-card" data-dday="' + esc(d) + '"><span class="day-card-top"><span class="day-date">' + esc(dayFullLabel(stops[0], d)) + "</span>" + badge + '</span><span class="day-summary" style="display:block">' + esc(summary) + '</span><span class="day-open" style="display:block">Xem tuyến giao →</span></button>';
+            }).join("");
+            Array.prototype.forEach.call(listBox.querySelectorAll("button[data-dday]"), function (b) {
+              b.addEventListener("click", function () { driverDay = b.getAttribute("data-dday"); renderDriver(); window.scrollTo(0, 0); });
+            });
+            return;
+          }
+          listBox.style.display = "none";
+          detailBox.style.display = "block";
+          var dayStops = dd.byDay[driverDay].slice().sort(function (a, b) { return String(a.created_at || "").localeCompare(String(b.created_at || "")); });
+          if (screen === "driver") {
+            $("screenTitle").textContent = dayFullLabel(dayStops[0], driverDay);
+            $("screenSub").textContent = "Tuyến giao — " + dayStops.length + " điểm";
+          }
+          $("driverStops").innerHTML = dayStops.map(stopCard).join("");
+          bindStatusButtons($("driverStops"));
+        }
+
         /* ================= KITCHEN (BẾP) ================= */
         var FLAVORS = ["Coffee", "Chocolate", "Green Tea", "Thai Tea", "Ube", "Mango", "Strawberry", "Cookie", "Vanilla", "Sesame"];
-
-        function showScreen(name) {
-          view = name;
-          $("homeScreen").style.display = name === "home" ? "block" : "none";
-          $("ordersScreen").style.display = name === "orders" ? "block" : "none";
-          $("kitchenScreen").style.display = name === "kitchen" ? "block" : "none";
-          if (name === "kitchen") renderKitchen();
-          window.scrollTo(0, 0);
-        }
 
         function kitchenDays() {
           var byDay = {}, days = [];
@@ -485,9 +668,24 @@
           if (o.phone) lines.push("SĐT: " + esc(o.phone));
           if (o.note) lines.push("Ghi chú: " + esc(o.note));
           var btn = isDone
-            ? '<div class="actions"><button class="btn btn-no" data-kstatus="in_kitchen" data-id="' + o.id + '" type="button">↩ Hoàn tác</button></div>'
-            : '<div class="actions"><button class="btn btn-ok" data-kstatus="done" data-id="' + o.id + '" type="button">✓ Đã xong</button></div>';
+            ? '<div class="actions"><button class="btn btn-no" data-status="in_kitchen" data-id="' + o.id + '" type="button">↩ Hoàn tác</button></div>'
+            : '<div class="actions"><button class="btn btn-ok" data-status="done" data-id="' + o.id + '" type="button">✓ Đã xong</button></div>';
           return '<div class="card' + (isDone ? " done" : "") + '"><h3>' + esc(o.customer_name || "Khách") + '</h3><div class="meta">' + lines.join("<br />") + "</div>" + orderItems(o) + btn + "</div>";
+        }
+
+        // Full online-order card (shown in the 🌐 ĐƠN ONLINE group): includes total + pills
+        function onlineCard(o) {
+          var st = statusInfo(o);
+          var paidPill = o.paid === true ? '<span class="pill ok">Đã thanh toán</span>' : '<span class="pill no">Chưa thanh toán</span>';
+          var method = o.method === "delivery" ? "Giao hàng" : "Pick up";
+          var meta = method + (o.weekday_label ? " · " + esc(o.weekday_label) : "") + (o.day ? " " + esc(o.day) : "") + " · " + fmtDate(o.created_at);
+          if (o.phone) meta += "<br />SĐT khách: " + esc(o.phone);
+          if (o.method === "delivery" && o.address) meta += "<br />Giao đến: " + esc(o.address);
+          if (o.note) meta += "<br />Ghi chú: " + esc(o.note);
+          var acts = '<div class="actions"><button class="btn btn-ok" data-status="in_kitchen" data-id="' + o.id + '" type="button">➕ Đưa vào bếp</button></div>';
+          return '<div class="card online"><div class="row"><div><h3>' + esc(o.customer_name || "Khách") + '</h3><div class="meta">' + meta + '</div></div>' +
+            '<div style="text-align:right"><div class="amt">' + money(o.total) + '</div><div class="pills" style="margin-top:5px;justify-content:flex-end">' + paidPill + '<span class="pill ' + st.cls + '">' + st.label + "</span></div></div></div>" +
+            orderItems(o) + acts + "</div>";
         }
 
         function renderKitchen() {
@@ -507,25 +705,24 @@
             b.addEventListener("click", function () { kitchenDay = b.getAttribute("data-day"); renderKitchen(); });
           });
           var dayOrders = orders.filter(function (o) { return (o.day || "") === kitchenDay; });
+          var news = dayOrders.filter(function (o) { return (o.status || "new") === "new"; });
           var doing = dayOrders.filter(function (o) { return (o.status || "new") === "in_kitchen"; });
           var done = dayOrders.filter(function (o) { return (o.status || "new") === "done"; });
-          var html = '<div class="ksec">Đang làm (' + doing.length + ")</div>";
+          var html = "";
+          if (news.length) {
+            html += '<div class="ksec">🌐 ĐƠN ONLINE (' + news.length + ")</div>";
+            html += news.map(onlineCard).join("");
+          }
+          html += '<div class="ksec">Đang làm (' + doing.length + ")</div>";
           html += doing.length
             ? doing.map(function (o) { return kitchenCard(o, false); }).join("")
-            : '<div class="empty">Chưa có đơn nào đang làm — về Trang chủ, vào mục 🧾 Đơn online bấm “➕ Đưa vào bếp” nhé.</div>';
+            : '<div class="empty">Chưa có đơn nào đang làm — đơn mới ở nhóm 🌐 ĐƠN ONLINE phía trên, bấm “➕ Đưa vào bếp” nhé.</div>';
           if (done.length) {
             html += '<div class="ksec">Đã xong (' + done.length + ")</div>";
             html += done.map(function (o) { return kitchenCard(o, true); }).join("");
           }
           box.innerHTML = html;
-          Array.prototype.forEach.call(box.querySelectorAll("button[data-kstatus]"), function (b) {
-            b.addEventListener("click", function () {
-              b.disabled = true;
-              api("/rest/v1/web_orders?id=eq." + b.getAttribute("data-id"), { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify({ status: b.getAttribute("data-kstatus") }) })
-                .then(function () { loadOrders(); })
-                .catch(function () { b.disabled = false; alert("Cập nhật chưa được — thử lại nhé."); });
-            });
-          });
+          bindStatusButtons(box);
         }
 
         function parseItems(o) {
@@ -592,10 +789,6 @@
           $("cookSub").textContent = dayChipLabel(kd.byDay[kitchenDay], kitchenDay) + " · " + list.length + " đơn đang làm";
           $("cookBody").innerHTML = html;
           $("cookOverlay").hidden = false;
-        }
-
-        function stat(icon, num, lbl, sub) {
-          return '<div class="stat"><div class="lbl">' + icon + " " + esc(lbl) + '</div><div class="num">' + esc(num) + '</div><div class="sub">' + esc(sub) + "</div></div>";
         }
 
         if (session && session.access_token) enterApp(); else showView("login");
