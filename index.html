@@ -2359,7 +2359,7 @@
                signed-in session, but its failure must never break the
                rest of the app: a failed read resolves to null and the
                🌐 Đơn online section simply stays hidden that round. */
-            dataGet("/rest/v1/web_orders?select=*&order=day.desc,created_at.asc").then(function (rows) {
+            dataGet("/rest/v1/web_orders?select=*&or=(shop.eq.thinks-kitchen,shop.is.null)&order=day.desc,created_at.asc").then(function (rows) {
               return rows;
             }, function () {
               return null;
