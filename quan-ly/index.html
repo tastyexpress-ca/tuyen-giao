@@ -303,10 +303,27 @@
           }
 
           // shops
-          $("shopsBox").innerHTML =
+          function slugify(n) {
+            return String(n || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+          }
+          function shopStats(key) {
+            var ps = paidOrders.filter(function (o) { return (o.shop || "thinks-kitchen") === key; });
+            var un = orders.filter(function (o) { return o.paid !== true && (o.shop || "thinks-kitchen") === key; }).length;
+            return { n: ps.length, rev: ps.reduce(function (a, o) { return a + (Number(o.total) || 0); }, 0), un: un };
+          }
+          var tk = shopStats("thinks-kitchen");
+          var shopsHtml =
             '<div class="card"><div class="row"><h3>Think\'s Kitchen</h3><span class="pill ok">Đang bán · Tiệm của anh</span></div>' +
-            '<div class="meta">Đơn online đã thanh toán: <b>' + paidOrders.length + '</b> · Doanh thu online: <b>' + money(revenue) + '</b>' + (unpaidCount ? ' · Đơn chưa thanh toán: ' + unpaidCount + ' (chưa tính)' : '') + '<br />Tiệm đầu tiên trên Tasty Express — đơn chạy vào hệ thống bếp + tài xế của tiệm.</div></div>' +
-            '<div class="empty">Các tiệm đối tác được duyệt sẽ hiện ở đây với số đơn, doanh thu và commission 15% của họ.</div>';
+            '<div class="meta">Đơn online đã thanh toán: <b>' + tk.n + '</b> · Doanh thu online: <b>' + money(tk.rev) + '</b>' + (tk.un ? ' · Đơn chưa thanh toán: ' + tk.un + ' (chưa tính)' : '') + '<br />Tiệm đầu tiên trên Tasty Express — đơn chạy vào hệ thống bếp + tài xế của tiệm.</div></div>';
+          var approved = signups.filter(function (s) { return s.status === "approved"; });
+          approved.forEach(function (s) {
+            var st = shopStats(slugify(s.shop_name));
+            var cm = s.commission_pct != null ? s.commission_pct : cmPct;
+            shopsHtml += '<div class="card"><div class="row"><h3>' + esc(s.shop_name) + (s.cuisine ? ' – ' + esc(s.cuisine) : '') + '</h3><span class="pill ok">Đang bán</span></div>' +
+              '<div class="meta">Đơn online đã thanh toán: <b>' + st.n + '</b> · Doanh thu online: <b>' + money(st.rev) + '</b>' + (st.un ? ' · Đơn chưa thanh toán: ' + st.un + ' (chưa tính)' : '') + '<br />Commission: <b>' + cm + '%</b>' + (s.commission_pct != null ? ' (mức riêng)' : ' (mức chung)') + ' · Chủ tiệm: ' + esc(s.owner_name || "—") + '</div></div>';
+          });
+          if (!approved.length) shopsHtml += '<div class="empty">Các tiệm đối tác được duyệt sẽ hiện ở đây với số đơn, doanh thu và commission của họ.</div>';
+          $("shopsBox").innerHTML = shopsHtml;
 
           // recent orders
           if (!orders.length) {
