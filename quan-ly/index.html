@@ -65,6 +65,11 @@
       .cm-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; }
       .cm-row input{ width:110px; }
       .saved-note{ color:var(--green-deep); font-weight:600; font-size:.9rem; }
+      select{ width:100%; padding:12px 13px; border:1.5px solid var(--line); border-radius:11px; font:inherit; font-size:1rem; background:var(--bg); color:var(--ink); }
+      .sale-form{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+      .sale-form .full{ grid-column:1 / -1; }
+      .sale-day-head{ display:flex; justify-content:space-between; font-weight:700; padding:10px 0 4px; }
+      .del{ background:none; border:0; color:var(--red); font-size:1rem; cursor:pointer; padding:2px 6px; }
     </style>
   </head>
   <body>
@@ -93,6 +98,9 @@
         </header>
 
         <div class="stats" id="statsBox"><div class="loading">Đang tải dữ liệu…</div></div>
+
+        <h2 class="sec">💵 Doanh số nhập tay</h2>
+        <div id="salesBox"><div class="loading">Đang tải…</div></div>
 
         <h2 class="sec">💸 Commission</h2>
         <div id="cmBox"><div class="loading">Đang tải…</div></div>
@@ -162,7 +170,7 @@
 
         var cmPct = 15;
         function loadAll() {
-          var signups = [], orders = [];
+          var signups = [], orders = [], sales = [];
           api("/rest/v1/app_settings?select=value&key=eq.commission_pct")
             .then(function (rows) { if (rows && rows.length && !isNaN(parseFloat(rows[0].value))) cmPct = parseFloat(rows[0].value); })
             .catch(function () {})
@@ -172,10 +180,13 @@
             .then(function () { return api("/rest/v1/web_orders?select=*&order=created_at.desc&limit=1000"); })
             .then(function (rows) { orders = rows || []; })
             .catch(function () { orders = []; })
-            .then(function () { render(signups, orders); });
+            .then(function () { return api("/rest/v1/manual_sales?select=*&order=day.desc,created_at.desc&limit=1000"); })
+            .then(function (rows) { sales = rows || []; })
+            .catch(function () { sales = []; })
+            .then(function () { render(signups, orders, sales); });
         }
 
-        function render(signups, orders) {
+        function render(signups, orders, sales) {
           var pending = signups.filter(function (s) { return s.status === "new"; });
           var approved = signups.filter(function (s) { return s.status === "approved"; });
           var paidOrders = orders.filter(function (o) { return o.paid === true; });
@@ -186,11 +197,62 @@
           var todayRevenue = todayPaid.reduce(function (a, o) { return a + (Number(o.total) || 0); }, 0);
           var commissionPartner = 0; // tiệm đối tác chưa có đơn — khi có, tính 15% doanh thu của họ
 
+          var manualTotal = sales.reduce(function (a, s) { return a + (Number(s.amount) || 0); }, 0);
+          var manualToday = sales.filter(function (s) { return s.day === t; }).reduce(function (a, s) { return a + (Number(s.amount) || 0); }, 0);
+
           $("statsBox").innerHTML =
             stat("📝", pending.length, "Đăng ký chờ duyệt", approved.length + " tiệm đã duyệt") +
             stat("🧾", paidOrders.length, "Đơn online đã thanh toán", todayPaid.length + " đơn hôm nay · " + unpaidCount + " đơn chưa thanh toán (không tính)") +
             stat("💰", money(revenue), "Doanh thu online (đã thanh toán)", "Hôm nay: " + money(todayRevenue)) +
+            stat("💵", money(manualTotal), "Doanh số nhập tay", "Hôm nay: " + money(manualToday) + " · Bắt đầu 24/10/2026") +
+            stat("🏦", money(revenue + manualTotal), "TỔNG DOANH THU THẬT", "Online + nhập tay · Hôm nay: " + money(todayRevenue + manualToday)) +
             stat("📈", money(commissionPartner), "Lời của app (commission " + cmPct + "%)", "Từ tiệm đối tác — chưa có tiệm nào bán");
+
+          // manual sales: form + entries by day
+          var CAT = { food: "Cơm", icecream: "Kem lẻ", wholesale: "Kem sỉ", other: "Khác" };
+          var salesHtml =
+            '<div class="card"><h3>Nhập doanh số mới</h3>' +
+            '<div class="meta">Bán tại tiệm, qua Messenger/điện thoại hay kem sỉ — nhập vào đây để trang hiện doanh thu thật. Em cũng sẽ nhập giúp anh mỗi ngày.</div>' +
+            '<div class="sale-form" style="margin-top:10px">' +
+            '<input id="saleDay" type="date" value="' + t + '" aria-label="Ngày" />' +
+            '<select id="saleCat" aria-label="Loại"><option value="food">Cơm</option><option value="icecream">Kem lẻ</option><option value="wholesale">Kem sỉ</option><option value="other">Khác</option></select>' +
+            '<input id="saleLabel" class="full" type="text" placeholder="Nội dung — vd: Kem lẻ 8497, 1 combo (Zelle)" />' +
+            '<input id="saleAmt" type="number" min="0" step="0.01" placeholder="Số tiền $" aria-label="Số tiền" />' +
+            '<button class="btn btn-ok" id="saleAdd" type="button">＋ Thêm doanh số</button>' +
+            '</div><span class="saved-note" id="saleSaved"></span></div>';
+          if (!sales.length) {
+            salesHtml += '<div class="empty">Chưa có doanh số nhập tay nào.</div>';
+          } else {
+            var byDay = {};
+            sales.forEach(function (s) { (byDay[s.day] = byDay[s.day] || []).push(s); });
+            var days = Object.keys(byDay).sort().reverse();
+            salesHtml += '<div class="card">' + days.map(function (d) {
+              var rows = byDay[d];
+              var sum = rows.reduce(function (a, s) { return a + (Number(s.amount) || 0); }, 0);
+              var parts = d.split("-");
+              var head = '<div class="sale-day-head"><span>' + parts[2] + "/" + parts[1] + "/" + parts[0] + '</span><span>' + money(sum) + '</span></div>';
+              return head + rows.map(function (s) {
+                return '<div class="order"><div>' + esc(s.label) + ' <span class="pill">' + esc(CAT[s.category] || "Khác") + '</span></div><div class="amt">' + money(s.amount) + ' <button class="del" data-del="' + s.id + '" type="button" aria-label="Xoá">✕</button></div></div>';
+              }).join("");
+            }).join("") + '</div>';
+          }
+          $("salesBox").innerHTML = salesHtml;
+          $("saleAdd").addEventListener("click", function () {
+            var day = $("saleDay").value, label = $("saleLabel").value.trim(), cat = $("saleCat").value, amt = parseFloat($("saleAmt").value);
+            if (!day || !label || isNaN(amt) || amt <= 0) { alert("Anh nhập đủ ngày, nội dung và số tiền nhé."); return; }
+            var btn = $("saleAdd"); btn.disabled = true;
+            api("/rest/v1/manual_sales", { method: "POST", headers: { "Prefer": "return=minimal" }, body: JSON.stringify({ day: day, label: label, category: cat, amount: amt }) })
+              .then(function () { loadAll(); })
+              .catch(function () { btn.disabled = false; alert("Nhập chưa được — thử lại nhé."); });
+          });
+          Array.prototype.forEach.call($("salesBox").querySelectorAll("button[data-del]"), function (b) {
+            b.addEventListener("click", function () {
+              if (!confirm("Xoá dòng doanh số này?")) return;
+              b.disabled = true;
+              api("/rest/v1/manual_sales?id=eq." + b.getAttribute("data-del"), { method: "DELETE" })
+                .then(loadAll).catch(function () { b.disabled = false; alert("Xoá chưa được — thử lại nhé."); });
+            });
+          });
 
           // commission settings
           $("cmBox").innerHTML =
