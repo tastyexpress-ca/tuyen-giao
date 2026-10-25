@@ -437,6 +437,7 @@
       .auth-ok { display: none; background: var(--green-bg); color: var(--green); border: 1px solid var(--green); border-radius: 10px; padding: 11px 13px; font-size: 13.5px; font-weight: 600; margin-bottom: 12px; }
       .auth-ok.show { display: block; }
       .auth-note { font-size: 12.5px; color: var(--ink-soft); margin: 12px 0 0; text-align: center; }
+      .auth-link { background: none; border: 0; padding: 0; font: inherit; color: var(--brown); font-weight: 700; text-decoration: underline; cursor: pointer; }
 
       /* ---------- My orders ---------- */
       .order-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; margin-bottom: 10px; box-shadow: var(--shadow-sm); }
@@ -616,7 +617,7 @@
           <button class="close-x" type="button" id="authClose" aria-label="Đóng">×</button>
         </div>
         <div class="sheet-body">
-          <div class="seg" role="tablist" aria-label="Đăng nhập hoặc đăng ký">
+          <div class="seg" id="authSeg" role="tablist" aria-label="Đăng nhập hoặc đăng ký">
             <button type="button" id="tabLogin" class="active">Đăng nhập</button>
             <button type="button" id="tabSignup">Đăng ký</button>
           </div>
@@ -633,8 +634,46 @@
             <div class="err">Mật khẩu cần ít nhất 6 ký tự.</div>
           </div>
           <button class="btn accent block" type="button" id="authSubmit">Đăng nhập</button>
+          <p class="auth-note" id="authForgotRow"><button type="button" class="auth-link" id="authForgotBtn">Quên mật khẩu?</button></p>
           <p class="auth-note" id="authNote">Chưa có tài khoản? Bấm tab Đăng ký ở trên để tạo mới.</p>
-          <p class="auth-note">Không có tài khoản vẫn đặt hàng bình thường — đăng nhập chỉ để xem lại lịch sử đơn.</p>
+          <p class="auth-note" id="authNote2">Không có tài khoản vẫn đặt hàng bình thường — đăng nhập chỉ để xem lại lịch sử đơn.</p>
+          <div id="authResetView" style="display:none">
+            <div class="field" id="fResetEmail">
+              <label for="inResetEmail">Email <span class="req">*</span></label>
+              <input type="email" id="inResetEmail" autocomplete="email" placeholder="vidu@email.com" />
+              <div class="err">Email chưa đúng định dạng.</div>
+            </div>
+            <button class="btn accent block" type="button" id="authResetSubmit">Gửi link đặt lại mật khẩu</button>
+            <p class="auth-note"><button type="button" class="auth-link" id="authResetBack">← Quay lại đăng nhập</button></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Đặt mật khẩu mới (từ link trong email khôi phục) -->
+    <div class="overlay" id="pwOverlay" role="dialog" aria-modal="true" aria-label="Đặt mật khẩu mới">
+      <div class="sheet">
+        <div class="sheet-head">
+          <div>
+            <h2>Đặt mật khẩu mới</h2>
+            <p>Nhập mật khẩu mới cho tài khoản của bạn</p>
+          </div>
+          <button class="close-x" type="button" id="pwClose" aria-label="Đóng">×</button>
+        </div>
+        <div class="sheet-body">
+          <div class="form-alert" id="pwAlert"></div>
+          <div class="auth-ok" id="pwOk"></div>
+          <div class="field" id="fNewPass">
+            <label for="inNewPass">Mật khẩu mới <span class="req">*</span></label>
+            <input type="password" id="inNewPass" autocomplete="new-password" placeholder="Ít nhất 6 ký tự" />
+            <div class="err">Mật khẩu cần ít nhất 6 ký tự.</div>
+          </div>
+          <div class="field" id="fNewPass2">
+            <label for="inNewPass2">Nhập lại mật khẩu mới <span class="req">*</span></label>
+            <input type="password" id="inNewPass2" autocomplete="new-password" placeholder="Nhập lại mật khẩu mới" />
+            <div class="err">Mật khẩu nhập lại chưa khớp.</div>
+          </div>
+          <button class="btn accent block" type="button" id="pwSubmit">Lưu mật khẩu mới</button>
         </div>
       </div>
     </div>
@@ -1765,15 +1804,168 @@
       }
       function setAuthMode(m) {
         authMode = m;
+        showAuthReset(false);
         $("tabLogin").classList.toggle("active", m === "login");
         $("tabSignup").classList.toggle("active", m === "signup");
         $("authTitle").textContent = m === "login" ? "Đăng nhập" : "Đăng ký tài khoản";
         $("authSubmit").textContent = m === "login" ? "Đăng nhập" : "Đăng ký";
         $("inPass").setAttribute("autocomplete", m === "login" ? "current-password" : "new-password");
+        $("authForgotRow").style.display = m === "login" ? "" : "none";
         $("authNote").textContent = m === "login"
           ? "Chưa có tài khoản? Bấm tab Đăng ký ở trên để tạo mới."
           : "Đã có tài khoản? Bấm tab Đăng nhập ở trên.";
         hideAuthMsgs();
+      }
+      /* ---- Quên mật khẩu: xin link đặt lại ---- */
+      function showAuthReset(show) {
+        $("authResetView").style.display = show ? "" : "none";
+        ["authSeg", "fEmail", "fPass", "authNote", "authNote2"].forEach(function (id) {
+          $(id).style.display = show ? "none" : "";
+        });
+        $("authSubmit").style.display = show ? "none" : "";
+        $("authForgotRow").style.display = show ? "none" : (authMode === "login" ? "" : "none");
+        if (show) {
+          $("authTitle").textContent = "Quên mật khẩu";
+          $("inResetEmail").value = $("inEmail").value.trim();
+          $("fResetEmail").classList.remove("invalid");
+        } else if ($("authOverlay").classList.contains("open")) {
+          $("authTitle").textContent = authMode === "login" ? "Đăng nhập" : "Đăng ký tài khoản";
+        }
+        hideAuthMsgs();
+      }
+      function authPageUrl() {
+        return window.location.origin + window.location.pathname.replace(/index\.html$/, "");
+      }
+      function doResetRequest() {
+        var email = $("inResetEmail").value.trim();
+        var badEmail = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        $("fResetEmail").classList.toggle("invalid", badEmail);
+        if (badEmail) { showAuthAlert("Email chưa đúng định dạng. Bạn kiểm tra lại nhé."); return; }
+        hideAuthMsgs();
+        var btn = $("authResetSubmit");
+        btn.disabled = true;
+        btn.textContent = "Đang gửi…";
+        fetch(AUTH_URL + "/recover?redirect_to=" + encodeURIComponent(authPageUrl()), {
+          method: "POST",
+          headers: { "apikey": SUPABASE_ANON, "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email })
+        }).then(function (r) {
+          return r.json().then(function (d) { return { ok: r.ok, d: d }; }).catch(function () { return { ok: r.ok, d: null }; });
+        }).then(function (res) {
+          btn.disabled = false;
+          btn.textContent = "Gửi link đặt lại mật khẩu";
+          if (!res.ok) { showAuthAlert(authErrorText(res.d)); return; }
+          showAuthOk("Đã gửi link! Bạn kiểm tra email và bấm vào link trong thư để đặt mật khẩu mới nhé.");
+        }).catch(function () {
+          btn.disabled = false;
+          btn.textContent = "Gửi link đặt lại mật khẩu";
+          showAuthAlert("Không kết nối được. Bạn kiểm tra mạng rồi thử lại nhé.");
+        });
+      }
+      /* ---- Đặt mật khẩu mới (mở từ link trong email khôi phục) ---- */
+      var recoveryAuth = null; // {access_token, refresh_token, expires_in} từ URL hash type=recovery
+      function parseHashParams() {
+        var out = {};
+        var h = window.location.hash.replace(/^#/, "");
+        h.split("&").forEach(function (kv) {
+          var i = kv.indexOf("=");
+          if (i > 0) {
+            try { out[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, " ")); } catch (e) { /* bỏ qua */ }
+          }
+        });
+        return out;
+      }
+      function cleanUrlHash() {
+        try { history.replaceState(null, "", window.location.pathname + window.location.search); } catch (e) { /* bỏ qua */ }
+      }
+      function openPwReset() {
+        $("pwOverlay").classList.add("open");
+        document.body.style.overflow = "hidden";
+        $("pwAlert").classList.remove("show");
+        $("pwOk").classList.remove("show");
+      }
+      function closePwReset() {
+        $("pwOverlay").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+      function showPwAlert(msg) {
+        var a = $("pwAlert");
+        a.textContent = msg;
+        a.classList.add("show");
+        $("pwOk").classList.remove("show");
+      }
+      function showPwOk(msg) {
+        var o = $("pwOk");
+        o.textContent = msg;
+        o.classList.add("show");
+        $("pwAlert").classList.remove("show");
+      }
+      function doPwUpdate() {
+        var p1 = $("inNewPass").value;
+        var p2 = $("inNewPass2").value;
+        var badLen = p1.length < 6;
+        var badMatch = p1 !== p2;
+        $("fNewPass").classList.toggle("invalid", badLen);
+        $("fNewPass2").classList.toggle("invalid", badMatch);
+        if (badLen) { showPwAlert("Mật khẩu cần ít nhất 6 ký tự."); return; }
+        if (badMatch) { showPwAlert("Mật khẩu nhập lại chưa khớp. Bạn kiểm tra lại nhé."); return; }
+        if (!recoveryAuth) { showPwAlert("Link đặt lại đã hết hạn. Bạn mở lại link trong email, hoặc xin link mới nhé."); return; }
+        $("pwAlert").classList.remove("show");
+        $("pwOk").classList.remove("show");
+        var btn = $("pwSubmit");
+        btn.disabled = true;
+        btn.textContent = "Đang lưu…";
+        fetch(AUTH_URL + "/user", {
+          method: "PUT",
+          headers: { "apikey": SUPABASE_ANON, "Authorization": "Bearer " + recoveryAuth.access_token, "Content-Type": "application/json" },
+          body: JSON.stringify({ password: p1 })
+        }).then(function (r) {
+          return r.json().then(function (d) { return { ok: r.ok, d: d }; }).catch(function () { return { ok: r.ok, d: null }; });
+        }).then(function (res) {
+          btn.disabled = false;
+          btn.textContent = "Lưu mật khẩu mới";
+          if (!res.ok) { showPwAlert(authErrorText(res.d)); return; }
+          var user = res.d;
+          if (user && user.id && recoveryAuth.access_token) {
+            saveSession(sessionFromAuth({
+              access_token: recoveryAuth.access_token,
+              refresh_token: recoveryAuth.refresh_token,
+              expires_in: recoveryAuth.expires_in,
+              user: user
+            }));
+            recoveryAuth = null;
+            showPwOk("Đặt mật khẩu mới thành công! Bạn đã được đăng nhập.");
+            setTimeout(closePwReset, 1400);
+          } else {
+            recoveryAuth = null;
+            showPwOk("Đặt mật khẩu mới thành công! Bạn đăng nhập lại bằng mật khẩu mới nhé.");
+            setTimeout(function () { closePwReset(); openAuth("login"); }, 1400);
+          }
+        }).catch(function () {
+          btn.disabled = false;
+          btn.textContent = "Lưu mật khẩu mới";
+          showPwAlert("Không kết nối được. Bạn kiểm tra mạng rồi thử lại nhé.");
+        });
+      }
+      function checkRecoveryLanding() {
+        var hp = parseHashParams();
+        if (hp.type === "recovery" && hp.access_token) {
+          recoveryAuth = {
+            access_token: hp.access_token,
+            refresh_token: hp.refresh_token || null,
+            expires_in: parseInt(hp.expires_in || "3600", 10) || 3600
+          };
+          cleanUrlHash();
+          openPwReset();
+          return true;
+        }
+        if (hp.error) {
+          cleanUrlHash();
+          openAuth("login");
+          showAuthAlert("Link đặt lại mật khẩu đã hết hạn hoặc không hợp lệ. Bạn bấm 'Quên mật khẩu?' để nhận link mới nhé.");
+          return true;
+        }
+        return false;
       }
       function authErrorText(data) {
         var msg = "";
@@ -1949,6 +2141,21 @@
       $("tabLogin").addEventListener("click", function () { setAuthMode("login"); });
       $("tabSignup").addEventListener("click", function () { setAuthMode("signup"); });
       $("authSubmit").addEventListener("click", doAuth);
+      $("authForgotBtn").addEventListener("click", function () { showAuthReset(true); });
+      $("authResetBack").addEventListener("click", function () { setAuthMode("login"); });
+      $("authResetSubmit").addEventListener("click", doResetRequest);
+      $("inResetEmail").addEventListener("keydown", function (e) { if (e.key === "Enter") doResetRequest(); });
+      $("inResetEmail").addEventListener("input", function () { $("fResetEmail").classList.remove("invalid"); });
+      $("pwClose").addEventListener("click", closePwReset);
+      $("pwOverlay").addEventListener("click", function (e) { if (e.target === $("pwOverlay")) closePwReset(); });
+      $("pwSubmit").addEventListener("click", doPwUpdate);
+      $("inNewPass2").addEventListener("keydown", function (e) { if (e.key === "Enter") doPwUpdate(); });
+      ["inNewPass", "inNewPass2"].forEach(function (id) {
+        $(id).addEventListener("input", function () {
+          var f = $(id).closest(".field");
+          if (f) f.classList.remove("invalid");
+        });
+      });
       $("inPass").addEventListener("keydown", function (e) { if (e.key === "Enter") doAuth(); });
       ["inEmail", "inPass"].forEach(function (id) {
         $(id).addEventListener("input", function () {
@@ -1960,6 +2167,7 @@
       $("navOrdersBtn").addEventListener("click", openMyOrders);
       $("ordersOverlay").addEventListener("click", function (e) { if (e.target === $("ordersOverlay")) closeOrders(); });
 
+      checkRecoveryLanding();
       loadSession();
       renderAcct();
       if (!session) {
