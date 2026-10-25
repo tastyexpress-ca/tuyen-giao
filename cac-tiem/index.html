@@ -424,6 +424,33 @@
           }
         }
         input.addEventListener("input", applyFilter);
+        /* Nạp thêm món các tiệm tự đăng (bảng shop_products) vào chỉ mục tìm kiếm.
+           Lỗi tải thì bỏ qua — tìm kiếm tĩnh bên trên vẫn hoạt động bình thường. */
+        try {
+          var SUPA_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+          fetch("https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/shop_products?available=eq.true&select=shop,name", {
+            headers: { "apikey": SUPA_ANON, "Authorization": "Bearer " + SUPA_ANON }
+          }).then(function (r) {
+            if (!r.ok) throw new Error("products fetch failed");
+            return r.json();
+          }).then(function (rows) {
+            if (!rows || !rows.length) return;
+            var changed = false;
+            rows.forEach(function (row) {
+              if (!row || !row.shop || !row.name) return;
+              if (!DISH_INDEX[row.shop]) DISH_INDEX[row.shop] = [];
+              var folded = fold(row.name);
+              var exists = DISH_INDEX[row.shop].some(function (d) { return fold(d) === folded; });
+              if (!exists) { DISH_INDEX[row.shop].push(row.name); changed = true; }
+            });
+            if (!changed) return;
+            cardDishes = cards.map(function (c) {
+              var list = DISH_INDEX[c.getAttribute("data-shop")] || [];
+              return list.map(function (d) { return { name: d, folded: fold(d) }; });
+            });
+            applyFilter();
+          }).catch(function () { /* giữ nguyên tìm kiếm tĩnh */ });
+        } catch (e) { /* giữ nguyên tìm kiếm tĩnh */ }
       })();
     </script>
   </body>

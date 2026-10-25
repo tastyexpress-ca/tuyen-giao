@@ -228,6 +228,21 @@
       .money-total .q{ white-space:nowrap; }
       .cook-muted{ margin-top:12px; font-size:.9rem; color:var(--muted); font-weight:600; }
       .cook-close{ width:100%; margin-top:16px; padding:12px; border:0; border-radius:999px; background:var(--brown); color:#fdf3e0; font:inherit; font-weight:700; cursor:pointer; }
+      /* dish manager (Quản lý món) */
+      .dish-add-btn{ width:100%; padding:13px; font-size:1rem; }
+      .dish-row{ display:flex; gap:12px; align-items:flex-start; }
+      .dish-thumb{ width:64px; height:64px; border-radius:12px; object-fit:cover; flex:none; border:1px solid var(--line); background:var(--chip); }
+      .dish-thumb-ph{ display:flex; align-items:center; justify-content:center; font-size:30px; }
+      .dish-main{ flex:1; min-width:0; }
+      .dish-name{ font-weight:800; font-size:1.02rem; overflow-wrap:anywhere; }
+      .dish-price{ font-weight:800; color:var(--green-deep); white-space:nowrap; }
+      .dish-desc{ color:var(--muted); font-size:.88rem; line-height:1.45; margin-top:2px; overflow-wrap:anywhere; }
+      .avail{ border-radius:999px; padding:8px 13px; font:inherit; font-size:.82rem; font-weight:800; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--ink); }
+      .avail.on{ background:var(--paid-bg); color:var(--paid-ink); border-color:var(--paid-line); }
+      .avail.off{ background:var(--unknown-bg); color:var(--unknown-ink); border-color:var(--unknown-line); }
+      .avail:disabled{ opacity:.55; }
+      .dish-del{ color:var(--collect-ink); border-color:var(--collect-line); }
+      .dish-preview{ display:none; max-width:180px; max-height:180px; border-radius:12px; border:1px solid var(--line); margin-top:8px; object-fit:cover; }
     </style>
   </head>
   <body>
@@ -342,6 +357,14 @@
               </span>
               <span class="section-arrow" aria-hidden="true">→</span>
             </button>
+            <button type="button" class="section-card" id="cardDishes">
+              <span class="section-icon" aria-hidden="true">🍽</span>
+              <span>
+                <span class="section-title">Quản lý món</span>
+                <span class="section-sub">Tự đăng món bán trên trang của tiệm</span>
+              </span>
+              <span class="section-arrow" aria-hidden="true">→</span>
+            </button>
             <button type="button" class="section-card" id="cardShare">
               <span class="section-icon" aria-hidden="true">📤</span>
               <span>
@@ -373,6 +396,38 @@
             <input type="search" id="kitchenSearch" class="k-search" placeholder="Tìm theo 4 số cuối…" autocomplete="off" enterkeyhint="search" aria-label="Tìm order theo 4 số cuối số điện thoại" />
           </div>
           <div id="kitchenGroups"></div>
+        </div>
+
+        <!-- DISHES: LIST -->
+        <div id="scrDishes" style="display:none">
+          <div style="padding:18px 0 4px">
+            <button type="button" class="btn btn-ok dish-add-btn" id="addDishBtn">＋ Thêm món</button>
+            <div class="err" id="dishErr"></div>
+          </div>
+          <div id="dishList" style="padding-top:8px"></div>
+        </div>
+
+        <!-- DISHES: ADD / EDIT FORM -->
+        <div id="scrDishForm" style="display:none">
+          <div class="card" style="margin-top:18px">
+            <label for="dfName">Tên món *</label>
+            <input id="dfName" type="text" placeholder="Ví dụ: Phở bò tái" autocomplete="off" />
+            <label for="dfPrice">Giá ($) *</label>
+            <input id="dfPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Ví dụ: 12.50" />
+            <label for="dfDesc">Mô tả</label>
+            <textarea id="dfDesc" rows="3" placeholder="Mô tả ngắn về món (không bắt buộc)"></textarea>
+            <label for="dfImage">Hình món</label>
+            <input id="dfImage" type="file" accept="image/*" />
+            <img id="dfPreview" class="dish-preview" alt="Hình món" />
+            <p class="hint" id="dfImageHint" style="display:none">Món đã có hình — chọn hình mới nếu muốn thay.</p>
+            <label for="dfSort">Thứ tự hiển thị</label>
+            <input id="dfSort" type="number" inputmode="numeric" step="1" min="0" />
+            <div class="err" id="dfErr"></div>
+            <div class="actions" style="margin-top:16px">
+              <button type="button" class="btn btn-ok" id="dfSave" style="flex:1">Lưu món</button>
+              <button type="button" class="btn btn-no" id="dfCancel" style="flex:1">Huỷ</button>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -426,6 +481,18 @@
         </div>
       </div>
 
+      <!-- DELETE-DISH CONFIRM (same dialog pattern as delete-day) -->
+      <div class="confirm-overlay" id="dishDeleteOverlay" hidden>
+        <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="dishDeleteTitle">
+          <div class="confirm-title" id="dishDeleteTitle"></div>
+          <div class="confirm-text">Món này sẽ bị xoá khỏi trang bán của tiệm.</div>
+          <div class="confirm-actions">
+            <button type="button" class="confirm-cancel" id="dishDeleteCancelBtn">Huỷ</button>
+            <button type="button" class="confirm-delete" id="dishDeleteOkBtn">🗑 Xoá món</button>
+          </div>
+        </div>
+      </div>
+
       <div class="copy-toast" id="copyToast" role="status" aria-live="polite"></div>
     </div>
 
@@ -449,6 +516,13 @@
         var kitchenDay = null;
         var driverDay = null;
         var cmGlobal = 15; // global commission % (app_settings), refreshed on enter
+        var products = []; // shop_products của tiệm (màn Quản lý món)
+        var dishFormOpen = false;
+        var editingDishId = null;
+        var dishPhotoFile = null;
+        var dishCurrentImage = "";
+        var dishFormHeading = "＋ Thêm món";
+        var pendingDishDelete = null;
 
         function $(id) { return document.getElementById(id); }
         function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -505,8 +579,10 @@
         }
         function doLogout() {
           session = null; shop = null; orders = []; kitchenDay = null; driverDay = null; screen = "home"; cmGlobal = 15;
+          products = []; dishFormOpen = false; editingDishId = null; dishPhotoFile = null; dishCurrentImage = ""; pendingDishDelete = null;
           localStorage.removeItem(KEY);
           closeDeleteConfirm();
+          closeDishDelete();
           go("home");
           showView("login");
         }
@@ -712,9 +788,13 @@
           $("scrDriver").style.display = (name === "driver" || name === "driverDay") ? "block" : "none";
           $("scrKitchen").style.display = name === "kitchen" ? "block" : "none";
           $("scrKitchenDay").style.display = name === "kitchenDay" ? "block" : "none";
+          $("scrDishes").style.display = name === "dishes" ? "block" : "none";
+          $("scrDishForm").style.display = name === "dishForm" ? "block" : "none";
           if (name === "home") setHeader({ title: "Trang chủ", sub: "Chọn mục cần xem bên dưới" });
           else if (name === "kitchen") { setHeader({ brand: "· NHÀ BẾP", title: "🍳 Order nhà bếp", sub: "Bấm vào một ngày để xem order nấu của ngày đó", home: true }); renderKitchenList(); }
           else if (name === "kitchenDay") { setHeader({ brand: "· NHÀ BẾP", title: "", sub: null, home: true, list: "← Danh sách ngày bếp" }); renderKitchenDay(); }
+          else if (name === "dishes") { setHeader({ brand: "· QUẢN LÝ MÓN", title: "🍽 Quản lý món", sub: "Món của tiệm đang bán trên Tasty Express", home: true }); loadProducts(); }
+          else if (name === "dishForm") { setHeader({ brand: "· QUẢN LÝ MÓN", title: dishFormHeading, sub: null, home: true, list: "← Danh sách món" }); }
           else if (name === "driver" || name === "driverDay") { setHeader({ brand: "· TÀI XẾ", title: "🚗 Tuyến giao hàng", sub: "Bấm vào một ngày để xem tuyến giao của ngày đó", home: true, list: name === "driverDay" ? "← Danh sách ngày" : "" }); renderDriver(); }
           window.scrollTo(0, 0);
         }
@@ -725,9 +805,21 @@
         $("backListBtn").addEventListener("click", function () {
           if (screen === "kitchenDay") go("kitchen");
           else if (screen === "driverDay") { driverDay = null; go("driver"); }
+          else if (screen === "dishForm") { closeDishForm(); go("dishes"); }
         });
         $("cardDriver").addEventListener("click", function () { driverDay = null; go("driver"); });
         $("cardKitchen").addEventListener("click", function () { go("kitchen"); });
+        $("cardDishes").addEventListener("click", function () { go("dishes"); });
+        $("addDishBtn").addEventListener("click", function () { openDishForm(null); });
+        $("dfSave").addEventListener("click", saveDish);
+        $("dfCancel").addEventListener("click", function () { closeDishForm(); go("dishes"); });
+        $("dfImage").addEventListener("change", function () {
+          dishPhotoFile = (this.files && this.files[0]) || null;
+          updateDishPreview();
+        });
+        $("dishDeleteCancelBtn").addEventListener("click", closeDishDelete);
+        $("dishDeleteOverlay").addEventListener("click", function (ev) { if (ev.target === $("dishDeleteOverlay")) closeDishDelete(); });
+        $("dishDeleteOkBtn").addEventListener("click", confirmDeleteDish);
         $("cardShare").addEventListener("click", function () {
           var url = "https://tastyexpress-ca.github.io/tuyen-giao/doi-tac/";
           var title = (shop && shop.shop_name) || "Tasty Express";
@@ -798,7 +890,13 @@
               document.title = (shop.shop_name || "Back Office") + " — Back Office · Tasty Express";
               loadOrders();
               if (refreshTimer) clearInterval(refreshTimer);
-              refreshTimer = setInterval(function () { if (shop) loadOrders(true); }, 30000);
+              refreshTimer = setInterval(function () {
+                if (!shop) return;
+                loadOrders(true);
+                // Refresh the dish list too — but never while the
+                // add/edit form is open, so typing is never clobbered.
+                if (screen === "dishes" && !dishFormOpen) loadProducts(true);
+              }, 30000);
             })
             .catch(function () {
               $("noticeMeta").textContent = "Đang đăng nhập: " + email;
@@ -1648,6 +1746,212 @@
               setTimeout(printAllViaPrintDialog, 900);
             });
           });
+        }
+
+        /* ================= DISH MANAGER (QUẢN LÝ MÓN) =================
+           The shop posts its own dishes to public.shop_products; the
+           selling page reads them from the same table. Images go to the
+           public `dish-images` storage bucket under <slug>/. */
+        function dishErr(msg) {
+          var e = $("dishErr");
+          if (!e) return;
+          if (msg) { e.textContent = msg; e.style.display = "block"; }
+          else e.style.display = "none";
+        }
+        function loadProducts(silent) {
+          if (!shop) return;
+          var slug = shopSlug();
+          if (!slug) { products = []; renderDishList(); return; }
+          if (dishFormOpen) return; // never disturb an open form
+          api("/rest/v1/shop_products?shop=eq." + encodeURIComponent(slug) + "&order=sort.asc,created_at.asc&select=*")
+            .then(function (rows) { products = rows || []; dishErr(null); renderDishList(); })
+            .catch(function () {
+              if (!silent) dishErr("Tải danh sách món chưa được — kiểm tra mạng rồi thử lại nhé.");
+              renderDishList();
+            });
+        }
+        function dishCard(p) {
+          var card = el("div", "card");
+          var row = el("div", "dish-row");
+          if (p.image_url) {
+            var img = el("img", "dish-thumb");
+            img.src = p.image_url;
+            img.alt = p.name || "Món";
+            img.loading = "lazy";
+            row.appendChild(img);
+          } else {
+            row.appendChild(el("div", "dish-thumb dish-thumb-ph", "🍽"));
+          }
+          var main = el("div", "dish-main");
+          var top = el("div", "row");
+          top.appendChild(el("span", "dish-name", p.name || "Món"));
+          top.appendChild(el("span", "dish-price", money(p.price)));
+          main.appendChild(top);
+          if (p.description) main.appendChild(el("div", "dish-desc", truncate(String(p.description), 90)));
+          var acts = el("div", "actions");
+          var isOn = p.available !== false;
+          var tog = el("button", "avail " + (isOn ? "on" : "off"), isOn ? "✅ Đang bán" : "⏸ Tạm ẩn");
+          tog.type = "button";
+          tog.setAttribute("aria-pressed", isOn ? "true" : "false");
+          tog.addEventListener("click", function () { toggleDishAvailable(p, tog); });
+          acts.appendChild(tog);
+          var ed = el("button", "btn btn-no", "Sửa");
+          ed.type = "button";
+          ed.addEventListener("click", function () { openDishForm(p); });
+          acts.appendChild(ed);
+          var del = el("button", "btn btn-no dish-del", "Xoá");
+          del.type = "button";
+          del.addEventListener("click", function () { askDeleteDish(p); });
+          acts.appendChild(del);
+          main.appendChild(acts);
+          row.appendChild(main);
+          card.appendChild(row);
+          return card;
+        }
+        function renderDishList() {
+          var box = $("dishList");
+          if (!box) return;
+          box.innerHTML = "";
+          if (!products.length) {
+            box.appendChild(el("div", "empty", "Chưa có món nào — bấm ＋ Thêm món để đăng món đầu tiên."));
+            return;
+          }
+          products.forEach(function (p) { box.appendChild(dishCard(p)); });
+        }
+        function toggleDishAvailable(p, btn) {
+          var next = !(p.available !== false);
+          btn.disabled = true;
+          api("/rest/v1/shop_products?id=eq." + p.id, { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify({ available: next }) })
+            .then(function () {
+              p.available = next;
+              dishErr(null);
+              renderDishList();
+              showToast(next ? "✅ Đang bán: " + (p.name || "Món") : "⏸ Đã tạm ẩn: " + (p.name || "Món"));
+            })
+            .catch(function () {
+              btn.disabled = false;
+              dishErr("Đổi trạng thái món chưa được — kiểm tra mạng rồi thử lại nhé.");
+            });
+        }
+        /* ---------- add / edit form ---------- */
+        function nextDishSort() {
+          var m = 0;
+          products.forEach(function (p) { var s = Number(p.sort) || 0; if (s > m) m = s; });
+          return m + 1;
+        }
+        function safeFileName(name) {
+          var base = slugify(String(name || "dish").replace(/\.[^.]*$/, "")) || "dish";
+          var m = String(name || "").match(/\.([a-zA-Z0-9]+)$/);
+          return base + (m ? "." + m[1].toLowerCase() : ".jpg");
+        }
+        function uploadDishImage(file) {
+          var slug = shopSlug();
+          var fname = Date.now() + "-" + safeFileName(file.name || "dish.jpg");
+          var path = slug + "/" + fname;
+          return api("/storage/v1/object/dish-images/" + slug + "/" + encodeURIComponent(fname), {
+            method: "POST",
+            headers: { "x-upsert": "true", "Content-Type": file.type || "application/octet-stream" },
+            body: file
+          }).then(function () { return BASE + "/storage/v1/object/public/dish-images/" + path; });
+        }
+        function updateDishPreview() {
+          var img = $("dfPreview");
+          if (dishPhotoFile) {
+            try { img.src = URL.createObjectURL(dishPhotoFile); } catch (e) {}
+            img.style.display = "block";
+          } else if (dishCurrentImage) {
+            img.src = dishCurrentImage;
+            img.style.display = "block";
+          } else {
+            img.removeAttribute("src");
+            img.style.display = "none";
+          }
+          $("dfImageHint").style.display = (!dishPhotoFile && dishCurrentImage) ? "block" : "none";
+        }
+        function openDishForm(p) {
+          dishFormOpen = true;
+          editingDishId = p ? p.id : null;
+          dishPhotoFile = null;
+          dishCurrentImage = p ? (p.image_url || "") : "";
+          dishFormHeading = p ? "✏️ Sửa món" : "＋ Thêm món";
+          $("dfName").value = p ? (p.name || "") : "";
+          $("dfPrice").value = p && p.price != null ? p.price : "";
+          $("dfDesc").value = p ? (p.description || "") : "";
+          $("dfSort").value = p ? (p.sort != null ? p.sort : "") : nextDishSort();
+          $("dfImage").value = "";
+          $("dfErr").style.display = "none";
+          updateDishPreview();
+          go("dishForm");
+        }
+        function closeDishForm() {
+          dishFormOpen = false;
+          editingDishId = null;
+          dishPhotoFile = null;
+          dishCurrentImage = "";
+        }
+        function saveDish() {
+          var err = $("dfErr");
+          var fail = function (msg) { err.textContent = msg; err.style.display = "block"; };
+          var name = $("dfName").value.trim();
+          var priceRaw = $("dfPrice").value;
+          var price = parseFloat(priceRaw);
+          if (!name) { fail("Chưa nhập tên món."); return; }
+          if (priceRaw === "" || isNaN(price) || price < 0) { fail("Giá món chưa đúng — nhập số tiền, ví dụ 12.50."); return; }
+          var desc = $("dfDesc").value.trim();
+          var sortVal = parseInt($("dfSort").value, 10);
+          if (isNaN(sortVal)) sortVal = editingDishId ? 0 : nextDishSort();
+          var btn = $("dfSave");
+          var oldTxt = btn.textContent;
+          btn.disabled = true; btn.textContent = "Đang lưu…";
+          err.style.display = "none";
+          var imgPromise = dishPhotoFile ? uploadDishImage(dishPhotoFile) : Promise.resolve(dishCurrentImage || null);
+          imgPromise.then(function (imgUrl) {
+            var payload = { name: name, price: price, description: desc || null, image_url: imgUrl, sort: sortVal };
+            if (editingDishId) {
+              return api("/rest/v1/shop_products?id=eq." + editingDishId, { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify(payload) });
+            }
+            payload.shop = shopSlug();
+            payload.available = true;
+            return api("/rest/v1/shop_products", { method: "POST", body: JSON.stringify(payload) });
+          }).then(function () {
+            btn.disabled = false; btn.textContent = oldTxt;
+            closeDishForm();
+            go("dishes");
+            loadProducts();
+            showToast("✅ Đã lưu món");
+          }).catch(function () {
+            btn.disabled = false; btn.textContent = oldTxt;
+            fail("Lưu món chưa được — kiểm tra mạng rồi thử lại nhé.");
+          });
+        }
+        /* ---------- delete dish (confirm dialog) ---------- */
+        function askDeleteDish(p) {
+          pendingDishDelete = p;
+          $("dishDeleteTitle").textContent = "Xoá món “" + (p.name || "Món") + "”?";
+          $("dishDeleteOverlay").hidden = false;
+        }
+        function closeDishDelete() {
+          pendingDishDelete = null;
+          var ov = $("dishDeleteOverlay");
+          if (ov) ov.hidden = true;
+        }
+        function confirmDeleteDish() {
+          if (!pendingDishDelete) { closeDishDelete(); return; }
+          var p = pendingDishDelete;
+          var btn = $("dishDeleteOkBtn");
+          btn.disabled = true;
+          api("/rest/v1/shop_products?id=eq." + p.id, { method: "DELETE", headers: { "Prefer": "return=minimal" } })
+            .then(function () {
+              btn.disabled = false;
+              closeDishDelete();
+              loadProducts();
+              showToast("🗑 Đã xoá món");
+            })
+            .catch(function () {
+              btn.disabled = false;
+              closeDishDelete();
+              dishErr("Xoá món chưa được — kiểm tra mạng rồi thử lại nhé.");
+            });
         }
 
         if (recoveryLanding) { /* đang ở màn hình đặt mật khẩu mới từ link email */ }
