@@ -30,10 +30,22 @@
         --brown:#54301a;
         --header-bg:#3a2110; --header-ink:#fff7ec; --header-muted:#e8c9a8; --header-chip:rgba(255,247,236,.14);
         --accent:#c2410c;
+        --accent-strong:#9a3412; --accent-soft:#fdeadd;
+        --paid-bg:#e9f7ee; --paid-ink:#166534; --paid-line:#bfe6cc;
+        --unknown-bg:#fdf3e0; --unknown-ink:#92600a; --unknown-line:#ecd9a8;
+        --done-bg:#eef4ee; --done-badge:#2f7d3e;
+        --collect-ink:#b91c1c; --collect-line:#f5b8b8; --collect-bg:#fdecec;
+        --track:rgba(255,247,236,.25); --fill:#4ade80; --chip-bg:rgba(255,247,236,.14);
         --web-line:#b9d4f2;
       }
       @media (prefers-color-scheme: dark){
-        :root{ --bg:#16140f; --card:#201d16; --ink:#f0e9da; --muted:#b8ae99; --red:#c94f42; --red-deep:#b3352b; --green:#5cb87e; --green-deep:#7ccb97; --line:#38322a; --chip:#2c2517; --chip-line:#a07d2e; --shadow:0 10px 26px rgba(0,0,0,.5); --brown:#d9b98c; --header-bg:#120b06; --header-muted:#c8a586; --accent:#fb923c; --web-line:#26507c; }
+        :root{ --bg:#16140f; --card:#201d16; --ink:#f0e9da; --muted:#b8ae99; --red:#c94f42; --red-deep:#b3352b; --green:#5cb87e; --green-deep:#7ccb97; --line:#38322a; --chip:#2c2517; --chip-line:#a07d2e; --shadow:0 10px 26px rgba(0,0,0,.5); --brown:#d9b98c; --header-bg:#120b06; --header-muted:#c8a586; --accent:#fb923c; --web-line:#26507c;
+          --accent-strong:#fdba74; --accent-soft:#3a2412;
+          --paid-bg:#14301d; --paid-ink:#86efac; --paid-line:#1f5133;
+          --unknown-bg:#3a2c10; --unknown-ink:#fcd34d; --unknown-line:#6b5518;
+          --done-bg:#1b241b; --done-badge:#4ade80;
+          --collect-ink:#fca5a5; --collect-line:#7f2d24; --collect-bg:#3a1712;
+          --track:rgba(255,247,236,.22); --chip-bg:rgba(255,247,236,.12); }
       }
       *{box-sizing:border-box}
       body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif; min-height:100svh; -webkit-font-smoothing:antialiased; }
@@ -93,28 +105,113 @@
       .section-sub{ display:block; margin-top:2px; font-size:.93rem; color:var(--muted); font-weight:600; line-height:1.4; }
       .section-arrow{ margin-left:auto; flex:none; font-size:1.6rem; font-weight:900; color:var(--accent); line-height:1; }
       .homenote{ display:none; margin-top:16px; background:#e9f5ec; border:1px solid #9fd0ab; color:#155830; border-radius:11px; padding:11px 13px; font-size:.93rem; font-weight:600; }
-      /* driver: day list */
+      /* day lists (staff-app pattern: Bếp + Tài Xế) */
       .day-list{ display:flex; flex-direction:column; gap:14px; padding:18px 0 6px; }
-      .day-card{ display:block; width:100%; text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); font:inherit; cursor:pointer; color:var(--ink); }
-      .day-card:active{ background:var(--chip); }
+      .day-card{ display:block; width:100%; text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); cursor:pointer; color:var(--ink); }
+      .day-card:active{ background:var(--accent-soft); }
       .day-card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
-      .day-date{ font-size:1.28rem; font-weight:800; line-height:1.25; }
-      .day-badge{ flex:none; font-size:.74rem; font-weight:900; letter-spacing:.04em; padding:5px 10px; border-radius:999px; border:1.5px solid var(--green); color:var(--green-deep); }
-      .day-summary{ margin-top:6px; font-size:.97rem; color:var(--muted); font-weight:600; }
-      .day-open{ margin-top:10px; font-size:.97rem; font-weight:800; color:var(--accent); }
-      .backpill{ display:inline-block; margin:16px 0 12px; padding:9px 16px; border-radius:999px; border:1.5px solid var(--line); background:var(--card); color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
+      .day-date{ font-size:21px; font-weight:800; line-height:1.25; }
+      .day-badge{ flex:0 0 auto; font-size:12.5px; font-weight:900; letter-spacing:.04em; padding:5px 10px; border-radius:999px; border:1.5px solid transparent; }
+      .day-badge.kitchen, .day-badge.route{ background:var(--accent-soft); color:var(--accent-strong); border-color:var(--line); }
+      .day-summary{ display:block; margin-top:6px; font-size:16px; color:var(--muted); font-weight:600; }
+      .day-progress{ display:block; margin-top:4px; font-size:15px; font-weight:700; color:var(--paid-ink); }
+      .day-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; }
+      .day-open{ font-size:16px; font-weight:800; color:var(--accent); }
+      .day-delete{ flex:0 0 auto; background:var(--card); color:var(--collect-ink); border:2px solid var(--collect-line); border-radius:999px; padding:7px 13px; font:inherit; font-size:14.5px; font-weight:800; cursor:pointer; }
+      .day-delete:active{ background:var(--collect-bg); }
+      .hint-line{ background:var(--accent-soft); border:1.5px solid var(--line); border-radius:12px; padding:10px 13px; font-size:15px; font-weight:600; color:var(--ink); }
+      /* delete-day confirm dialog (staff-app copy) */
+      .confirm-overlay{ position:fixed; inset:0; background:rgba(20,10,4,.55); display:flex; align-items:center; justify-content:center; padding:20px; z-index:60; }
+      .confirm-overlay[hidden]{ display:none; }
+      .confirm-box{ background:var(--card); color:var(--ink); border-radius:18px; padding:20px 18px; max-width:420px; width:100%; box-shadow:0 10px 34px rgba(0,0,0,.35); }
+      .confirm-title{ font-size:19px; font-weight:800; line-height:1.3; }
+      .confirm-text{ margin-top:8px; font-size:15.5px; color:var(--muted); font-weight:600; }
+      .confirm-actions{ display:flex; gap:10px; margin-top:16px; }
+      .confirm-cancel{ flex:1; min-height:52px; border-radius:12px; font:inherit; font-size:16px; font-weight:800; background:var(--card); color:var(--ink); border:2px solid var(--line); cursor:pointer; }
+      .confirm-delete{ flex:1; min-height:52px; border-radius:12px; font:inherit; font-size:16px; font-weight:900; background:var(--collect-ink); color:#fff; border:2px solid var(--collect-ink); cursor:pointer; }
+      /* header extras (kitchen day detail): brand suffix, chips, buttons, progress */
+      .brand-line .route-name{ color:var(--fill); }
+      .back-row{ display:flex; gap:8px; flex-wrap:wrap; }
+      .back-row .back-btn{ margin-bottom:8px; }
+      .chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+      .chip{ background:var(--chip-bg); border:1px solid rgba(255,247,236,.18); border-radius:999px; padding:2px 8px; font-size:12.5px; font-weight:700; }
+      .hdr-btn-row{ display:flex; gap:8px; margin-top:8px; }
+      .btn-print-all{ flex:1; display:block; width:100%; min-height:44px; border-radius:12px; font:inherit; font-size:15.5px; font-weight:800; background:var(--accent-soft); color:var(--accent-strong); border:1.5px solid var(--line); cursor:pointer; }
+      .btn-print-all:active{ background:var(--line); }
+      .progress-row{ display:flex; align-items:center; gap:10px; margin-top:8px; }
+      .progress-track{ flex:1; height:7px; border-radius:999px; background:var(--track); overflow:hidden; }
+      .progress-fill{ height:100%; width:0%; background:var(--fill); border-radius:999px; transition:width .35s ease; }
+      .progress-text{ font-size:13px; font-weight:800; white-space:nowrap; }
+      /* toast (staff-app copy-toast) */
+      .copy-toast{ position:fixed; left:50%; bottom:calc(22px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(16px); background:var(--header-bg); color:var(--header-ink); font-size:15.5px; font-weight:700; padding:11px 18px; border-radius:999px; box-shadow:0 6px 22px rgba(0,0,0,.35); opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:50; white-space:nowrap; }
+      .copy-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
       /* entry form */
       .entry-box{ max-width:560px; margin:18px auto 0; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:6px 20px 22px; box-shadow:var(--shadow); }
       .seg{ display:flex; gap:8px; margin:2px 0 4px; }
       .seg button{ flex:1; padding:11px; border-radius:999px; border:1.5px solid var(--line); background:none; color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
       .seg button.active{ background:var(--brown); border-color:var(--brown); color:#fdf3e0; }
-      /* kitchen */
-      .daychips{ display:flex; gap:8px; flex-wrap:wrap; margin:16px 0 12px; }
-      .chipbtn{ padding:8px 14px; border-radius:999px; border:1.5px solid var(--chip-line); background:var(--chip); color:var(--ink); font:inherit; font-weight:600; font-size:.9rem; cursor:pointer; }
-      .chipbtn.active{ background:var(--brown); border-color:var(--brown); color:#fdf3e0; }
-      .ksec{ font-size:1rem; font-weight:800; margin:16px 0 8px; }
+      /* kitchen day detail (staff-app k-card pattern) */
       .card.done{ opacity:.55; }
-      .card.online{ border-color:var(--web-line); border-width:1.5px; }
+      #kitchenGroups{ display:flex; flex-direction:column; gap:14px; padding:16px 0 8px; }
+      .k-group{ display:flex; flex-direction:column; gap:14px; }
+      .group-head{ font-size:15px; font-weight:900; letter-spacing:.07em; color:var(--accent-strong); margin:4px 2px -4px; }
+      .group-head.done-divider{ color:var(--muted); border-top:2px dashed var(--line); padding-top:12px; }
+      .k-card{ background:var(--card); border:1.5px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); transition:background .25s ease, opacity .25s ease, border-color .25s ease; }
+      .k-card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px; }
+      .k-card-top .tag-pill{ margin-bottom:0; }
+      .tag-pill{ display:inline-block; font-size:13px; font-weight:900; letter-spacing:.03em; padding:5px 11px; border-radius:999px; border:1.5px solid transparent; margin-bottom:10px; }
+      .tag-sang{ background:var(--accent-soft); color:var(--accent-strong); border-color:var(--line); }
+      .tag-pickup{ background:var(--paid-bg); color:var(--paid-ink); border-color:var(--paid-line); }
+      .customer{ font-size:21px; font-weight:800; line-height:1.25; -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
+      .sdt-line{ margin-top:2px; font-size:16.5px; font-weight:700; color:var(--muted); letter-spacing:.02em; -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
+      .k-card .place{ margin-top:5px; font-size:16.5px; font-weight:700; color:var(--ink); overflow-wrap:anywhere; }
+      .k-card .dishes{ margin-top:12px; background:var(--accent-soft); border-radius:10px; padding:10px 12px; }
+      .k-card .dish{ font-size:16.5px; font-weight:600; padding:2px 0; line-height:1.4; }
+      .k-card .note-line{ margin-top:10px; font-size:15.5px; font-weight:700; color:var(--paid-ink); background:var(--paid-bg); border:1.5px solid var(--paid-line); border-radius:10px; padding:9px 12px; }
+      .k-card.received{ border-color:var(--accent); box-shadow:0 0 0 1.5px var(--accent), var(--shadow); }
+      .k-card.done{ background:var(--done-bg); border-color:var(--paid-line); opacity:.58; filter:saturate(.5); }
+      .k-card.done .customer{ text-decoration:line-through; text-decoration-thickness:2px; }
+      .k-card.done .btn-done{ background:var(--done-badge); border-color:var(--done-badge); color:#fff; }
+      @media (prefers-color-scheme: dark){ .k-card.done .btn-done{ color:#0c1a0e; } }
+      .k-search-row{ padding:14px 0 0; }
+      .k-search{ width:100%; min-height:50px; padding:10px 14px; font-family:inherit; font-size:17px; font-weight:600; color:var(--ink); background:var(--card); border:1.5px solid var(--line); border-radius:12px; box-shadow:var(--shadow); -webkit-appearance:none; appearance:none; }
+      .k-search::placeholder{ color:var(--muted); font-weight:600; }
+      .k-search:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+      .k-actions{ display:flex; gap:10px; margin-top:10px; }
+      .btn-done{ width:auto; flex:1; margin-top:0; min-height:60px; border-radius:12px; font:inherit; font-size:17px; font-weight:900; letter-spacing:.03em; background:var(--card); color:var(--ink); border:2.5px solid var(--ink); cursor:pointer; }
+      .btn-done:active{ transform:scale(.99); }
+      .btn-received{ flex:1; min-height:60px; border-radius:12px; font:inherit; font-size:15px; font-weight:900; letter-spacing:.02em; background:var(--card); color:var(--accent-strong); border:2.5px solid var(--accent); cursor:pointer; }
+      .btn-received:active{ transform:scale(.99); }
+      .btn-received.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
+      .btn-print{ flex:1; min-height:52px; border-radius:12px; font:inherit; font-size:16px; font-weight:800; background:var(--accent-soft); color:var(--accent-strong); border:1.5px solid var(--line); cursor:pointer; }
+      .btn-print:active{ background:var(--line); }
+      /* print-only label area (staff-app pattern) */
+      #printArea{ display:none; }
+      #printArea.measuring{ display:block; position:absolute; left:-10000px; top:0; width:2.4in; visibility:hidden; }
+      #printArea.capturing{ display:block; position:absolute; left:-10000px; top:0; width:2.4in; }
+      #printArea .pl-label{ display:flex; flex-direction:column; box-sizing:border-box; width:2.4in; height:auto; padding:0 4px; background:#fff; color:#000; font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif; }
+      #printArea .pl-head{ display:flex; justify-content:space-between; align-items:baseline; gap:6px; background:#000; color:#fff; padding:.07in .1in; font-size:10.5pt; font-weight:800; letter-spacing:.02em; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      #printArea .pl-body{ flex:1; display:flex; flex-direction:column; padding:.07in .1in 0; }
+      #printArea .pl-tag{ display:inline-block; background:#000; color:#fff; border-radius:999px; padding:.028in .11in; font-size:10pt; font-weight:800; letter-spacing:.02em; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      #printArea .pl-name{ margin-top:.07in; font-size:19pt; font-weight:800; line-height:1.15; }
+      #printArea .pl-place{ margin-top:.035in; font-size:11pt; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
+      #printArea .pl-phone{ margin-top:.03in; font-size:11.5pt; font-weight:700; }
+      #printArea .pl-dishes{ margin-top:.07in; }
+      #printArea .pl-dish{ font-size:12pt; font-weight:600; line-height:1.32; padding:.012in 0; }
+      #printArea .pl-note{ padding-top:.07in; text-align:center; font-size:11.5pt; font-weight:800; line-height:1.3; }
+      #printArea .pl-foot{ padding-top:.09in; text-align:center; }
+      #printArea .pl-note + .pl-foot{ margin-top:0; }
+      #printArea .pl-foot-1{ font-size:11pt; font-weight:800; }
+      #printArea .pl-foot-2{ margin-top:.02in; font-size:8.5pt; font-weight:600; }
+      #printArea .pl-foot-3{ margin-top:.01in; font-size:13pt; font-weight:900; letter-spacing:0; white-space:nowrap; }
+      #printArea .pl-cut{ margin:.05in .1in .06in; border-top:2px dashed #000; }
+      @page{ size:2.4in auto; margin:0; }
+      @media print{
+        html, body{ margin:0 !important; padding:0 !important; background:#fff !important; }
+        body > *:not(#printArea){ display:none !important; }
+        #printArea{ position:static; margin:0; padding:0; display:block; width:2.4in; background:#fff; color:#000; font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif; }
+        #printArea, #printArea .pl-label{ page-break-before:auto; break-before:auto; page-break-after:auto; break-after:auto; page-break-inside:auto; break-inside:auto; }
+      }
       .cook-overlay{ position:fixed; inset:0; background:rgba(20,10,4,.55); display:flex; align-items:flex-start; justify-content:center; padding:14px; z-index:60; overflow-y:auto; }
       .cook-overlay[hidden]{ display:none; }
       .cook-box{ background:var(--card); color:var(--ink); border-radius:18px; padding:18px 16px; max-width:460px; width:100%; box-shadow:0 10px 34px rgba(0,0,0,.35); margin:auto 0; }
@@ -170,13 +267,27 @@
       <!-- DASHBOARD -->
       <div id="dashView" style="display:none">
         <header class="app">
-          <button type="button" class="back-btn" id="backBtn" style="display:none">← Trang chủ</button>
+          <div class="back-row">
+            <button type="button" class="back-btn" id="backListBtn" style="display:none">← Danh sách ngày</button>
+            <button type="button" class="back-btn" id="backHomeBtn" style="display:none">← Trang chủ</button>
+          </div>
           <div class="head-row">
             <div class="brand-line" id="brandLine">Tiệm của bạn</div>
             <button type="button" class="logout-btn" id="logoutBtn">Đăng xuất</button>
           </div>
           <div class="dayline" id="screenTitle">Trang chủ</div>
           <div class="origin" id="screenSub">Chọn mục cần xem bên dưới</div>
+          <div class="chips" id="hdrChips" style="display:none"></div>
+          <div class="hdr-btn-row" id="hdrBtnRow" style="display:none">
+            <button type="button" class="btn-print-all" id="printAllBtn">🖨 In tất cả</button>
+            <button type="button" class="btn-print-all" id="cookBtn">🍳 Tổng món cần nấu</button>
+          </div>
+          <div class="progress-row" id="hdrProgress" style="display:none">
+            <div class="progress-track" role="progressbar" aria-label="Tiến độ nấu order" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="kProgressBar">
+              <div class="progress-fill" id="kProgressFill"></div>
+            </div>
+            <div class="progress-text" id="kProgressText"></div>
+          </div>
         </header>
 
         <!-- HOME -->
@@ -222,16 +333,21 @@
         <div id="scrDriver" style="display:none">
           <div class="day-list" id="driverDayList"></div>
           <div id="driverDayDetail" style="display:none">
-            <button type="button" class="backpill" id="driverBackDays">← Danh sách ngày</button>
-            <div id="driverStops"></div>
+            <div id="driverStops" style="padding-top:16px"></div>
           </div>
         </div>
 
-        <!-- KITCHEN -->
+        <!-- KITCHEN: DAY LIST -->
         <div id="scrKitchen" style="display:none">
-          <div class="daychips" id="dayChips"></div>
-          <div class="actions" style="margin:0 0 6px"><button class="btn btn-ok" id="cookBtn" type="button">🧮 Tổng món cần chuẩn bị</button></div>
-          <div id="kitchenBox"><div class="loading">Đang tải…</div></div>
+          <div class="day-list" id="kitchenDayList"></div>
+        </div>
+
+        <!-- KITCHEN: DAY DETAIL -->
+        <div id="scrKitchenDay" style="display:none">
+          <div class="k-search-row">
+            <input type="search" id="kitchenSearch" class="k-search" placeholder="Tìm theo 4 số cuối…" autocomplete="off" enterkeyhint="search" aria-label="Tìm order theo 4 số cuối số điện thoại" />
+          </div>
+          <div id="kitchenGroups"></div>
         </div>
 
         <!-- MANUAL ORDER ENTRY -->
@@ -273,7 +389,26 @@
           <button type="button" class="cook-close" id="cookCloseBtn">Đóng</button>
         </div>
       </div>
+
+      <!-- DELETE-DAY CONFIRM (staff-app pattern) -->
+      <div class="confirm-overlay" id="deleteConfirm" hidden>
+        <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="deleteConfirmTitle" aria-describedby="deleteConfirmText">
+          <div class="confirm-title" id="deleteConfirmTitle"></div>
+          <div class="confirm-text" id="deleteConfirmText">Ngày này sẽ ẩn khỏi máy này. Các ngày khác không bị ảnh hưởng.</div>
+          <div class="confirm-actions">
+            <button type="button" class="confirm-cancel" id="deleteCancelBtn">Huỷ</button>
+            <button type="button" class="confirm-delete" id="deleteOkBtn">🗑 Xoá ngày</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="copy-toast" id="copyToast" role="status" aria-live="polite"></div>
     </div>
+
+    <!-- Print-only label area: filled by the kitchen print actions,
+         shown only while printing (or while a label PDF is built). -->
+    <div id="printArea" aria-hidden="true"></div>
+    <style id="dynamicPageStyle"></style>
 
     <script>
       (function () {
@@ -295,9 +430,6 @@
         function $(id) { return document.getElementById(id); }
         function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
         function money(n) { return "$" + (Math.round((Number(n) || 0) * 100) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-        function fmtDate(iso) {
-          try { return new Date(iso).toLocaleString("vi-VN", { timeZone: "America/Los_Angeles", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; }
-        }
         function fmtDay(iso) {
           var p = String(iso || "").split("-");
           return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : String(iso || "");
@@ -338,6 +470,7 @@
         function doLogout() {
           session = null; shop = null; orders = []; kitchenDay = null; driverDay = null; screen = "home";
           localStorage.removeItem(KEY);
+          closeDeleteConfirm();
           go("home");
           showView("login");
         }
@@ -388,31 +521,61 @@
             });
         });
 
-        /* ---------- navigation (staff-app style: one screen per card) ---------- */
-        var SCREEN_TITLES = {
-          home: ["Trang chủ", "Chọn mục cần xem bên dưới"],
-          driver: ["Tài Xế Giao Hàng", "Lịch sử tuyến giao theo ngày"],
-          kitchen: ["Order Nhà Bếp", "Danh sách order nấu theo ngày"],
-          entry: ["Nhập order", "Tự nhập order mới cho nhà bếp"]
-        };
+        /* ---------- navigation (staff-app style: one screen per card,
+           with a day-detail level under both Bếp and Tài Xế) ---------- */
+        function el(tag, cls, text) {
+          var n = document.createElement(tag);
+          if (cls) n.className = cls;
+          if (text != null) n.textContent = text;
+          return n;
+        }
+        var toastTimer = null;
+        function showToast(msg) {
+          var t = $("copyToast");
+          t.textContent = msg;
+          t.classList.add("show");
+          if (toastTimer) clearTimeout(toastTimer);
+          toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
+        }
+        function setBrand(suffix) {
+          var name = (shop && shop.shop_name) || "Tiệm của bạn";
+          $("brandLine").innerHTML = esc(name) + (suffix ? ' <span class="route-name">' + esc(suffix) + "</span>" : "");
+        }
+        function setHeader(o) {
+          setBrand(o.brand || "");
+          $("screenTitle").textContent = o.title || "";
+          var sub = $("screenSub");
+          if (o.sub == null) { sub.style.display = "none"; } else { sub.style.display = "block"; sub.textContent = o.sub; }
+          $("backHomeBtn").style.display = o.home ? "inline-block" : "none";
+          var lb = $("backListBtn");
+          if (o.list) { lb.style.display = "inline-block"; lb.textContent = o.list; } else { lb.style.display = "none"; }
+          var isDay = screen === "kitchenDay";
+          $("hdrChips").style.display = isDay ? "flex" : "none";
+          $("hdrBtnRow").style.display = isDay ? "flex" : "none";
+          $("hdrProgress").style.display = isDay ? "flex" : "none";
+        }
         function go(name) {
           screen = name;
           $("scrHome").style.display = name === "home" ? "block" : "none";
-          $("scrDriver").style.display = name === "driver" ? "block" : "none";
+          $("scrDriver").style.display = (name === "driver" || name === "driverDay") ? "block" : "none";
           $("scrKitchen").style.display = name === "kitchen" ? "block" : "none";
+          $("scrKitchenDay").style.display = name === "kitchenDay" ? "block" : "none";
           $("scrEntry").style.display = name === "entry" ? "block" : "none";
-          $("backBtn").style.display = name === "home" ? "none" : "inline-block";
-          var t = SCREEN_TITLES[name] || SCREEN_TITLES.home;
-          $("screenTitle").textContent = t[0];
-          $("screenSub").textContent = t[1];
-          if (name === "kitchen") renderKitchen();
-          if (name === "driver") renderDriver();
+          if (name === "home") setHeader({ title: "Trang chủ", sub: "Chọn mục cần xem bên dưới" });
+          else if (name === "kitchen") { setHeader({ brand: "· NHÀ BẾP", title: "🍳 Order nhà bếp", sub: "Bấm vào một ngày để xem order nấu của ngày đó", home: true }); renderKitchenList(); }
+          else if (name === "kitchenDay") { setHeader({ brand: "· NHÀ BẾP", title: "", sub: null, home: true, list: "← Danh sách ngày bếp" }); renderKitchenDay(); }
+          else if (name === "driver" || name === "driverDay") { setHeader({ brand: "· TÀI XẾ", title: "🚗 Tuyến giao hàng", sub: "Bấm vào một ngày để xem tuyến giao của ngày đó", home: true, list: name === "driverDay" ? "← Danh sách ngày" : "" }); renderDriver(); }
+          else if (name === "entry") setHeader({ title: "Nhập order", sub: "Tự nhập order mới cho nhà bếp", home: true });
           window.scrollTo(0, 0);
         }
 
         $("logoutBtn").addEventListener("click", doLogout);
         $("noticeLogout").addEventListener("click", doLogout);
-        $("backBtn").addEventListener("click", function () { go("home"); });
+        $("backHomeBtn").addEventListener("click", function () { go("home"); });
+        $("backListBtn").addEventListener("click", function () {
+          if (screen === "kitchenDay") go("kitchen");
+          else if (screen === "driverDay") { driverDay = null; go("driver"); }
+        });
         $("cardDriver").addEventListener("click", function () { driverDay = null; go("driver"); });
         $("cardKitchen").addEventListener("click", function () { go("kitchen"); });
         $("cardEntry").addEventListener("click", function () { go("entry"); });
@@ -442,7 +605,20 @@
         $("cookBtn").addEventListener("click", openCook);
         $("cookCloseBtn").addEventListener("click", function () { $("cookOverlay").hidden = true; });
         $("cookOverlay").addEventListener("click", function (ev) { if (ev.target === $("cookOverlay")) $("cookOverlay").hidden = true; });
-        $("driverBackDays").addEventListener("click", function () { driverDay = null; renderDriver(); go("driver"); });
+        $("printAllBtn").addEventListener("click", printAllKitchenOrders);
+        $("kitchenSearch").addEventListener("input", applyKitchenFilter);
+        $("deleteCancelBtn").addEventListener("click", closeDeleteConfirm);
+        $("deleteConfirm").addEventListener("click", function (ev) { if (ev.target === $("deleteConfirm")) closeDeleteConfirm(); });
+        $("deleteOkBtn").addEventListener("click", function () {
+          if (!pendingDelete) { closeDeleteConfirm(); return; }
+          var job = pendingDelete;
+          var ids = loadHiddenDays(job.section);
+          if (ids.indexOf(job.day) === -1) ids.push(job.day);
+          saveHiddenDays(job.section, ids);
+          closeDeleteConfirm();
+          render();
+          showToast("🗑 Đã xoá ngày khỏi máy này");
+        });
 
         /* ---------- manual entry form ---------- */
         function setEntryMethod(m) {
@@ -524,7 +700,7 @@
               shop = row;
               showView("dash");
               go("home");
-              $("brandLine").textContent = shop.shop_name || "Tiệm của bạn";
+              setBrand("");
               document.title = (shop.shop_name || "Back Office") + " — Back Office · Tasty Express";
               loadOrders();
               if (refreshTimer) clearInterval(refreshTimer);
@@ -545,12 +721,6 @@
             .catch(function () { if (!silent) { orders = []; render(); } });
         }
 
-        function statusInfo(o) {
-          var s = o.status || "new";
-          if (s === "in_kitchen") return { label: "Đang làm", cls: "" };
-          if (s === "done") return { label: "Đã xong", cls: "ok" };
-          return { label: "Mới", cls: "no" };
-        }
         function orderItems(o) {
           var items = o.items;
           if (typeof items === "string") { try { items = JSON.parse(items); } catch (e) { items = null; } }
@@ -575,28 +745,89 @@
 
         function render() {
           renderDriver();
-          renderKitchen();
+          renderKitchenList();
+          renderKitchenDay();
         }
 
-        /* ================= DRIVER (TÀI XẾ) ================= */
-        function driverDaysData() {
+        /* ---------- shared day helpers ---------- */
+        function fmtDM(iso) {
+          var p = String(iso || "").split("-");
+          return p.length === 3 ? (+p[2]) + "/" + (+p[1]) : String(iso || "");
+        }
+        // "Thứ 7 · 24/10" — weekday from the day's first order (or computed), like the staff app
+        function dayLabel(d, dayOrders) {
+          var wd = (dayOrders && dayOrders.length && dayOrders[0].weekday_label) || weekdayOf(d);
+          return (wd ? wd + " · " : "") + fmtDM(d);
+        }
+        // Group orders by day: days newest-first; each day's orders oldest-first
+        function groupByDay(list) {
           var byDay = {}, days = [];
-          orders.forEach(function (o) {
-            if (o.method !== "delivery") return;
+          list.forEach(function (o) {
             var d = o.day || "";
             if (!d) return;
             if (!byDay[d]) { byDay[d] = []; days.push(d); }
             byDay[d].push(o);
           });
           days.sort(); days.reverse();
+          days.forEach(function (d) {
+            byDay[d].sort(function (a, b) { return String(a.created_at || "").localeCompare(String(b.created_at || "")); });
+          });
           return { days: days, byDay: byDay };
         }
-        function dayFullLabel(o, d) {
-          var wd = (o && o.weekday_label) || weekdayOf(d);
-          return (wd ? wd + ", " : "") + fmtDay(d);
+        function orderStatus(o) { return o.status || "new"; }
+        // "<qty>x <name>" lines of one order, staff-summary style
+        function itemsSummaryText(o) {
+          return parseItems(o).map(function (it) { return (Number(it.qty) || 1) + "x " + (it.name || "Món"); }).join(", ");
+        }
+        function truncate(s, n) { return s.length > n ? s.slice(0, n) + "…" : s; }
+
+        /* ---------- hidden (deleted) days ----------
+           Deleting a day hides it on THIS device only, per shop +
+           section — the day stays in the database for everyone else
+           (staff-app mechanism). */
+        function hiddenDaysKey(section) {
+          return "te-hidden-days-" + shopSlug() + "-" + section;
+        }
+        function loadHiddenDays(section) {
+          try {
+            var raw = window.localStorage.getItem(hiddenDaysKey(section));
+            var arr = raw ? JSON.parse(raw) : [];
+            return Array.isArray(arr) ? arr : [];
+          } catch (e) { return []; }
+        }
+        function saveHiddenDays(section, ids) {
+          try { window.localStorage.setItem(hiddenDaysKey(section), JSON.stringify(ids)); } catch (e) {}
+        }
+
+        /* ---------- delete-day confirm dialog (staff-app pattern) ---------- */
+        var pendingDelete = null;
+        function askDeleteDay(section, dayStr, label) {
+          pendingDelete = { section: section, day: dayStr };
+          $("deleteConfirmTitle").textContent = "Xoá ngày " + label + "?";
+          $("deleteConfirm").hidden = false;
+        }
+        function closeDeleteConfirm() {
+          pendingDelete = null;
+          var dc = $("deleteConfirm");
+          if (dc) dc.hidden = true;
+        }
+        function deleteButton(section, dayStr, label) {
+          var btn = el("button", "day-delete", "🗑 Xoá ngày");
+          btn.type = "button";
+          btn.setAttribute("aria-label", "Xoá ngày " + label);
+          btn.addEventListener("click", function (ev) {
+            ev.stopPropagation();
+            askDeleteDay(section, dayStr, label);
+          });
+          return btn;
+        }
+
+        /* ================= DRIVER (TÀI XẾ) ================= */
+        function driverDaysData() {
+          return groupByDay(orders.filter(function (o) { return o.method === "delivery"; }));
         }
         function stopCard(o) {
-          var isDone = (o.status || "new") === "done";
+          var isDone = orderStatus(o) === "done";
           var lines = [];
           if (o.address) lines.push("Địa chỉ: " + esc(o.address));
           if (o.phone) lines.push("SĐT: " + esc(o.phone));
@@ -613,33 +844,57 @@
           var listBox = $("driverDayList"), detailBox = $("driverDayDetail");
           if (!listBox || !detailBox) return;
           var dd = driverDaysData();
-          if (driverDay && !dd.byDay[driverDay]) driverDay = null;
+          if (driverDay && !dd.byDay[driverDay]) {
+            driverDay = null;
+            if (screen === "driverDay") go("driver");
+          }
           if (!driverDay) {
             detailBox.style.display = "none";
             listBox.style.display = "flex";
-            if (screen === "driver") { $("screenTitle").textContent = "Tài Xế Giao Hàng"; $("screenSub").textContent = "Lịch sử tuyến giao theo ngày"; }
-            if (!dd.days.length) {
-              listBox.innerHTML = '<div class="empty">Chưa có ngày nào có đơn giao hàng.</div>';
+            listBox.innerHTML = "";
+            var hidden = loadHiddenDays("driver");
+            var visible = dd.days.filter(function (d) { return hidden.indexOf(d) === -1; });
+            if (!visible.length) {
+              listBox.appendChild(el("div", "hint-line", "Chưa có ngày giao hàng nào."));
               return;
             }
-            listBox.innerHTML = dd.days.map(function (d, i) {
+            visible.forEach(function (d) {
               var stops = dd.byDay[d];
-              var doneN = stops.filter(function (o) { return (o.status || "new") === "done"; }).length;
-              var badge = i === 0 ? '<span class="day-badge">MỚI NHẤT</span>' : "";
-              var summary = stops.length + " điểm giao · Đã giao " + doneN + "/" + stops.length;
-              return '<button type="button" class="day-card" data-dday="' + esc(d) + '"><span class="day-card-top"><span class="day-date">' + esc(dayFullLabel(stops[0], d)) + "</span>" + badge + '</span><span class="day-summary" style="display:block">' + esc(summary) + '</span><span class="day-open" style="display:block">Xem tuyến giao →</span></button>';
-            }).join("");
-            Array.prototype.forEach.call(listBox.querySelectorAll("button[data-dday]"), function (b) {
-              b.addEventListener("click", function () { driverDay = b.getAttribute("data-dday"); renderDriver(); window.scrollTo(0, 0); });
+              var label = dayLabel(d, stops);
+              var card = el("div", "day-card");
+              card.setAttribute("role", "button");
+              card.tabIndex = 0;
+              var top = el("div", "day-card-top");
+              top.appendChild(el("span", "day-date", label));
+              top.appendChild(el("span", "day-badge route", "🚗 GIAO HÀNG"));
+              card.appendChild(top);
+              var first = stops[0];
+              var parts = [];
+              var itemsTxt = itemsSummaryText(first);
+              if (itemsTxt) parts.push("🍱 " + itemsTxt);
+              if (first.address) parts.push(first.address);
+              if (parts.length) card.appendChild(el("span", "day-summary", truncate(parts.join(" — "), 60)));
+              var doneN = stops.filter(function (o) { return orderStatus(o) === "done"; }).length;
+              card.appendChild(el("span", "day-progress", "Đã giao " + doneN + "/" + stops.length));
+              var foot = el("div", "day-foot");
+              foot.appendChild(el("span", "day-open", "Xem tuyến giao →"));
+              foot.appendChild(deleteButton("driver", d, label));
+              card.appendChild(foot);
+              var open = function () { driverDay = d; go("driverDay"); };
+              card.addEventListener("click", open);
+              card.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); open(); } });
+              listBox.appendChild(card);
             });
             return;
           }
           listBox.style.display = "none";
           detailBox.style.display = "block";
-          var dayStops = dd.byDay[driverDay].slice().sort(function (a, b) { return String(a.created_at || "").localeCompare(String(b.created_at || "")); });
-          if (screen === "driver") {
-            $("screenTitle").textContent = dayFullLabel(dayStops[0], driverDay);
-            $("screenSub").textContent = "Tuyến giao — " + dayStops.length + " điểm";
+          var dayStops = dd.byDay[driverDay];
+          if (screen === "driverDay") {
+            $("screenTitle").textContent = dayLabel(driverDay, dayStops);
+            var sub = $("screenSub");
+            sub.style.display = "block";
+            sub.textContent = "Tuyến giao — " + dayStops.length + " điểm";
           }
           $("driverStops").innerHTML = dayStops.map(stopCard).join("");
           bindStatusButtons($("driverStops"));
@@ -647,82 +902,191 @@
 
         /* ================= KITCHEN (BẾP) ================= */
         var FLAVORS = ["Coffee", "Chocolate", "Green Tea", "Thai Tea", "Ube", "Mango", "Strawberry", "Cookie", "Vanilla", "Sesame"];
+        var currentKitchenPrintOrders = [];
+        var currentKitchenDayLabel = "";
 
-        function kitchenDays() {
-          var byDay = {}, days = [];
-          orders.forEach(function (o) {
-            var d = o.day || "";
-            if (d && !byDay[d]) { byDay[d] = o; days.push(d); }
+        function kitchenDayData() { return groupByDay(orders); }
+        function dayCounts(dayOrders) {
+          var received = 0, done = 0;
+          dayOrders.forEach(function (o) {
+            var s = orderStatus(o);
+            if (s === "in_kitchen" || s === "done") received++;
+            if (s === "done") done++;
           });
-          days.sort(); days.reverse();
-          return { days: days, byDay: byDay };
+          return { received: received, done: done, total: dayOrders.length };
         }
-        function dayChipLabel(o, d) { return (((o && o.weekday_label) || "") + " " + (d || "")).trim(); }
-
-        // Kitchen-style card: no prices/totals — just who, where, and what to make
-        function kitchenCard(o, isDone) {
-          var lines = [];
-          var m = o.method === "delivery" ? "Giao hàng" : "Pick up";
-          if (o.method === "delivery" && o.address) m += ": " + o.address;
-          lines.push(esc(m));
-          if (o.phone) lines.push("SĐT: " + esc(o.phone));
-          if (o.note) lines.push("Ghi chú: " + esc(o.note));
-          var btn = isDone
-            ? '<div class="actions"><button class="btn btn-no" data-status="in_kitchen" data-id="' + o.id + '" type="button">↩ Hoàn tác</button></div>'
-            : '<div class="actions"><button class="btn btn-ok" data-status="done" data-id="' + o.id + '" type="button">✓ Đã xong</button></div>';
-          return '<div class="card' + (isDone ? " done" : "") + '"><h3>' + esc(o.customer_name || "Khách") + '</h3><div class="meta">' + lines.join("<br />") + "</div>" + orderItems(o) + btn + "</div>";
+        // Day summary in the staff style: "🍱 <first order's items> · +<n> đơn nữa"
+        function daySummaryLine(dayOrders) {
+          if (!dayOrders.length) return "";
+          var txt = itemsSummaryText(dayOrders[0]);
+          if (!txt) return "";
+          var s = "🍱 " + truncate(txt, 48);
+          if (dayOrders.length > 1) s += " · +" + (dayOrders.length - 1) + " đơn nữa";
+          return s;
         }
 
-        // Full online-order card (shown in the 🌐 ĐƠN ONLINE group): includes total + pills
-        function onlineCard(o) {
-          var st = statusInfo(o);
-          var paidPill = o.paid === true ? '<span class="pill ok">Đã thanh toán</span>' : '<span class="pill no">Chưa thanh toán</span>';
-          var method = o.method === "delivery" ? "Giao hàng" : "Pick up";
-          var meta = method + (o.weekday_label ? " · " + esc(o.weekday_label) : "") + (o.day ? " " + esc(o.day) : "") + " · " + fmtDate(o.created_at);
-          if (o.phone) meta += "<br />SĐT khách: " + esc(o.phone);
-          if (o.method === "delivery" && o.address) meta += "<br />Giao đến: " + esc(o.address);
-          if (o.note) meta += "<br />Ghi chú: " + esc(o.note);
-          var acts = '<div class="actions"><button class="btn btn-ok" data-status="in_kitchen" data-id="' + o.id + '" type="button">➕ Đưa vào bếp</button></div>';
-          return '<div class="card online"><div class="row"><div><h3>' + esc(o.customer_name || "Khách") + '</h3><div class="meta">' + meta + '</div></div>' +
-            '<div style="text-align:right"><div class="amt">' + money(o.total) + '</div><div class="pills" style="margin-top:5px;justify-content:flex-end">' + paidPill + '<span class="pill ' + st.cls + '">' + st.label + "</span></div></div></div>" +
-            orderItems(o) + acts + "</div>";
-        }
-
-        function renderKitchen() {
-          var chips = $("dayChips"), box = $("kitchenBox");
-          if (!chips || !box) return;
-          var kd = kitchenDays();
-          if (!kd.days.length) {
-            chips.innerHTML = ""; kitchenDay = null;
-            box.innerHTML = '<div class="empty">Chưa có ngày nào có đơn.</div>';
+        /* ---------- Bếp day list (staff-app pattern) ---------- */
+        function renderKitchenList() {
+          var box = $("kitchenDayList");
+          if (!box) return;
+          box.innerHTML = "";
+          var kd = kitchenDayData();
+          var hidden = loadHiddenDays("kitchen");
+          var visible = kd.days.filter(function (d) { return hidden.indexOf(d) === -1; });
+          if (!visible.length) {
+            box.appendChild(el("div", "hint-line", "Chưa có ngày bếp nào."));
             return;
           }
-          if (!kitchenDay || kd.days.indexOf(kitchenDay) < 0) kitchenDay = kd.days[0];
-          chips.innerHTML = kd.days.map(function (d) {
-            return '<button type="button" class="chipbtn' + (d === kitchenDay ? " active" : "") + '" data-day="' + esc(d) + '">' + esc(dayChipLabel(kd.byDay[d], d)) + "</button>";
-          }).join("");
-          Array.prototype.forEach.call(chips.querySelectorAll("button[data-day]"), function (b) {
-            b.addEventListener("click", function () { kitchenDay = b.getAttribute("data-day"); renderKitchen(); });
+          visible.forEach(function (d) {
+            var dayOrders = kd.byDay[d];
+            var label = dayLabel(d, dayOrders);
+            var counts = dayCounts(dayOrders);
+            var card = el("div", "day-card");
+            card.setAttribute("role", "button");
+            card.tabIndex = 0;
+            var top = el("div", "day-card-top");
+            top.appendChild(el("span", "day-date", label));
+            top.appendChild(el("span", "day-badge kitchen", "🍳 NHÀ BẾP"));
+            card.appendChild(top);
+            var summary = daySummaryLine(dayOrders);
+            if (summary) card.appendChild(el("span", "day-summary", summary));
+            card.appendChild(el("span", "day-progress",
+              "Đã nhận " + counts.received + "/" + counts.total + " · Đã xong " + counts.done + "/" + counts.total));
+            var foot = el("div", "day-foot");
+            foot.appendChild(el("span", "day-open", "Xem order →"));
+            foot.appendChild(deleteButton("kitchen", d, label));
+            card.appendChild(foot);
+            var open = function () { openKitchenDay(d); };
+            card.addEventListener("click", open);
+            card.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); open(); } });
+            box.appendChild(card);
           });
-          var dayOrders = orders.filter(function (o) { return (o.day || "") === kitchenDay; });
-          var news = dayOrders.filter(function (o) { return (o.status || "new") === "new"; });
-          var doing = dayOrders.filter(function (o) { return (o.status || "new") === "in_kitchen"; });
-          var done = dayOrders.filter(function (o) { return (o.status || "new") === "done"; });
+        }
+        function openKitchenDay(d) {
+          kitchenDay = d;
+          $("kitchenSearch").value = "";
+          go("kitchenDay");
+        }
+
+        /* ---------- Bếp day detail (staff-app pattern) ---------- */
+        function findOrder(id) {
+          for (var i = 0; i < orders.length; i++) if (String(orders[i].id) === String(id)) return orders[i];
+          return null;
+        }
+        // Staff-app kitchen card, driven by web_orders.status:
+        // BẾP ĐÃ NHẬN toggles new <-> in_kitchen/done, XONG toggles <-> done.
+        // Payment shows as a pill (partner shops have no TK settlement toggles).
+        function buildKitchenCard(o) {
+          var s = orderStatus(o);
+          var isDone = s === "done";
+          var isRecv = s === "in_kitchen" || isDone;
+          var isDelivery = o.method === "delivery";
+          var paidPill = o.paid === true ? '<span class="pill ok">Đã thanh toán</span>' : '<span class="pill no">Chưa thanh toán</span>';
+          var html = '<article class="k-card' + (isDone ? " done" : "") + (isRecv && !isDone ? " received" : "") + '" data-search="' + esc(((o.customer_name || "") + " " + (o.phone || "")).toLowerCase()) + '">';
+          html += '<div class="k-card-top"><span class="tag-pill ' + (isDelivery ? "tag-sang" : "tag-pickup") + '">' + (isDelivery ? "GIAO HÀNG" : "PICK UP") + "</span>" + paidPill + "</div>";
+          html += '<div class="customer">' + esc(o.customer_name || "Khách") + "</div>";
+          if (o.phone) html += '<div class="sdt-line">' + esc(o.phone) + "</div>";
+          if (isDelivery && o.address) html += '<div class="place">' + esc(o.address) + "</div>";
+          var items = parseItems(o);
+          if (items.length) {
+            html += '<div class="dishes">' + items.map(function (it) {
+              var line = "• " + (Number(it.qty) || 1) + "x " + (it.name || "Món");
+              if (it.detail) line += " (" + it.detail + ")";
+              return '<div class="dish">' + esc(line) + "</div>";
+            }).join("") + "</div>";
+          }
+          if (o.note) html += '<div class="note-line">' + esc(o.note) + "</div>";
+          html += '<div class="k-actions">' +
+            '<button type="button" class="btn-received' + (isRecv ? " on" : "") + '" data-toggle="recv" data-id="' + o.id + '" aria-pressed="' + (isRecv ? "true" : "false") + '">' + (isRecv ? "✅ BẾP ĐÃ NHẬN" : "☐ BẾP ĐÃ NHẬN") + "</button>" +
+            '<button type="button" class="btn-done" data-toggle="done" data-id="' + o.id + '" aria-pressed="' + (isDone ? "true" : "false") + '">' + (isDone ? "✅ XONG" : "☐ XONG") + "</button>" +
+            "</div>";
+          html += '<div class="k-actions"><button type="button" class="btn-print" data-print="' + o.id + '">🖨 In order</button></div>';
+          html += "</article>";
+          return html;
+        }
+        function kitchenToggle(id, kind, btn) {
+          var o = findOrder(id);
+          if (!o) return;
+          var s = orderStatus(o), next;
+          if (kind === "recv") next = s === "new" ? "in_kitchen" : "new";
+          else next = s === "done" ? "in_kitchen" : "done";
+          patchStatus(id, next, btn);
+        }
+        function bindKitchenCards(box) {
+          Array.prototype.forEach.call(box.querySelectorAll("button[data-toggle]"), function (b) {
+            b.addEventListener("click", function () { kitchenToggle(b.getAttribute("data-id"), b.getAttribute("data-toggle"), b); });
+          });
+          Array.prototype.forEach.call(box.querySelectorAll("button[data-print]"), function (b) {
+            b.addEventListener("click", function () {
+              var o = findOrder(b.getAttribute("data-print"));
+              if (o) printKitchenOrder(kitchenDay, o);
+            });
+          });
+        }
+        function applyKitchenFilter() {
+          var input = $("kitchenSearch");
+          if (!input) return;
+          var q = input.value.replace(/^\s+|\s+$/g, "").toLowerCase();
+          var qDigits = q.replace(/\D/g, "");
+          Array.prototype.forEach.call($("kitchenGroups").querySelectorAll(".k-group"), function (g) {
+            var any = false;
+            Array.prototype.forEach.call(g.querySelectorAll(".k-card"), function (card) {
+              var text = card.getAttribute("data-search") || "";
+              var digits = text.replace(/\D/g, "");
+              var match = !q || (qDigits !== "" && digits.indexOf(qDigits) !== -1) || text.indexOf(q) !== -1;
+              card.style.display = match ? "" : "none";
+              if (match) any = true;
+            });
+            g.style.display = any ? "" : "none";
+          });
+        }
+        function renderKitchenDay() {
+          var groupsBox = $("kitchenGroups");
+          if (!groupsBox) return;
+          if (!kitchenDay) { groupsBox.innerHTML = ""; currentKitchenPrintOrders = []; return; }
+          var dayOrders = orders.filter(function (o) { return (o.day || "") === kitchenDay; })
+            .sort(function (a, b) { return String(a.created_at || "").localeCompare(String(b.created_at || "")); });
+          if (!dayOrders.length) {
+            // The open day emptied (or was hidden) — fall back to the list
+            if (screen === "kitchenDay") { kitchenDay = null; go("kitchen"); }
+            groupsBox.innerHTML = ""; currentKitchenPrintOrders = [];
+            return;
+          }
+          var label = dayLabel(kitchenDay, dayOrders);
+          currentKitchenDayLabel = label;
+          var counts = dayCounts(dayOrders);
+          var news = dayOrders.filter(function (o) { return orderStatus(o) === "new"; });
+          var doing = dayOrders.filter(function (o) { return orderStatus(o) === "in_kitchen"; });
+          var done = dayOrders.filter(function (o) { return orderStatus(o) === "done"; });
+          currentKitchenPrintOrders = news.concat(doing, done);
+          if (screen === "kitchenDay") {
+            $("screenTitle").textContent = label;
+            var chips = $("hdrChips");
+            chips.innerHTML = "";
+            chips.appendChild(el("span", "chip", counts.total + " đơn"));
+            var summary = daySummaryLine(dayOrders);
+            if (summary) chips.appendChild(el("span", "chip", summary));
+            var fill = $("kProgressFill");
+            fill.style.width = (counts.total ? (counts.done / counts.total) * 100 : 0) + "%";
+            $("kProgressText").textContent = "Đã nhận " + counts.received + "/" + counts.total + " · Đã xong " + counts.done + "/" + counts.total;
+            var bar = $("kProgressBar");
+            bar.setAttribute("aria-valuenow", String(counts.done));
+            bar.setAttribute("aria-valuemax", String(counts.total));
+          }
+          var specs = [
+            { list: news, heading: "🌐 ĐƠN ONLINE", divider: false },
+            { list: doing, heading: "ĐANG LÀM", divider: false },
+            { list: done, heading: "ĐÃ XONG", divider: true }
+          ];
           var html = "";
-          if (news.length) {
-            html += '<div class="ksec">🌐 ĐƠN ONLINE (' + news.length + ")</div>";
-            html += news.map(onlineCard).join("");
-          }
-          html += '<div class="ksec">Đang làm (' + doing.length + ")</div>";
-          html += doing.length
-            ? doing.map(function (o) { return kitchenCard(o, false); }).join("")
-            : '<div class="empty">Chưa có đơn nào đang làm — đơn mới ở nhóm 🌐 ĐƠN ONLINE phía trên, bấm “➕ Đưa vào bếp” nhé.</div>';
-          if (done.length) {
-            html += '<div class="ksec">Đã xong (' + done.length + ")</div>";
-            html += done.map(function (o) { return kitchenCard(o, true); }).join("");
-          }
-          box.innerHTML = html;
-          bindStatusButtons(box);
+          specs.forEach(function (sp) {
+            if (!sp.list.length) return;
+            html += '<div class="k-group"><div class="group-head' + (sp.divider ? " done-divider" : "") + '">' + sp.heading + "</div>" +
+              sp.list.map(buildKitchenCard).join("") + "</div>";
+          });
+          groupsBox.innerHTML = html;
+          bindKitchenCards(groupsBox);
+          applyKitchenFilter();
         }
 
         function parseItems(o) {
@@ -785,10 +1149,254 @@
               html += otherRows.map(function (r) { return '<div class="cook-line"><span>' + esc(r.name) + '</span><span class="q">× ' + r.n + "</span></div>"; }).join("");
             }
           }
-          var kd = kitchenDays();
-          $("cookSub").textContent = dayChipLabel(kd.byDay[kitchenDay], kitchenDay) + " · " + list.length + " đơn đang làm";
+          var dayOrders = orders.filter(function (o) { return (o.day || "") === kitchenDay; });
+          $("cookSub").textContent = dayLabel(kitchenDay, dayOrders) + " · " + list.length + " đơn đang làm";
           $("cookBody").innerHTML = html;
           $("cookOverlay").hidden = false;
+        }
+
+        /* ================= PRINT (staff-app label pipeline) =================
+           One fixed label size 2.44in × 4in (62mm × 101.6mm) per page,
+           built with html2canvas + jsPDF lazy-loaded from cdnjs; if the
+           libraries cannot load, fall back to the window.print() flow
+           with a dynamic @page sized to the measured label strip. */
+        var printArea = $("printArea");
+        var dynamicPageStyle = $("dynamicPageStyle");
+        var PDF_LIB_URLS = [
+          "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+          "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+        ];
+        var pdfLibsPromise = null;
+        var printPdfBusy = false;
+        var dynamicPageTimer = null;
+
+        function loadScriptOnce(src) {
+          return new Promise(function (resolve, reject) {
+            var s = document.createElement("script");
+            s.src = src;
+            s.async = true;
+            s.onload = function () { resolve(); };
+            s.onerror = function () { reject(new Error("load failed: " + src)); };
+            document.head.appendChild(s);
+          });
+        }
+        function pdfLibsReady() { return !!(window.html2canvas && window.jspdf && window.jspdf.jsPDF); }
+        function loadPdfLibs() {
+          if (pdfLibsReady()) return Promise.resolve(true);
+          if (!pdfLibsPromise) {
+            var timeout = new Promise(function (resolve) { setTimeout(function () { resolve(false); }, 20000); });
+            var loading = Promise.all(PDF_LIB_URLS.map(loadScriptOnce)).then(
+              function () { return pdfLibsReady(); },
+              function () { return false; }
+            );
+            pdfLibsPromise = Promise.race([loading, timeout]).then(function (ok) {
+              if (!ok) pdfLibsPromise = null;
+              return ok;
+            });
+          }
+          return pdfLibsPromise;
+        }
+
+        function clearDynamicPage() {
+          if (dynamicPageTimer) { clearTimeout(dynamicPageTimer); dynamicPageTimer = null; }
+          if (dynamicPageStyle) dynamicPageStyle.textContent = "";
+        }
+        function measurePrintArea() {
+          var px = 0;
+          try {
+            printArea.classList.add("measuring");
+            px = Math.max(printArea.scrollHeight || 0, printArea.offsetHeight || 0);
+            printArea.classList.remove("measuring");
+          } catch (e) {
+            try { printArea.classList.remove("measuring"); } catch (e2) {}
+            px = 0;
+          }
+          return px;
+        }
+        function prepareDynamicPage() {
+          clearDynamicPage();
+          var px = measurePrintArea();
+          if (!px || px <= 0 || !dynamicPageStyle) return;
+          var heightIn = Math.ceil((px / 96) * 10) / 10 + 0.1;
+          if (heightIn > 200) heightIn = 200;
+          dynamicPageStyle.textContent = "@page { size: 2.4in " + heightIn.toFixed(2) + "in; margin: 0; }";
+          window.addEventListener("afterprint", clearDynamicPage);
+          dynamicPageTimer = setTimeout(clearDynamicPage, 120000);
+        }
+        function prepareSingleLabelPage() {
+          clearDynamicPage();
+          var px = measurePrintArea();
+          if (!dynamicPageStyle) return;
+          var css = "@page { size: 2.44in 4in; margin: 0; }";
+          var naturalIn = px > 0 ? px / 96 : 0;
+          if (naturalIn > 4) {
+            var scale = 3.99 / naturalIn;
+            css += "\n@media print { #printArea { transform: scale(" + scale.toFixed(4) + "); transform-origin: top left; } }";
+          }
+          dynamicPageStyle.textContent = css;
+          window.addEventListener("afterprint", clearDynamicPage);
+          dynamicPageTimer = setTimeout(clearDynamicPage, 120000);
+        }
+
+        // One printed label for a web order, laid out like the staff app's food label
+        function buildPrintLabel(dayStr, o) {
+          var label = el("div", "pl-label");
+          var head = el("div", "pl-head");
+          head.appendChild(el("span", null, ((shop && shop.shop_name) || "TASTY EXPRESS").toUpperCase()));
+          head.appendChild(el("span", null, dayLabel(dayStr, [o]).toUpperCase()));
+          label.appendChild(head);
+          var bodyBox = el("div", "pl-body");
+          var tagRow = el("div", null);
+          tagRow.appendChild(el("span", "pl-tag", o.method === "delivery" ? "GIAO HÀNG" : "PICK UP"));
+          bodyBox.appendChild(tagRow);
+          bodyBox.appendChild(el("div", "pl-name", o.customer_name || "Khách"));
+          if (o.method === "delivery" && o.address) bodyBox.appendChild(el("div", "pl-place", o.address));
+          bodyBox.appendChild(el("div", "pl-phone", "SĐT: " + (o.phone ? o.phone : "chưa có")));
+          var items = parseItems(o);
+          if (items.length) {
+            var dishBox = el("div", "pl-dishes");
+            items.forEach(function (it) {
+              var line = "• " + (Number(it.qty) || 1) + "x " + (it.name || "Món");
+              if (it.detail) line += " (" + it.detail + ")";
+              dishBox.appendChild(el("div", "pl-dish", line));
+            });
+            bodyBox.appendChild(dishBox);
+          }
+          if (o.note) bodyBox.appendChild(el("div", "pl-note", o.note));
+          var foot = el("div", "pl-foot");
+          foot.appendChild(el("div", "pl-foot-1", "CHÚC QUÝ KHÁCH NGON MIỆNG!"));
+          foot.appendChild(el("div", "pl-foot-2", "Order online"));
+          foot.appendChild(el("div", "pl-foot-3", "TASTY EXPRESS"));
+          bodyBox.appendChild(foot);
+          label.appendChild(bodyBox);
+          label.appendChild(el("div", "pl-cut"));
+          return label;
+        }
+
+        function buildLabelsPdf(dayStr, list) {
+          var JsPDF = window.jspdf.jsPDF;
+          var pdf = null;
+          var chain = Promise.resolve();
+          list.forEach(function (o, idx) {
+            chain = chain.then(function () {
+              showToast("Đang tạo PDF… " + (idx + 1) + "/" + list.length);
+              printArea.innerHTML = "";
+              var label = buildPrintLabel(dayStr, o);
+              printArea.appendChild(label);
+              printArea.classList.add("capturing");
+              return window.html2canvas(label, { scale: 3, backgroundColor: "#ffffff", logging: false }).then(function (canvas) {
+                printArea.classList.remove("capturing");
+                var img = canvas.toDataURL("image/jpeg", 0.92);
+                var heightMm = canvas.width > 0 ? 62 * (canvas.height / canvas.width) : 101.6;
+                if (!pdf) {
+                  pdf = new JsPDF({ unit: "mm", format: [62, 101.6], orientation: "portrait", compress: true });
+                } else {
+                  pdf.addPage([62, 101.6], "portrait");
+                }
+                var drawW = 62, drawH = heightMm;
+                if (drawH > 101.6) { drawW = 62 * (101.6 / drawH); drawH = 101.6; }
+                pdf.addImage(img, "JPEG", (62 - drawW) / 2, 0, drawW, drawH);
+              }, function (err) {
+                try { printArea.classList.remove("capturing"); } catch (e2) {}
+                throw err;
+              });
+            });
+          });
+          return chain.then(function () { return pdf; });
+        }
+        function openPdfBlobUrl(blob, fileName) {
+          var url = URL.createObjectURL(blob);
+          var w = null;
+          try { w = window.open(url, "_blank"); } catch (e) { w = null; }
+          if (!w) {
+            var a = document.createElement("a");
+            a.href = url; a.download = fileName;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          }
+          setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 60000);
+        }
+        function deliverLabelsPdf(blob, fileName) {
+          var file = null;
+          try { file = new File([blob], fileName, { type: "application/pdf" }); } catch (e) { file = null; }
+          if (file && navigator.share && navigator.canShare) {
+            var can = false;
+            try { can = navigator.canShare({ files: [file] }); } catch (e) { can = false; }
+            if (can) {
+              navigator.share({ files: [file], title: fileName }).then(function () {}, function (err) {
+                if (err && err.name === "AbortError") return;
+                openPdfBlobUrl(blob, fileName);
+              });
+              return;
+            }
+          }
+          openPdfBlobUrl(blob, fileName);
+        }
+
+        function printKitchenOrderViaDialog(dayStr, o) {
+          printArea.innerHTML = "";
+          printArea.appendChild(buildPrintLabel(dayStr, o));
+          prepareSingleLabelPage();
+          window.print();
+        }
+        function printKitchenOrder(dayStr, o) {
+          if (!dayStr || !o || printPdfBusy) return;
+          printPdfBusy = true;
+          showToast("Đang tạo PDF…");
+          loadPdfLibs().then(function (ok) {
+            if (!ok) {
+              printPdfBusy = false;
+              showToast("⚠️ Tạo PDF cần có mạng — đang in theo cách cũ…");
+              setTimeout(function () { printKitchenOrderViaDialog(dayStr, o); }, 900);
+              return;
+            }
+            buildLabelsPdf(dayStr, [o]).then(function (pdf) {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              if (!pdf) { printKitchenOrderViaDialog(dayStr, o); return; }
+              var who = (o.customer_name || o.phone || "order").toString().replace(/[^\w-]+/g, "-");
+              deliverLabelsPdf(pdf.output("blob"), "label-" + dayStr + "-" + who + ".pdf");
+            }, function () {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              showToast("⚠️ Không tạo được PDF — đang in theo cách cũ…");
+              setTimeout(function () { printKitchenOrderViaDialog(dayStr, o); }, 900);
+            });
+          });
+        }
+        function printAllViaPrintDialog() {
+          if (!kitchenDay || !currentKitchenPrintOrders.length) return;
+          printArea.innerHTML = "";
+          currentKitchenPrintOrders.forEach(function (o) {
+            printArea.appendChild(buildPrintLabel(kitchenDay, o));
+          });
+          prepareDynamicPage();
+          window.print();
+        }
+        function printAllKitchenOrders() {
+          if (!kitchenDay || !currentKitchenPrintOrders.length || printPdfBusy) return;
+          printPdfBusy = true;
+          showToast("Đang tạo PDF…");
+          var list = currentKitchenPrintOrders.slice();
+          var dayStr = kitchenDay;
+          loadPdfLibs().then(function (ok) {
+            if (!ok) {
+              printPdfBusy = false;
+              showToast("⚠️ Tạo PDF cần có mạng — đang in theo cách cũ…");
+              setTimeout(printAllViaPrintDialog, 900);
+              return;
+            }
+            buildLabelsPdf(dayStr, list).then(function (pdf) {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              if (!pdf) return;
+              deliverLabelsPdf(pdf.output("blob"), "labels-" + dayStr + ".pdf");
+            }, function () {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              showToast("⚠️ Không tạo được PDF — đang in theo cách cũ…");
+              setTimeout(printAllViaPrintDialog, 900);
+            });
+          });
         }
 
         if (session && session.access_token) enterApp(); else showView("login");
