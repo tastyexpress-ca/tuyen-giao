@@ -117,7 +117,7 @@
       .nav-wrap { display: flex; gap: 8px; margin-top: 10px; }
       .navbtn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; background: rgba(255, 250, 241, 0.12); border: 1px solid rgba(253, 243, 224, 0.45); color: #fdf3e0; text-decoration: none; font-weight: 700; font-size: 13.5px; padding: 8px 10px; border-radius: 10px; white-space: nowrap; cursor: pointer; font-family: inherit; }
 
-      main { padding-bottom: 130px; }
+      main { padding-bottom: 0; }
 
       /* ---------- Info strip ---------- */
       .info-strip {
@@ -213,11 +213,10 @@
 
       .foot-note { margin-top: 30px; font-size: 13px; color: var(--ink-soft); text-align: center; }
 
-      /* ---------- Sticky cart bar ---------- */
+      /* ---------- Cart bar (static, in page flow) ---------- */
       .cartbar {
-        position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-        padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-        background: linear-gradient(to top, var(--bg) 78%, transparent);
+        max-width: 680px; margin: 22px auto 0;
+        padding: 0 16px;
       }
       .cartbar-inner {
         max-width: 680px; margin: 0 auto;
@@ -401,24 +400,23 @@
         </div>
       </div>
       <main class="wrap" id="menuMain"></main>
+      <!-- Cart bar (static — sits at the end of the menu, in the page flow) -->
+      <div class="cartbar hidden" id="cartBar">
+        <button class="cartbar-inner" id="cartBarBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span>
+            <span class="cb-count" id="cartCount">0 món</span><br />
+            <span class="cb-sub">Nhấn để xem giỏ &amp; thanh toán</span>
+          </span>
+          <span class="cb-total" id="cartTotal">$0.00</span>
+          <span class="cb-cta">Đặt hàng</span>
+        </button>
+      </div>
       <p class="foot-note wrap">ACE CREAMERY · Trên nền tảng Tasty Express · Pick up: 9772 W Garden Grove Blvd, Garden Grove, CA 92844 (8AM–8PM)</p>
     </div>
 
     <!-- Result (success / failure) -->
     <div class="result wrap" id="resultView"></div>
-
-    <!-- Sticky cart bar -->
-    <div class="cartbar hidden" id="cartBar">
-      <button class="cartbar-inner" id="cartBarBtn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-        <span>
-          <span class="cb-count" id="cartCount">0 món</span><br />
-          <span class="cb-sub">Nhấn để xem giỏ &amp; thanh toán</span>
-        </span>
-        <span class="cb-total" id="cartTotal">$0.00</span>
-        <span class="cb-cta">Đặt hàng</span>
-      </button>
-    </div>
 
     <!-- Cart + checkout -->
     <div class="overlay" id="cartOverlay" role="dialog" aria-modal="true" aria-label="Giỏ hàng và thanh toán">
