@@ -3288,11 +3288,29 @@
            so untouched days settle exactly as before. The button's
            displayed state and the settlement both read this one
            function, so they can never disagree. */
+        /* Web-origin kitchen orders: a Wix order (label "Wix #…"),
+           an app online order pushed into the kitchen (label carries
+           "(web)" or the note carries "Đơn online #…"), or a note
+           saying "qua web". Their money ALWAYS lands with Chris
+           (card / Wix / Stripe), never with the shop — Chris
+           2026-10-26: "web thì auto là trả cho anh". */
+        function isWebOriginOrder(o) {
+          var label = String(o.label || "");
+          if (/^wix\s*#/i.test(label)) return true;
+          var text = (label + " " + String(o.note || "")).toLowerCase();
+          return text.indexOf("(web)") !== -1 ||
+            text.indexOf("đơn online") !== -1 ||
+            text.indexOf("qua web") !== -1;
+        }
         function effectivePayee(dayStr, order, grpKey) {
           var key = stateKey(dayStr, "ko-" + order.id, "payee_thinh");
           if (Object.prototype.hasOwnProperty.call(stateMap, key)) {
             return stateMap[key] === true ? "chris" : "shop";
           }
+          /* No explicit tap yet: web orders are auto paid-Chris;
+             a tap can still override (e.g. an unpaid web order the
+             customer settled in cash at the shop). */
+          if (isWebOriginOrder(order)) return "chris";
           return detectPayee(order.note, grpKey);
         }
         /* Delivery fee written in a bếp giao note: a $ amount sitting
@@ -3303,13 +3321,66 @@
             /\$\s*([\d]+(?:[.,]\d+)?)[^$\d]{0,24}(?:phí|ship)/.exec(n);
           return m ? (parseFloat(m[1].replace(",", ".")) || 0) : 0;
         }
+        /* A web order (web_orders) as a pseudo kitchen order for
+           the money views: dishes rebuilt from its items — món lẻ
+           (detail "Phần nhỏ"/"Phần lớn") and tray-class items
+           (price >= $20) keep their $ price so parseKitchenDish
+           classifies them exactly like priced kitchen lines; every
+           other item is a plain food line. Delivery web orders are
+           giao sáng by the standing rule; the rest are pick up.
+           Payee needs no state: the "(web)" label makes
+           isWebOriginOrder true, so it settles as paid-Chris. */
+        function webPseudoOrder(o) {
+          var lines = [];
+          (Array.isArray(o.items) ? o.items : []).forEach(function (it) {
+            var name = String(it.name || "");
+            if (name.toLowerCase().indexOf("kem") !== -1) return;
+            var qty = it.qty || 1;
+            var detail = String(it.detail || "");
+            var price = Number(it.price) || 0;
+            if (detail === "Phần nhỏ" || detail === "Phần lớn" || price >= 20) {
+              lines.push(qty + "x " + name + " $" + price);
+            } else {
+              lines.push(qty + "x " + name);
+            }
+          });
+          return {
+            id: "web-" + o.id,
+            grp: String(o.method || "").toLowerCase() === "delivery" ? "GIAO SÁNG" : "PICK UP",
+            label: (o.customer_name || "Đơn online") + " (web)",
+            name: o.customer_name || "",
+            note: "",
+            dishes: lines
+          };
+        }
+        /* The orders a day's money views settle over: its kitchen
+           orders PLUS its web orders that have no kitchen row yet
+           (a kitchen row whose note carries "Đơn online #<id>" IS
+           that web order — never count it twice). Since the
+           "Đưa vào bếp" push was retired, new web orders reach the
+           settlement and the Chris page through here alone. */
+        function settlementOrders(dayStr) {
+          var orders = (kitchenOrdersByDay[dayStr] || []).slice();
+          var linked = {};
+          orders.forEach(function (o) {
+            var m = /Đơn online #(\d+)/i.exec(String(o.note || ""));
+            if (m) linked[m[1]] = true;
+          });
+          (webOrdersByDay[dayStr] || []).forEach(function (o) {
+            if (linked[String(o.id)]) return;
+            if (String(o.status || "").toLowerCase() === "cancelled") return;
+            orders.push(webPseudoOrder(o));
+          });
+          return orders;
+        }
+
         /* Aggregate one kitchen day into the three settlement groups.
            Each group carries its per-order rows, total portions, total
            món lẻ, the grouped portions breakdown string (that group
            only), total "anh trả tiệm", total "tiệm nợ anh" and — for
            bếp giao — the total delivery fees handed back to the shop. */
         function kitchenSettlement(dayStr) {
-          var orders = kitchenOrdersByDay[dayStr] || [];
+          var orders = settlementOrders(dayStr);
           var groups = {};
           ["sang", "pickup", "bep"].forEach(function (k) {
             groups[k] = { rows: [], portions: 0, monLe: 0, anhTra: 0, tiemNo: 0, feesReturned: 0, nameOrder: [], nameTotals: {}, breakdown: "" };
@@ -3579,7 +3650,7 @@
           return 0;
         }
         function chrisDayProfit(dayStr) {
-          var orders = kitchenOrdersByDay[dayStr] || [];
+          var orders = settlementOrders(dayStr);
           var rows = [];
           var profitTotal = 0;
           var shipTotal = 0;
@@ -6020,7 +6091,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-1245";
+window.__BUILD__ = "20261026-1252";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
