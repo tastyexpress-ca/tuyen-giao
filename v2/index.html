@@ -1249,6 +1249,24 @@
         box-shadow: var(--shadow);
         transition: background 0.25s ease, opacity 0.25s ease, border-color 0.25s ease;
       }
+      /* Mỗi thẻ order một màu theo số thứ tự (seq) để dễ phân biệt
+         (Chris 2026-10-26) — màu bám theo order cả ngày, không đổi
+         khi thẻ khác hoàn thành. Thẻ done vẫn xám mờ như cũ (.k-card.done
+         khai báo sau nên thắng). */
+      .k-card.tint-0 { background: #fde8d7; border-color: #eda76a; }
+      .k-card.tint-1 { background: #dde9fd; border-color: #7ea6ec; }
+      .k-card.tint-2 { background: #dcf2e2; border-color: #6fce8b; }
+      .k-card.tint-3 { background: #f3e5fd; border-color: #b78fe8; }
+      .k-card.tint-4 { background: #fdf3c4; border-color: #e3c94f; }
+      .k-card.tint-5 { background: #fbdfe9; border-color: #ee8fb0; }
+      @media (prefers-color-scheme: dark) {
+        .k-card.tint-0 { background: #4a3220; border-color: #b97e3f; }
+        .k-card.tint-1 { background: #22344f; border-color: #5b84c4; }
+        .k-card.tint-2 { background: #1d3a26; border-color: #4da165; }
+        .k-card.tint-3 { background: #37254d; border-color: #8a67b8; }
+        .k-card.tint-4 { background: #453d17; border-color: #b3a13e; }
+        .k-card.tint-5 { background: #472631; border-color: #c06a87; }
+      }
       .tag-pill {
         display: inline-block;
         font-size: 13px;
@@ -4315,6 +4333,8 @@
           var cardKey = "ko-" + order.id;
           var info = grpInfo(order.grp);
           var card = el("article", "k-card");
+          /* Màu riêng theo seq để dễ phân biệt từng order (Chris 2026-10-26) */
+          card.classList.add("tint-" + (((Number(order.seq) || 1) - 1) % 6));
 
           /* Thẻ gọn (Chris 2026-10-26): bỏ tag pill riêng — note
              (giờ lấy, thanh toán…) lên trên cùng thay chỗ tag; đơn
@@ -6095,7 +6115,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-1305";
+window.__BUILD__ = "20261026-1353";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
