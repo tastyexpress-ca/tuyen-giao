@@ -1816,6 +1816,7 @@
             <div class="login-error" id="loginError" hidden>Sai email hoặc mật khẩu, thử lại nhé</div>
             <button type="submit" class="btn-login" id="loginBtn">Đăng nhập</button>
           </form>
+          <button type="button" class="logout-btn lang-toggle" style="display:block; margin:14px auto 0;">🌐 English</button>
         </div>
       </div>
     </div>
@@ -1845,7 +1846,10 @@
         <div class="wrap">
           <div class="head-row">
             <div class="brand">Think's Kitchen</div>
-            <button type="button" class="logout-btn" id="logoutBtn">Đăng xuất</button>
+            <span style="display:flex; gap:8px;">
+              <button type="button" class="logout-btn lang-toggle">🌐 English</button>
+              <button type="button" class="logout-btn" id="logoutBtn">Đăng xuất</button>
+            </span>
           </div>
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <div class="dayline">Trang chủ</div>
@@ -2314,6 +2318,300 @@
          CDN script fails to load, the app still auto-refreshes via the
          foreground + 30s polling fallback. -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+      /* ============ Ngôn ngữ VI / EN (Chris 2026-10-26) ============
+         Tiếng Việt là ngôn ngữ gốc trong mã nguồn. Khi máy chọn
+         English (nút 🌐, lưu trong localStorage "te-lang"), một lớp
+         dịch chạy trên DOM: dịch chữ giao diện theo từ điển + các
+         mẫu câu động (thứ, tiến độ, tiền thu hộ…). Tên món, tên
+         khách, ghi chú đơn là DỮ LIỆU — không dịch. Nhãn in (PDF)
+         vẫn tiếng Việt. Đổi ngôn ngữ sẽ nạp lại trang. */
+      (function () {
+        var LANG = "vi";
+        try { LANG = localStorage.getItem("te-lang") || "vi"; } catch (e) {}
+        window.__LANG__ = LANG;
+
+        function wireToggle() {
+          var btns = document.querySelectorAll(".lang-toggle");
+          for (var i = 0; i < btns.length; i++) {
+            if (LANG === "en") btns[i].textContent = "🌐 Tiếng Việt";
+            btns[i].addEventListener("click", function () {
+              try { localStorage.setItem("te-lang", LANG === "en" ? "vi" : "en"); } catch (e) {}
+              location.reload();
+            });
+          }
+        }
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wireToggle);
+        else wireToggle();
+
+        if (LANG !== "en") return;
+        document.documentElement.lang = "en";
+
+        var DICT = {
+          "App Tài Xế Giao Cơm": "Food Delivery Driver App",
+          "Đăng nhập để xem tuyến giao và order bếp": "Log in to see delivery routes and kitchen orders",
+          "Mật khẩu": "Password",
+          "Sai email hoặc mật khẩu, thử lại nhé": "Wrong email or password — please try again",
+          "Đăng nhập": "Log in",
+          "Đăng xuất": "Log out",
+          "Không tải được dữ liệu 😔": "Couldn't load data 😔",
+          "Kiểm tra kết nối mạng rồi thử lại nhé.": "Check your connection and try again.",
+          "Thử lại": "Try again",
+          "Trang chủ": "Home",
+          "Chọn mục cần xem bên dưới": "Choose a section below",
+          "Tài Xế Giao Hàng": "Delivery Driver",
+          "Lịch sử tuyến giao theo ngày": "Delivery routes by day",
+          "Order Nhà Bếp": "Kitchen Orders",
+          "Danh sách order nấu theo ngày": "Cooking orders by day",
+          "Chia sẻ app": "Share app",
+          "Gửi link app cho tài xế / nhà bếp": "Send the app link to the driver / kitchen",
+          "← Trang chủ": "← Home",
+          "← Danh sách ngày": "← Day list",
+          "← Danh sách ngày bếp": "← Kitchen day list",
+          "← Danh sách món": "← Dish list",
+          "← Quay lại bếp": "← Back to kitchen",
+          "← Quay lại tuyến": "← Back to route",
+          "Bấm vào một ngày để xem tuyến giao của ngày đó": "Tap a day to see its delivery route",
+          "Bấm vào một ngày để xem order nấu của ngày đó": "Tap a day to see its kitchen orders",
+          "📋 Lịch sử tuyến giao": "📋 Route history",
+          "Xuất phát:": "Start:",
+          "💡 Bấm 📍 Chỉ đường trong cụm nút của mỗi điểm giao để mở Google Maps.": "💡 Tap 📍 Directions on a stop to open Google Maps.",
+          "Đánh dấu đã lấy food / đã giao / trả cash được lưu vào hệ thống, xem được trên mọi máy.": "Picked up / delivered / cash marks are saved to the system and visible on every device.",
+          "Đánh dấu BẾP ĐÃ NHẬN / XONG / TRẢ TIỆM được lưu vào hệ thống, xem được trên mọi máy.": "RECEIVED / DONE / PAY SHOP marks are saved to the system and visible on every device.",
+          "🗺 Chỉ đường cả tuyến": "🗺 Whole-route directions",
+          "💰 Cần thu khi giao": "💰 To collect on delivery",
+          "Tổng cần thu": "Total to collect",
+          "Tổng tiền thu tại các điểm giao chưa trả trước": "Total to collect at stops not prepaid",
+          "💰 Thanh toán với tiệm": "💰 Shop settlement",
+          "💵 Thanh toán với tiệm": "💵 Shop settlement",
+          "· Thanh toán với tiệm": "· Shop settlement",
+          "TIỀN CỦA THINH": "THINH'S MONEY",
+          "· Tiền của Thinh": "· Thinh's money",
+          "Tính từ các order bếp của ngày này": "Calculated from this day's kitchen orders",
+          "Tính từ các điểm giao của ngày này": "Calculated from this day's delivery stops",
+          "🖨 In tất cả": "🖨 Print all",
+          "🍳 Tổng món cần nấu": "🍳 Total dishes to cook",
+          "📝 Note": "📝 Note",
+          "📷 Nhập từ hình order": "📷 Import from order photo",
+          "✅ Đã đọc hình xong — xem lại rồi bấm Lưu order": "✅ Photo read — review, then tap Save order",
+          "Chưa đọc được hình này — nhập tay giúp em nhé": "Couldn't read this photo — please enter it manually",
+          "Nhập order mới": "New order",
+          "· Nhập order": "· New order",
+          "Ngày": "Date",
+          "Tên khách": "Customer name",
+          "Số điện thoại": "Phone number",
+          "Địa chỉ giao / nơi pick up": "Delivery address / pickup place",
+          "Loại đơn": "Order type",
+          "Giao sáng": "Morning delivery",
+          "Bếp giao": "Kitchen delivers",
+          "Giờ": "Time",
+          "Món (mỗi món 1 dòng)": "Dishes (one per line)",
+          "Ghi chú": "Note",
+          "Lưu order": "Save order",
+          "Order sẽ hiện ngay trong mục Order Nhà Bếp của ngày đã chọn": "The order appears right away in Kitchen Orders for the chosen day",
+          "🌐 ĐƠN ONLINE": "🌐 ONLINE ORDERS",
+          "🌐 ĐƠN ONLINE ĐÃ XONG": "🌐 ONLINE ORDERS — DONE",
+          "🍳 Order nhà bếp": "🍳 Kitchen orders",
+          "🍳 NHÀ BẾP": "🍳 KITCHEN",
+          "· Nhà bếp": "· Kitchen",
+          "· Tuyến giao sáng": "· Morning route",
+          "Đang tải dữ liệu…": "Loading…",
+          "Đang kiểm tra mật khẩu…": "Checking password…",
+          "Đang lưu…": "Saving…",
+          "Đang mở…": "Opening…",
+          "Đang đăng nhập…": "Logging in…",
+          "Đang đọc hình…": "Reading photo…",
+          "⏳ Đang đọc hình…": "⏳ Reading photo…",
+          "Đang tạo PDF…": "Creating PDF…",
+          "🔒 Trang này cần mật khẩu": "🔒 This page needs a password",
+          "🔒 Tạo mật khẩu cho trang này": "🔒 Create a password for this page",
+          "🔒 Đổi mật khẩu": "🔒 Change password",
+          "Mật khẩu hiện tại": "Current password",
+          "Mật khẩu mới": "New password",
+          "Nhập lại mật khẩu": "Re-enter password",
+          "Nhập lại mật khẩu mới": "Re-enter new password",
+          "Lưu mật khẩu": "Save password",
+          "Lưu mật khẩu mới": "Save new password",
+          "Đóng": "Close",
+          "Huỷ": "Cancel",
+          "🗑 Xoá ngày": "🗑 Delete day",
+          "🗑 Đã xoá ngày khỏi máy này": "🗑 Day hidden on this device",
+          "Ngày này sẽ ẩn khỏi máy này. Các ngày khác không bị ảnh hưởng.": "This day will be hidden on this device only. Other days are not affected.",
+          "Hôm nay": "Today",
+          "Ngày mai": "Tomorrow",
+          "🍽 Quản lý món": "🍽 Dish manager",
+          "· Quản lý món": "· Dish manager",
+          "Tên món *": "Dish name *",
+          "Giá ($) *": "Price ($) *",
+          "Mô tả": "Description",
+          "Hình món": "Dish photo",
+          "Thứ tự hiển thị": "Display order",
+          "Lưu món": "Save dish",
+          "🗑 Xoá món": "🗑 Delete dish",
+          "Món này sẽ bị xoá khỏi trang bán của tiệm.": "This dish will be removed from the shop's selling page.",
+          "Món lưu xong sẽ hiện ngay trên trang bán của tiệm": "Once saved, the dish appears right away on the shop's selling page",
+          "Món tự đăng sẽ hiện trên trang bán của tiệm": "Self-posted dishes appear on the shop's selling page",
+          "Món đã có hình — chọn hình mới nếu muốn thay.": "This dish has a photo — pick a new one to replace it.",
+          "Mở trang": "Open page",
+          "Sửa": "Edit",
+          "✏️ Sửa món": "✏️ Edit dish",
+          "Xoá": "Delete",
+          "＋ Thêm món": "＋ Add dish",
+          "✅ Đang bán": "✅ On sale",
+          "⏸ Tạm ẩn": "⏸ Hidden",
+          "Chưa có món nào — bấm ＋ Thêm món để đăng món đầu tiên.": "No dishes yet — tap ＋ Add dish to post the first one.",
+          "Chưa nhập tên món.": "Dish name is missing.",
+          "Giá món chưa đúng — nhập số tiền, ví dụ 12.50.": "Invalid price — enter an amount, e.g. 12.50.",
+          "Hai mật khẩu chưa khớp, nhập lại nhé.": "The passwords don't match — please re-enter.",
+          "Sai mật khẩu, thử lại nhé": "Wrong password — please try again",
+          "Vui lòng chọn ngày cho order nhé.": "Please choose a date for the order.",
+          "Vui lòng nhập tên khách và ít nhất 1 món nhé.": "Please enter the customer name and at least 1 dish.",
+          "Vui lòng nhập mật khẩu mới nhé.": "Please enter the new password.",
+          "✅ Đã lưu món": "✅ Dish saved",
+          "🗑 Đã xoá món": "🗑 Dish deleted",
+          "✓ Đã chép link app": "✓ App link copied",
+          "🔒 Đã tạo mật khẩu cho trang TIỀN CỦA THINH": "🔒 Password created for the THINH'S MONEY page",
+          "Chưa có ngày bếp nào.": "No kitchen days yet.",
+          "Chưa có tuyến giao nào.": "No delivery routes yet.",
+          "Không có order nào trong ngày này.": "No orders on this day.",
+          "TUYẾN MỚI NHẤT": "LATEST ROUTE",
+          "Xem tuyến →": "View route →",
+          "Xem order →": "View orders →",
+          "GIAO SÁNG": "MORNING DELIVERY",
+          "BẾP GIAO": "KITCHEN DELIVERY",
+          "GIAO HÀNG": "DELIVERY",
+          "Anh trả tiệm": "You owe the shop",
+          "Tiệm nợ anh": "Shop owes you",
+          "Chi tiết phần ăn": "Portion details",
+          "☐ BẾP ĐÃ NHẬN": "☐ RECEIVED",
+          "✅ BẾP ĐÃ NHẬN": "✅ RECEIVED",
+          "☐ XONG": "☐ DONE",
+          "✅ ĐÃ XONG": "✅ DONE",
+          "💵 TRẢ TIỆM": "💵 PAY SHOP",
+          "✅ ĐÃ TRẢ TIỆM": "✅ PAID SHOP",
+          "💵 TRẢ THINH": "💵 PAY THINH",
+          "💵 TRẢ CASH": "💵 CASH PAID",
+          "✅ ĐÃ TRẢ CASH": "✅ CASH PAID",
+          "☐ ĐÃ LẤY FOOD": "☐ PICKED UP",
+          "✅ ĐÃ LẤY FOOD": "✅ PICKED UP",
+          "☐ ĐÃ GIAO": "☐ DELIVERED",
+          "✅ ĐÃ GIAO": "✅ DELIVERED",
+          "🖨 In order": "🖨 Print order",
+          "Chỉ đường": "Directions",
+          "➕ Đưa vào bếp": "➕ Send to kitchen",
+          "Đưa vào bếp": "Send to kitchen",
+          "— Chưa có món —": "— No dishes —",
+          "— Không có —": "— None —",
+          "⚠️ Chưa lưu được — kiểm tra mạng rồi thử lại nhé.": "⚠️ Couldn't save — check your connection and try again.",
+          "⚠️ Không tạo được PDF — đang in theo cách cũ…": "⚠️ Couldn't create the PDF — printing the old way…",
+          "⚠️ Tạo PDF cần có mạng — đang in theo cách cũ…": "⚠️ PDF needs internet — printing the old way…",
+          "Tìm theo 4 số cuối…": "Search by last 4 digits…",
+          "VD: 8175 hoặc Lam Doan": "E.g. 8175 or Lam Doan",
+          "VD: 4:00 PM, 8:30 AM, ngay bây giờ": "E.g. 4:00 PM, 8:30 AM, right now",
+          "VD: Đã Zelle cho anh $10": "E.g. Paid Zelle $10",
+          "Không bắt buộc": "Optional",
+          "Mô tả ngắn về món (không bắt buộc)": "Short dish description (optional)",
+          "Ví dụ: Phở bò tái": "E.g. Phở bò tái",
+          "Ví dụ: 12.50": "E.g. 12.50"
+        };
+
+        var RULES = [
+          [/^(Thứ Hai|Thứ 2)\b/, "Monday"],
+          [/^(Thứ Ba|Thứ 3)\b/, "Tuesday"],
+          [/^(Thứ Tư|Thứ 4)\b/, "Wednesday"],
+          [/^(Thứ Năm|Thứ 5)\b/, "Thursday"],
+          [/^(Thứ Sáu|Thứ 6)\b/, "Friday"],
+          [/^(Thứ Bảy|Thứ 7)\b/, "Saturday"],
+          [/^Chủ Nhật\b/, "Sunday"],
+          [/^Đã nhận (\d+)\/(\d+) · Đã xong (\d+)\/(\d+)$/, "Received $1/$2 · Done $3/$4"],
+          [/^CHƯA XONG — CẦN NẤU \((\d+)\)$/, "NOT DONE — TO COOK ($1)"],
+          [/^ĐÃ XONG \((\d+)\)$/, "DONE ($1)"],
+          [/^Tổng lời món: /, "Total food profit: "],
+          [/^Tổng shipping của Thinh: /, "Thinh's total shipping: "],
+          [/^TỔNG CẢ 2: /, "GRAND TOTAL: "],
+          [/^Tổng phí giao trả tiệm: /, "Total delivery fees to the shop: "],
+          [/^Tổng anh trả tiệm: /, "Total you owe the shop: "],
+          [/^Tổng tiệm nợ anh: /, "Total the shop owes you: "],
+          [/^− phí /, "− fee "],
+          [/^Tài xế: /, "Driver: "],
+          [/^SĐT: /, "Phone: "],
+          [/^Mặn: /, "Main: "],
+          [/^Xào: /, "Stir-fry: "],
+          [/^Canh: /, "Soup: "],
+          [/^Đơn online #(\d+)$/, "Online order #$1"],
+          [/^✅ Đang bán: /, "✅ On sale: "],
+          [/^⏸ Đã tạm ẩn: /, "⏸ Hidden: "],
+          [/^Xoá ngày /, "Delete day "],
+          [/^THU \$(.+?) khi giao \(chưa\s+trả\)$/, "COLLECT $$$1 on delivery (unpaid)"],
+          [/^Đã trả qua web \$(.+?) · Không thu tiền$/, "Paid via web $$$1 · No collection"],
+          [/^Đã trả Cash cả tuần ✅ · Không thu tiền$/, "Paid cash for the whole week ✅ · No collection"],
+          [/^Đã trả Zelle \$(.+?) ✅ · Không thu tiền$/, "Zelle paid $$$1 ✅ · No collection"],
+          [/^Đã trả Venmo \$(.+?) ✅ · Không thu tiền$/, "Venmo paid $$$1 ✅ · No collection"],
+          [/(\d+)\s*điểm giao\b/g, "$1 stops"],
+          [/(\d+)\s*phần cơm/g, "$1 rice portions"],
+          [/(\d+)\s*phần\b/g, "$1 portions"],
+          [/(\d+)\s*đơn\b/g, "$1 orders"],
+          [/(\d+)\s*phút/g, "$1 min"],
+          [/(\d+)\s*giờ/g, "$1 hr"],
+          [/box kem/g, "ice cream box"]
+        ];
+
+        function trText(node) {
+          var raw = node.nodeValue;
+          if (!raw || !/\S/.test(raw)) return;
+          var core = raw.trim();
+          var out;
+          if (Object.prototype.hasOwnProperty.call(DICT, core)) {
+            out = DICT[core];
+          } else {
+            out = core;
+            for (var i = 0; i < RULES.length; i++) out = out.replace(RULES[i][0], RULES[i][1]);
+          }
+          if (out !== core) node.nodeValue = raw.replace(core, out);
+        }
+
+        function walk(root) {
+          if (!root) return;
+          var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (n) {
+              var p = n.parentNode;
+              if (!p) return NodeFilter.FILTER_REJECT;
+              var tag = p.nodeName;
+              if (tag === "SCRIPT" || tag === "STYLE" || tag === "TEXTAREA") return NodeFilter.FILTER_REJECT;
+              return NodeFilter.FILTER_ACCEPT;
+            }
+          });
+          var nodes = [], n;
+          while ((n = walker.nextNode())) nodes.push(n);
+          for (var i = 0; i < nodes.length; i++) trText(nodes[i]);
+          if (root.querySelectorAll) {
+            var els = root.querySelectorAll("[placeholder]");
+            for (var j = 0; j < els.length; j++) {
+              var ph = els[j].getAttribute("placeholder");
+              if (ph && DICT[ph]) els[j].setAttribute("placeholder", DICT[ph]);
+            }
+          }
+        }
+
+        function start() {
+          walk(document.body);
+          var mo = new MutationObserver(function (muts) {
+            for (var i = 0; i < muts.length; i++) {
+              var m = muts[i];
+              if (m.type === "characterData") { trText(m.target); continue; }
+              for (var j = 0; j < m.addedNodes.length; j++) {
+                var a = m.addedNodes[j];
+                if (a.nodeType === 1) walk(a);
+                else if (a.nodeType === 3) trText(a);
+              }
+            }
+          });
+          mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+        }
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+        else start();
+      })();
+    </script>
     <script>
       (function () {
         "use strict";
@@ -6115,7 +6413,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-1353";
+window.__BUILD__ = "20261026-1415";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
