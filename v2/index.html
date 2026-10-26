@@ -1829,7 +1829,10 @@
             <div class="brand">Think's Kitchen</div>
             <button type="button" class="logout-btn" id="logoutBtn">Đăng xuất</button>
           </div>
-          <div class="dayline">Trang chủ</div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div class="dayline">Trang chủ</div>
+            <button type="button" class="logout-btn" id="openChrisMonthBtn">💵 Chris all month</button>
+          </div>
           <div class="origin">Chọn mục cần xem bên dưới</div>
         </div>
       </header>
@@ -1848,21 +1851,6 @@
             <span>
               <span class="section-title">Order Nhà Bếp</span>
               <span class="section-sub">Danh sách order nấu theo ngày</span>
-            </span>
-            <span class="section-arrow" aria-hidden="true">→</span>
-          </button>
-          <button type="button" class="section-card" id="openChrisMonthBtn">
-            <span class="section-icon" aria-hidden="true">💵</span>
-            <span>
-              <span class="section-title">Chris all month</span>
-              <span class="section-sub">Tổng tiền lời của Thinh trong tháng</span>
-            </span>
-            <span class="section-arrow" aria-hidden="true">→</span>
-          </button>
-          <button type="button" class="section-card" id="openDishesBtn">
-            <span class="section-icon" aria-hidden="true">🍽</span>
-            <span>
-              <span class="section-title">Quản lý món</span>
             </span>
             <span class="section-arrow" aria-hidden="true">→</span>
           </button>
@@ -5363,7 +5351,8 @@
           });
         }
 
-        document.getElementById("openDishesBtn").addEventListener("click", function () {
+        var openDishesEl = document.getElementById("openDishesBtn");
+        if (openDishesEl) openDishesEl.addEventListener("click", function () {
           dishErr(null);
           showView(dishesView);
           loadTkProducts();
@@ -6091,7 +6080,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-1252";
+window.__BUILD__ = "20261026-1256";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
