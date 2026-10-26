@@ -343,5 +343,37 @@
         if (session && session.access_token) showDash(); else showLogin();
       })();
     </script>
-  </body>
+  <script>
+/* Tu dong cap nhat ban moi (Chris 2026-10-26): moi lan mo app /
+   quay lai app / moi 5 phut, trang tu kiem tra version.json tren
+   server — neu server co ban moi hon ban dang chay thi tu load
+   lai 1 lan. Dien thoai khong con giu ban cu. */
+window.__BUILD__ = "20261026-1245";
+(function () {
+  var KEY = "build-reloaded-for";
+  function check() {
+    fetch("/tuyen-giao/version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.build) return;
+        if (j.build === window.__BUILD__) {
+          try { sessionStorage.removeItem(KEY); } catch (e) {}
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(KEY) === j.build) return;
+          sessionStorage.setItem(KEY, j.build);
+        } catch (e) {}
+        location.reload();
+      })
+      .catch(function () {});
+  }
+  check();
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) check();
+  });
+  setInterval(check, 300000);
+})();
+</script>
+</body>
 </html>
