@@ -3676,7 +3676,16 @@
             var fee = gkey === "sang" ? chrisDriverFee(dayStr, o, sell) : parseShipFee(o.note);
             var ship = gkey === "sang" ? fee : 0;
             var wixFee = 0;
+            var feeKind = "";
             if (isWebPaidOrder(o)) {
+              feeKind = "Wix";
+            } else if (isWebOriginOrder(o)) {
+              /* Đơn web của tiệm (dat-com) trả thẻ qua Stripe —
+                 cũng trừ phí thẻ 2.9% + $0.30 như Wix (Chris
+                 2026-10-26: đơn Giang Nguyen (web) trừ phí Stripe). */
+              feeKind = "Stripe";
+            }
+            if (feeKind) {
               var charged = Math.round((sell + fee) * 1.0875 * 100) / 100;
               wixFee = Math.round((charged * 0.029 + 0.30) * 100) / 100;
             }
@@ -3684,7 +3693,7 @@
             var amount = Math.round((marginNet + ship) * 100) / 100;
             rows.push({
               label: o.label || o.name || "",
-              amount: amount, ship: ship, wixFee: wixFee
+              amount: amount, ship: ship, wixFee: wixFee, feeKind: feeKind
             });
             profitTotal += marginNet;
             shipTotal += ship;
@@ -3746,7 +3755,7 @@
                 name.appendChild(el("span", "chris-ship-note", "+ ship " + fmtUsd2(r.ship)));
               }
               if (r.wixFee > 0) {
-                name.appendChild(el("span", "chris-fee-note", "− phí Wix " + fmtUsd2(r.wixFee)));
+                name.appendChild(el("span", "chris-fee-note", "− phí " + (r.feeKind || "Wix") + " " + fmtUsd2(r.wixFee)));
               }
               line.appendChild(name);
               line.appendChild(el("span", "chris-amt", fmtUsd2(r.amount)));
@@ -6086,7 +6095,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-1300";
+window.__BUILD__ = "20261026-1305";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
