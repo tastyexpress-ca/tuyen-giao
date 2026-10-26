@@ -140,7 +140,6 @@
     "Số lượng": "Quantity",
     "Tăng": "Increase",
     "Giảm": "Decrease",
-    " / phần": " / portion",
     "Ngày: ": "Date: ",
     "Đã qua giờ nhận đơn": "Ordering is closed for this slot",
     "Đang tính phí giao…": "Calculating delivery fee…",
@@ -301,10 +300,104 @@
     "Chưa có đơn online nào.": "No online orders yet.",
     "Chủ tiệm: ": "Owner: ",
     "Commission riêng:": "Custom commission:",
-    "Khác": "Other"
+    "Khác": "Other",
+    "Mặn:": "Main:",
+    "Xào:": "Stir-fry:",
+    "Canh:": "Soup:",
+    "Chọn món cho cơm phần": "Choose dishes for your set meal",
+    "/ phần": "/ portion",
+    "Đặc biệt": "Special",
+    "MENU ĐẶC TIỆC — ": "PARTY TRAY MENU — ",
+    "1 tray dành cho 4–5 người · Đặt trước để tiệm chuẩn bị chu đáo": "1 tray serves 4–5 people · Please order ahead so the shop can prepare it well",
+    "1 tray · 4–5 người": "1 tray · serves 4–5",
+    "Gỏi": "Salads",
+    "Món chiên": "Fried dishes",
+    "Món khai vị": "Appetizers",
+    "Xào bò": "Beef stir-fry",
+    "Xào hải sản": "Seafood stir-fry",
+    "Cơm tháng": "Monthly meal plan",
+    "Bánh canh giò heo, trứng cút, tôm": "Pork hock noodle soup with quail eggs & shrimp",
+    "Bánh tráng trộn": "Mixed rice paper salad",
+    "Bò kho": "Beef stew",
+    "Bò xào cà chua củ hành": "Beef stir-fried with tomato & onion",
+    "Bông cải xào": "Stir-fried cauliflower",
+    "Bún bò Huế": "Hue-style beef noodle soup",
+    "Bún riêu": "Crab noodle soup",
+    "Bắp cải xào": "Stir-fried cabbage",
+    "Canh bí đỏ": "Pumpkin soup",
+    "Canh bầu nấu tôm": "Gourd soup with shrimp",
+    "Canh chua tôm": "Sour shrimp soup",
+    "Canh cà rốt, khoai tây": "Carrot & potato soup",
+    "Canh cải bẹ xanh": "Mustard greens soup",
+    "Canh cải chua sườn non": "Pickled mustard soup with pork ribs",
+    "Canh cải thảo": "Napa cabbage soup",
+    "Canh hẹ đậu hủ": "Chive & tofu soup",
+    "Canh khoai mỡ": "Purple yam soup",
+    "Canh khổ qua dồi thịt": "Stuffed bitter melon soup",
+    "Canh mồng tơi mướp": "Malabar spinach & luffa soup",
+    "Canh rau dền": "Amaranth greens soup",
+    "Cháo lòng": "Pork offal congee",
+    "Chả giò": "Fried spring rolls",
+    "Cà ri gà": "Chicken curry",
+    "Cá chim, cá lưỡi trâu chiên": "Fried pomfret & sole",
+    "Cá kho tộ": "Clay-pot braised fish",
+    "Cá kèo kho rau răm": "Braised goby with Vietnamese coriander",
+    "Cá ngừ kho thơm": "Tuna braised with pineapple",
+    "Cá nục chiên": "Fried mackerel scad",
+    "Cá nục kho thơm": "Mackerel scad braised with pineapple",
+    "Cánh gà chiên nước mắm": "Fish-sauce fried chicken wings",
+    "Cánh gà, đùi gà chiên nước mắm": "Fish-sauce fried chicken wings & drumsticks",
+    "Đùi gà, cánh gà chiên nước mắm": "Fish-sauce fried chicken drumsticks & wings",
+    "Đùi gà, cánh gà chiên nước mắm tỏi": "Garlic fish-sauce fried chicken drumsticks & wings",
+    "Cơm chiên Dương Châu": "Yangzhou fried rice",
+    "Cơm chiên hải sản": "Seafood fried rice",
+    "Cơm chiên tỏi trứng": "Garlic & egg fried rice",
+    "Cải ngọt xào": "Stir-fried choy sum",
+    "Giá hẹ xào": "Stir-fried bean sprouts & chives",
+    "Gà kho gừng": "Ginger braised chicken",
+    "Gà kho sả": "Lemongrass braised chicken",
+    "Gà rô ti": "Roasted chicken",
+    "Gỏi bò ngũ sắc": "Five-color beef salad",
+    "Gỏi cuốn tôm thịt": "Fresh spring rolls with shrimp & pork",
+    "Gỏi củ cải, cà rốt tôm thịt": "Radish & carrot salad with shrimp & pork",
+    "Gỏi gà": "Chicken salad",
+    "Gỏi đu đủ tôm thịt": "Papaya salad with shrimp & pork",
+    "Kho quẹt chấm rau luộc": "Caramelized dipping sauce with boiled vegetables",
+    "Khổ qua xào trứng": "Bitter melon stir-fried with egg",
+    "Mì xào bò": "Beef chow mein",
+    "Mì xào hải sản": "Seafood chow mein",
+    "Nui xào bò": "Beef macaroni stir-fry",
+    "Nui xào hải sản": "Seafood macaroni stir-fry",
+    "Nui giò heo, trứng cút, tôm": "Macaroni soup with pork hock, quail eggs & shrimp",
+    "Mắm chưng": "Steamed fermented fish with egg & pork",
+    "Mực lăn bột chiên giòn": "Crispy fried calamari",
+    "Mực lăn bột": "Crispy fried calamari",
+    "Mực xào chua ngọt": "Sweet & sour squid stir-fry",
+    "Su su xào": "Stir-fried chayote",
+    "Sườn kho tiêu": "Pepper braised pork ribs",
+    "Sườn non nướng": "Grilled pork ribs",
+    "Sườn non xào chua ngọt": "Sweet & sour pork ribs",
+    "Thịt ba rọi kho mắm ruốc": "Pork belly braised in shrimp paste",
+    "Thịt kho trứng": "Braised pork with eggs",
+    "Trứng chiên thịt bằm": "Fried egg with minced pork",
+    "Tôm kho tàu": "Caramelized shrimp",
+    "Tôm lăn bột chiên giòn": "Crispy fried shrimp",
+    "Tôm lăn bột": "Crispy fried shrimp",
+    "Tôm rim": "Caramelized shrimp",
+    "Tôm rim thịt ba rọi": "Caramelized shrimp with pork belly",
+    "Đậu hủ dồi thịt sốt cà chua": "Stuffed tofu in tomato sauce",
+    "Đậu que xào": "Stir-fried green beans"
   };
 
+  var WD = { "Thứ 2": "Monday", "Thứ 3": "Tuesday", "Thứ 4": "Wednesday", "Thứ 5": "Thursday", "Thứ 6": "Friday", "Thứ 7": "Saturday", "Chủ Nhật": "Sunday" };
   var RULES = [
+    [/^⏰ Ca Sáng của (Thứ \d|Chủ Nhật) ([\d/]+) đã chốt đơn \(10:00 tối hôm trước\) — ngày này chỉ còn nhận đơn cho Ca Tối 7–9pm\.$/,
+      function (m, wd, dm) { return "⏰ The Morning shift for " + (WD[wd] || wd) + " " + dm + " is closed (10:00 PM the night before) — this day now only takes Evening 7–9pm orders."; }],
+    [/^⛔ (Thứ \d|Chủ Nhật) ([\d/]+) đã qua giờ nhận đơn — cả 2 ca đều đã chốt \(Ca Sáng chốt 10:00 tối hôm trước · Ca Tối chốt 4:00 chiều cùng ngày\)\. Bạn chọn ngày khác giúp tiệm nhé\.$/,
+      function (m, wd, dm) { return "⛔ " + (WD[wd] || wd) + " " + dm + " is past the order cutoff — both shifts are closed (Morning closes 10:00 PM the night before · Evening closes 4:00 PM the same day). Please pick another day."; }],
+    [/^Một phần gồm cơm trắng kèm 1 món mặn, 1 món xào và 1 món canh — bạn tự chọn theo menu (Thứ \d|Chủ Nhật) ([\d/]+)\.$/,
+      function (m, wd, dm) { return "One portion of white rice with your choice of 1 main, 1 stir-fry and 1 soup — from the " + (WD[wd] || wd) + " " + dm + " menu."; }],
+    [/^Món đặc biệt (Thứ \d|Chủ Nhật)$/, function (m, wd) { return "Special · " + (WD[wd] || wd); }],
     [/^(Thứ Hai|Thứ 2)\b/, "Monday"],
     [/^(Thứ Ba|Thứ 3)\b/, "Tuesday"],
     [/^(Thứ Tư|Thứ 4)\b/, "Wednesday"],
@@ -321,13 +414,21 @@
     [/^Loại món: /, "Cuisine: "],
     [/^Mức commission chung: /, "General commission rate: "],
     [/^Không tìm thấy tiệm nào khớp với “/, "No shop matches “"],
-    [/(\d+)\s*món\b/g, "$1 items"],
-    [/(\d+)\s*phần cơm/g, "$1 rice portions"],
-    [/(\d+)\s*phần\b/g, "$1 portions"],
-    [/(\d+)\s*phút/g, "$1 min"],
-    [/(\d+)\s*giờ/g, "$1 hr"]
+    [/^(\d+) phút$/, "$1 min"],
+    [/^(\d+) giờ$/, "$1 hr"]
   ];
 
+  var PREFIX = { "Mặn: ": "Main: ", "Xào: ": "Stir-fry: ", "Canh: ": "Soup: ", "Cơm: ": "Rice: " };
+  function trSegment(seg) {
+    if (Object.prototype.hasOwnProperty.call(DICT, seg)) return DICT[seg];
+    for (var p in PREFIX) {
+      if (seg.indexOf(p) === 0) {
+        var rest = seg.slice(p.length);
+        if (Object.prototype.hasOwnProperty.call(DICT, rest)) return PREFIX[p] + DICT[rest];
+      }
+    }
+    return seg;
+  }
   function trText(node) {
     var raw = node.nodeValue;
     if (!raw || !/\S/.test(raw)) return;
@@ -335,9 +436,19 @@
     var out;
     if (Object.prototype.hasOwnProperty.call(DICT, core)) {
       out = DICT[core];
+    } else if (core.indexOf(" · ") > -1) {
+      var parts = core.split(" · ");
+      var changed = false;
+      for (var i = 0; i < parts.length; i++) {
+        var t = trSegment(parts[i]);
+        if (t !== parts[i]) changed = true;
+        parts[i] = t;
+      }
+      out = changed ? parts.join(" · ") : core;
+      if (!changed) for (var j = 0; j < RULES.length; j++) out = out.replace(RULES[j][0], RULES[j][1]);
     } else {
-      out = core;
-      for (var i = 0; i < RULES.length; i++) out = out.replace(RULES[i][0], RULES[i][1]);
+      out = trSegment(core);
+      if (out === core) for (var k = 0; k < RULES.length; k++) out = out.replace(RULES[k][0], RULES[k][1]);
     }
     if (out !== core) node.nodeValue = raw.replace(core, out);
   }
