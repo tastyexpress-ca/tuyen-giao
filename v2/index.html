@@ -3633,6 +3633,12 @@
               base = total / 1.0875;
             }
             var fee = Math.round((base - sell) * 100) / 100;
+            /* Fees here are whole dollars by construction ($1/mile
+               rounded up, flat Wix shipping); the tax unwind can
+               leave a 1-cent rounding artifact (an $81.57 Wix total
+               unwinds to a $5.01 "fee" for a $5.00 shipping line) —
+               snap it back to the whole dollar. */
+            if (Math.abs(fee - Math.round(fee)) <= 0.02) fee = Math.round(fee);
             return fee > 0 ? fee : 0;
           }
           return 0;
@@ -6080,7 +6086,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-1256";
+window.__BUILD__ = "20261026-1300";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
