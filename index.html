@@ -463,6 +463,21 @@
         color: var(--ink);
       }
       .day-card:active { background: var(--accent-soft); }
+      /* Thẻ của ngày hôm nay: nguyên thẻ màu xanh, nổi bật để nhìn
+         nhanh là thấy (Chris 2026-10-26) — ngày nào là "hôm nay" thì
+         thẻ của ngày đó xanh, các thẻ khác giữ nguyên. */
+      .day-card.today {
+        background: #d8f3e0;
+        border: 2.5px solid #22a355;
+        box-shadow: 0 0 0 3px rgba(34, 163, 85, 0.22), var(--shadow);
+      }
+      @media (prefers-color-scheme: dark) {
+        .day-card.today {
+          background: #173d24;
+          border-color: #4ade80;
+          box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25), var(--shadow);
+        }
+      }
       .day-card-top {
         display: flex;
         justify-content: space-between;
@@ -2901,6 +2916,7 @@
             var card = el("div", "day-card");
             card.setAttribute("role", "button");
             card.tabIndex = 0;
+            if (rd.day === localDayStr(new Date())) card.classList.add("today");
             var top = el("div", "day-card-top");
             top.appendChild(el("span", "day-date", label));
             if (rd.is_latest) {
@@ -4123,6 +4139,7 @@
             var card = el("div", "day-card");
             card.setAttribute("role", "button");
             card.tabIndex = 0;
+            if (kd.day === localDayStr(new Date())) card.classList.add("today");
             var top = el("div", "day-card-top");
             top.appendChild(el("span", "day-date", label));
             top.appendChild(el("span", "day-badge kitchen", "🍳 NHÀ BẾP"));
