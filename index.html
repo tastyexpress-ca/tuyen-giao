@@ -1725,6 +1725,7 @@
       }
       .web-card.done .customer { text-decoration: line-through; text-decoration-thickness: 2px; }
       .web-card .k-actions { margin-top: 12px; }
+      .web-card .btn-payee:disabled { opacity: 1; cursor: default; }
 
       @media (prefers-reduced-motion: reduce) {
         .progress-fill, .stop-card { transition: none; }
@@ -4886,10 +4887,8 @@
           }
 
           /* 4 nút trạng thái giống thẻ bếp (Chris 2026-10-26): BẾP ĐÃ
-             NHẬN / XONG / TRẢ TIỆM / TRẢ THINH — lưu vào states với
-             card_key "wo-<id>". Tiền online trả thẻ qua Stripe nên
-             TRẢ THINH mặc định bật; bấm để đổi, trạng thái đã lưu
-             luôn thắng mặc định. */
+             NHẬN / XONG / TRẢ TIỆM — lưu vào states với card_key
+             "wo-<id>". TRẢ THINH luôn bật (tiền online về Thinh). */
           var wDay = o.day;
           var wKey = "wo-" + o.id;
           var wDone = getToggle(wDay, wKey, "done");
@@ -4929,18 +4928,13 @@
           });
           wActions.appendChild(wPaidBtn);
 
-          var wThinhKey = stateKey(wDay, wKey, "payee_thinh");
-          var wThinh = (wThinhKey in stateMap) ? stateMap[wThinhKey] === true : true;
-          var wPayeeBtn = el("button", "btn-payee", wThinh ? "💵 TRẢ THINH ✓" : "💵 TRẢ THINH");
+          /* Đơn online: tiền thẻ qua Stripe luôn về Thinh — nút
+             TRẢ THINH luôn bật sẵn, không bấm đổi được
+             (Chris 2026-10-26: "Đơn online thì auto là trả Thịnh"). */
+          var wPayeeBtn = el("button", "btn-payee on", "💵 TRẢ THINH ✓");
           wPayeeBtn.type = "button";
-          wPayeeBtn.classList.toggle("on", wThinh);
-          wPayeeBtn.setAttribute("aria-pressed", wThinh ? "true" : "false");
-          wPayeeBtn.addEventListener("click", function () {
-            var k2 = stateKey(wDay, wKey, "payee_thinh");
-            var nowThinh = (k2 in stateMap) ? stateMap[k2] === true : true;
-            setToggle(wDay, wKey, "payee_thinh", !nowThinh, renderWebOrders);
-            renderWebOrders();
-          });
+          wPayeeBtn.disabled = true;
+          wPayeeBtn.setAttribute("aria-pressed", "true");
           wActions.appendChild(wPayeeBtn);
 
           card.appendChild(wActions);
