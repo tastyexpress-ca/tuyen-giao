@@ -2171,6 +2171,10 @@
           <div class="web-list" id="webOrdersList"></div>
         </section>
         <main id="kitchenGroups"></main>
+        <section class="web-section" id="webDoneSection" hidden aria-label="Đơn online đã xong">
+          <div class="web-head" id="webDoneHead">🌐 ĐƠN ONLINE ĐÃ XONG</div>
+          <div class="web-list" id="webDoneList"></div>
+        </section>
 
         <footer>
           <p class="fineprint">Đánh dấu BẾP ĐÃ NHẬN / XONG / TRẢ TIỆM được lưu vào hệ thống, xem được trên mọi máy.</p>
@@ -2378,6 +2382,9 @@
         var webOrdersSection = document.getElementById("webOrdersSection");
         var webOrdersHead = document.getElementById("webOrdersHead");
         var webOrdersList = document.getElementById("webOrdersList");
+        var webDoneSection = document.getElementById("webDoneSection");
+        var webDoneHead = document.getElementById("webDoneHead");
+        var webDoneList = document.getElementById("webDoneList");
         var kitchenDayline = document.getElementById("kitchenDayline");
         var kitchenChips = document.getElementById("kitchenChips");
         var kFill = document.getElementById("kProgressFill");
@@ -4944,15 +4951,32 @@
           var kd = currentKitchenDay;
           var list = kd ? (webOrdersByDay[kd.day] || []) : [];
           webOrdersList.innerHTML = "";
-          if (!list.length) {
-            webOrdersSection.hidden = true;
-            return;
-          }
-          webOrdersHead.textContent = "🌐 ĐƠN ONLINE · " + list.length + " ĐƠN";
+          webDoneList.innerHTML = "";
+          var pending = [], done = [];
           list.forEach(function (o) {
-            webOrdersList.appendChild(buildWebCard(o));
+            if (getToggle(o.day, "wo-" + o.id, "done")) done.push(o);
+            else pending.push(o);
           });
-          webOrdersSection.hidden = false;
+          if (!pending.length) {
+            webOrdersSection.hidden = true;
+          } else {
+            webOrdersHead.textContent = "🌐 ĐƠN ONLINE · " + pending.length + " ĐƠN";
+            pending.forEach(function (o) {
+              webOrdersList.appendChild(buildWebCard(o));
+            });
+            webOrdersSection.hidden = false;
+          }
+          /* Đơn online đã XONG chạy xuống khu dưới cùng của trang,
+             giống thẻ bếp (Chris 2026-10-26). */
+          if (!done.length) {
+            webDoneSection.hidden = true;
+          } else {
+            webDoneHead.textContent = "🌐 ĐƠN ONLINE ĐÃ XONG · " + done.length + " ĐƠN";
+            done.forEach(function (o) {
+              webDoneList.appendChild(buildWebCard(o));
+            });
+            webDoneSection.hidden = false;
+          }
         }
 
         /* ================================================================
