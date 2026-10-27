@@ -3321,6 +3321,13 @@
           if (r % 1 === 0) return "$" + String(r);
           return "$" + r.toFixed(2).replace(/0$/, "");
         }
+
+        /* Portion counts can be fractional (0.5 phần from a $5 món lẻ,
+           tray equivalents like 33/10) — print at most 2 decimals,
+           trimmed ("30.5", "10"). */
+        function fmtPhan(x) {
+          return String(Math.round((Number(x) || 0) * 100) / 100);
+        }
         /* Display name for the portions breakdown: the dish name with
            its parenthetical modifiers removed ("cơm phần (cá kho tộ,
            …)" → "cơm phần") and any "Thứ N" day marker dropped, so
@@ -3460,7 +3467,15 @@
           var orders = (kitchenOrdersByDay[dayStr] || []).slice();
           var linked = {};
           orders.forEach(function (o) {
-            var m = /Đơn online #(\d+)/i.exec(String(o.note || ""));
+            /* A kitchen row IS a web order when its note carries
+               "Đơn online #<id>" OR its label is "Order app #<id> — …"
+               (the label rule Chris locked 2026-10-26). The label
+               match matters: the kitchen note usually carries the
+               CUSTOMER's note instead, and without it app order #17
+               settled twice on 2026-10-27 (kitchen row + pseudo row)
+               until Chris spotted the duplicate. */
+            var m = /Đơn online #(\d+)/i.exec(String(o.note || "")) ||
+              /^Order app #(\d+)/i.exec(String(o.label || ""));
             if (m) linked[m[1]] = true;
           });
           (webOrdersByDay[dayStr] || []).forEach(function (o) {
@@ -3480,7 +3495,7 @@
           var orders = settlementOrders(dayStr);
           var groups = {};
           ["sang", "pickup", "bep"].forEach(function (k) {
-            groups[k] = { rows: [], portions: 0, monLe: 0, anhTra: 0, tiemNo: 0, feesReturned: 0, nameOrder: [], nameTotals: {}, breakdown: "" };
+            groups[k] = { rows: [], portions: 0, monLe: 0, anhTra: 0, tiemNo: 0, feesReturned: 0, anhEq: 0, shopEq: 0, nameOrder: [], nameTotals: {}, breakdown: "" };
           });
           orders.forEach(function (o) {
             var gkey = grpInfo(o.grp).key;
@@ -3540,6 +3555,19 @@
             } else {
               /* Pick up paid to the shop: flat $2/portion profit back. */
               tiemNo = portions * 2 + monLe * 0.2;
+            }
+            /* Portion-equivalents behind each money total, for the
+               day summary's formula lines (Chris 2026-10-27: "Tổng
+               anh trả tiệm = số phần × $8", "Tổng tiệm nợ anh = số
+               phần × $2"): every $10 of tray-class money counts as
+               1 phần here too, so anhEq × $8 (+ bếp giao fees) is
+               exactly anhTra and shopEq × $2 is exactly tiemNo —
+               the bếp giao shop branch runs on profit, so its
+               equivalent is profit ÷ 2 ($4 premium = 2 phần). */
+            if (gkey === "sang" || payee === "chris") {
+              g.anhEq += portions + monLe / 10;
+            } else {
+              g.shopEq += (gkey === "bep" ? profit / 2 : portions) + monLe / 10;
             }
             g.rows.push({
               label: o.label || o.name || "",
@@ -3646,10 +3674,13 @@
           ktBody.appendChild(buildSettleTable("Bảng 3 — Bếp giao", groups.bep, "bep"));
           var a = groups.sang.anhTra + groups.pickup.anhTra + groups.bep.anhTra;
           var b = groups.pickup.tiemNo + groups.bep.tiemNo;
+          var aEq = groups.sang.anhEq + groups.pickup.anhEq + groups.bep.anhEq;
+          var bEq = groups.pickup.shopEq + groups.bep.shopEq;
+          var feesTotal = groups.sang.feesReturned + groups.pickup.feesReturned + groups.bep.feesReturned;
           var net = el("div", "kt-net");
           net.appendChild(el("div", "totals-label", "Tổng kết ngày"));
-          net.appendChild(el("div", "totals-big", "Tổng anh trả tiệm: " + fmtMoney(a)));
-          net.appendChild(el("div", "totals-big", "Tổng tiệm nợ anh: " + fmtMoney(b)));
+          net.appendChild(el("div", "totals-big", "Tổng anh trả tiệm: " + fmtPhan(aEq) + " phần × $8" + (feesTotal > 0 ? " + phí giao " + fmtMoney(feesTotal) : "") + " = " + fmtMoney(a)));
+          net.appendChild(el("div", "totals-big", "Tổng tiệm nợ anh: " + fmtPhan(bEq) + " phần × $2 = " + fmtMoney(b)));
           var aC = Math.round(a * 100);
           var bC = Math.round(b * 100);
           var netText = aC > bC ? "→ Anh gửi tiệm " + fmtMoney(a - b)
@@ -6376,7 +6407,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261027-0125";
+window.__BUILD__ = "20261027-0140";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
