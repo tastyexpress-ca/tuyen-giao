@@ -2967,50 +2967,54 @@
             var label = routeDayLabel(rd);
             var dayStops = stopsByDay[rd.day] || [];
             var hasToi = dayStops.some(function (st) { return st.shift === "toi"; });
-            function buildCard(shift) {
-              var counts = driverCounts(rd.day, shift);
-              var card = el("div", "day-card");
-              card.setAttribute("role", "button");
-              card.tabIndex = 0;
-              if (rd.day === localDayStr(new Date())) card.classList.add("today");
-              if (shift === "toi") card.classList.add("toi-card");
-              var top = el("div", "day-card-top");
-              top.appendChild(el("span", "day-date", label));
-              if (hasToi) {
-                top.appendChild(el("span", "day-badge shift", shift === "toi" ? "🌙 CA TỐI 7PM–11PM" : "🌅 CA SÁNG 9AM–11AM"));
-              }
-              if (rd.is_latest && shift !== "toi") {
-                top.appendChild(el("span", "day-badge newest", "TUYẾN MỚI NHẤT"));
-              }
-              card.appendChild(top);
-              {
-                var miles = fmtMiles(shift === "toi" ? rd.miles_toi : rd.miles);
-                if (miles) card.appendChild(el("div", "day-summary", "\uD83D\uDEE3 " + miles));
-              }
-              var summary = portionsSummary(rd.day, shift);
-              if (summary) card.appendChild(el("div", "day-summary", "🍱 " + summary));
-              if (rd.driver_name && shift !== "toi") {
-                card.appendChild(el("div", "day-summary", "Tài xế: " + rd.driver_name));
-              }
-              card.appendChild(el("div", "day-progress",
-                "Đã lấy " + counts.picked + "/" + counts.total + " · Đã giao " + counts.delivered + "/" + counts.total));
-              var foot = el("div", "day-foot");
-              foot.appendChild(el("span", "day-open", "Xem tuyến →"));
-              if (shift !== "toi") {
-                foot.appendChild(makeDeleteButton("driver", rd.day, label, renderDayList));
-              }
-              card.appendChild(foot);
-              card.addEventListener("click", function () { openDay(rd, shift); });
-              card.addEventListener("keydown", function (ev) {
-                if (ev.key === "Enter" || ev.key === " ") {
-                  ev.preventDefault();
-                  openDay(rd, shift);
-                }
-              });
-              dayList.appendChild(card);
+            /* ONE card per day (Chris 2026-10-27: "Giữ 1 thẻ thôi — bên
+               trong có sẵn 2 thẻ giao sáng, giao tối rồi"): the day list
+               used to split a day with tối stops into two cards, which
+               read as a duplicate day. The card now totals BOTH shifts
+               (counts/summary called with no shift = all stops) and
+               opens the route view on the sáng tab, where the sáng/tối
+               tabs already live. */
+            var counts = driverCounts(rd.day);
+            var card = el("div", "day-card");
+            card.setAttribute("role", "button");
+            card.tabIndex = 0;
+            if (rd.day === localDayStr(new Date())) card.classList.add("today");
+            var top = el("div", "day-card-top");
+            top.appendChild(el("span", "day-date", label));
+            if (hasToi) {
+              top.appendChild(el("span", "day-badge shift", "🌅 SÁNG + 🌙 TỐI"));
             }
-            buildCard("sang");
-            if (hasToi) buildCard("toi");
+            if (rd.is_latest) {
+              top.appendChild(el("span", "day-badge newest", "TUYẾN MỚI NHẤT"));
+            }
+            card.appendChild(top);
+            {
+              var milesParts = [];
+              var milesSang = fmtMiles(rd.miles);
+              var milesToi = fmtMiles(rd.miles_toi);
+              if (milesSang) milesParts.push(hasToi ? "Sáng " + milesSang : milesSang);
+              if (milesToi) milesParts.push("Tối " + milesToi);
+              if (milesParts.length) card.appendChild(el("div", "day-summary", "\uD83D\uDEE3 " + milesParts.join(" · ")));
+            }
+            var summary = portionsSummary(rd.day);
+            if (summary) card.appendChild(el("div", "day-summary", "🍱 " + summary));
+            if (rd.driver_name) {
+              card.appendChild(el("div", "day-summary", "Tài xế: " + rd.driver_name));
+            }
+            card.appendChild(el("div", "day-progress",
+              "Đã lấy " + counts.picked + "/" + counts.total + " · Đã giao " + counts.delivered + "/" + counts.total));
+            var foot = el("div", "day-foot");
+            foot.appendChild(el("span", "day-open", "Xem tuyến →"));
+            foot.appendChild(makeDeleteButton("driver", rd.day, label, renderDayList));
+            card.appendChild(foot);
+            card.addEventListener("click", function () { openDay(rd, "sang"); });
+            card.addEventListener("keydown", function (ev) {
+              if (ev.key === "Enter" || ev.key === " ") {
+                ev.preventDefault();
+                openDay(rd, "sang");
+              }
+            });
+            dayList.appendChild(card);
           });
           if (!dayList.children.length) {
             dayList.appendChild(el("div", "hint-line", "Chưa có tuyến giao nào."));
@@ -6422,7 +6426,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261027-1247";
+window.__BUILD__ = "20261027-1341";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
