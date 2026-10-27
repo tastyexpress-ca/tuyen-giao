@@ -1396,6 +1396,21 @@
         border-color: var(--accent);
         color: #fff;
       }
+      /* 🧾 In hoá đơn on online-order cards (Chris 2026-10-27). */
+      .btn-receipt {
+        width: 100%;
+        margin-top: 10px;
+        min-height: 52px;
+        border-radius: 12px;
+        font-size: 16.5px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        background: #000;
+        color: #fff;
+        border: 2.5px solid #000;
+        cursor: pointer;
+      }
+      .btn-receipt:active { transform: scale(0.99); }
 
       /* ---------- Kitchen print label (🖨 In order) ---------- */
       .btn-print {
@@ -1590,6 +1605,15 @@
         margin: 0.05in 0.1in 0.06in;
         border-top: 2px dashed #000;
       }
+      /* ---------- Receipt (🧾 hoá đơn for online orders) ---------- */
+      #printArea .rc-meta { margin-top: 0.05in; font-size: 10.5pt; font-weight: 700; line-height: 1.3; }
+      #printArea .rc-name { margin-top: 0.06in; font-size: 15pt; font-weight: 800; line-height: 1.2; }
+      #printArea .rc-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 0.03in; font-size: 10.5pt; line-height: 1.3; }
+      #printArea .rc-item { flex: 1; overflow-wrap: anywhere; }
+      #printArea .rc-price { font-weight: 700; white-space: nowrap; }
+      #printArea .rc-hr { margin: 0.08in 0 0.02in; border-top: 2px solid #000; }
+      #printArea .rc-grand { font-size: 13pt; font-weight: 900; }
+      #printArea .rc-paid { margin-top: 0.07in; text-align: center; font-size: 11.5pt; font-weight: 900; letter-spacing: 0.02em; }
       /* One printed label: 2.4in wide, height automatic so it grows
          to fit the whole order — nothing is ever clipped. There is
          NO page separation between labels in either print mode:
@@ -4898,6 +4922,145 @@
           openPdfBlobUrl(blob, fileName);
         }
 
+        /* ---------- Receipt PDF for one online order (🧾 In hoá đơn,
+           Chris 2026-10-27) — same capture pipeline as the food
+           labels: an off-screen receipt element rasterized by
+           html2canvas onto ONE fixed 62×101.6mm jsPDF page (natural
+           height at full width, scaled down only if taller), then
+           delivered through the same share/open path. ---------- */
+        function buildPrintReceipt(o) {
+          var label = el("div", "pl-label");
+
+          var head = el("div", "pl-head");
+          head.appendChild(el("span", null, "THINK'S KITCHEN"));
+          head.appendChild(el("span", null, "HOÁ ĐƠN"));
+          label.appendChild(head);
+
+          var bodyBox = el("div", "pl-body");
+          var dstr = "";
+          if (o.day) {
+            var dp = String(o.day).split("-");
+            if (dp.length === 3) dstr = parseInt(dp[2], 10) + "/" + parseInt(dp[1], 10);
+          }
+          bodyBox.appendChild(el("div", "rc-meta",
+            "Order app #" + o.id + (o.weekday_label ? " · " + o.weekday_label : "") + (dstr ? " " + dstr : "")));
+          bodyBox.appendChild(el("div", "rc-name", o.customer_name || ""));
+          if (o.phone) {
+            bodyBox.appendChild(el("div", "pl-phone", "SĐT: " + o.phone));
+          }
+          var isDel = String(o.method || "").toLowerCase() === "delivery";
+          bodyBox.appendChild(el("div", "rc-meta", isDel
+            ? "🚗 Giao hàng" + (o.shift ? " · Ca " + o.shift : "")
+            : "🏠 Pick up" + (o.pickup_time ? " · Giờ lấy: " + o.pickup_time : "")));
+          if (isDel && o.address) {
+            bodyBox.appendChild(el("div", "pl-place", o.address));
+          }
+
+          var items = Array.isArray(o.items) ? o.items : [];
+          if (items.length) {
+            var dishBox = el("div", "pl-dishes");
+            items.forEach(function (it) {
+              var row = el("div", "rc-row");
+              row.appendChild(el("span", "rc-item", "• " + webDishLine(it)));
+              var price = Number(it.price) || 0;
+              var qty = Number(it.qty) || 1;
+              if (price > 0) {
+                row.appendChild(el("span", "rc-price", webMoney(price * qty)));
+              }
+              dishBox.appendChild(row);
+            });
+            bodyBox.appendChild(dishBox);
+          }
+
+          if (o.note) {
+            bodyBox.appendChild(el("div", "pl-note", "📝 " + o.note));
+          }
+
+          bodyBox.appendChild(el("div", "rc-hr"));
+          function trow(text, val, cls) {
+            var r = el("div", "rc-row" + (cls ? " " + cls : ""));
+            r.appendChild(el("span", null, text));
+            r.appendChild(el("span", "rc-price", webMoney(val)));
+            bodyBox.appendChild(r);
+          }
+          trow("Tạm tính", o.subtotal);
+          if (Number(o.delivery_fee) > 0) trow("Phí giao", o.delivery_fee);
+          trow("Thuế", o.tax);
+          trow("TỔNG CỘNG", o.total, "rc-grand");
+
+          bodyBox.appendChild(el("div", "rc-paid",
+            o.paid === true ? "✓ ĐÃ THANH TOÁN" : "⚠️ CHƯA THANH TOÁN"));
+
+          var foot = el("div", "pl-foot");
+          foot.appendChild(el("div", "pl-foot-1", "CẢM ƠN QUÝ KHÁCH!"));
+          foot.appendChild(el("div", "pl-foot-2", "Order: 626-283-9994"));
+          foot.appendChild(el("div", "pl-foot-3", "CREAMERYACE.COM"));
+          bodyBox.appendChild(foot);
+          label.appendChild(bodyBox);
+
+          label.appendChild(el("div", "pl-cut"));
+          return label;
+        }
+
+        function buildReceiptPdf(o) {
+          var JsPDF = window.jspdf.jsPDF;
+          showToast("Đang tạo PDF…");
+          printArea.innerHTML = "";
+          var label = buildPrintReceipt(o);
+          printArea.appendChild(label);
+          printArea.classList.add("capturing");
+          return window.html2canvas(label, {
+            scale: 3,
+            backgroundColor: "#ffffff",
+            logging: false
+          }).then(function (canvas) {
+            printArea.classList.remove("capturing");
+            var img = canvas.toDataURL("image/jpeg", 0.92);
+            var heightMm = canvas.width > 0
+              ? 62 * (canvas.height / canvas.width)
+              : 101.6;
+            var pdf = new JsPDF({
+              unit: "mm",
+              format: [62, 101.6],
+              orientation: "portrait",
+              compress: true
+            });
+            var drawW = 62;
+            var drawH = heightMm;
+            if (drawH > 101.6) {
+              drawW = 62 * (101.6 / drawH);
+              drawH = 101.6;
+            }
+            pdf.addImage(img, "JPEG", (62 - drawW) / 2, 0, drawW, drawH);
+            return pdf;
+          }, function (err) {
+            try { printArea.classList.remove("capturing"); } catch (e2) {}
+            throw err;
+          });
+        }
+
+        function printWebReceipt(o) {
+          if (printPdfBusy) return;
+          printPdfBusy = true;
+          loadPdfLibs().then(function (ok) {
+            if (!ok) {
+              printPdfBusy = false;
+              showToast("⚠️ Tạo PDF cần có mạng — thử lại giúp em");
+              return;
+            }
+            buildReceiptPdf(o).then(function (pdf) {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              if (!pdf) return;
+              deliverLabelsPdf(pdf.output("blob"), "hoa-don-app-" + o.id + ".pdf");
+            }, function () {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              showToast("⚠️ Không tạo được hoá đơn — thử lại giúp em");
+            });
+          });
+        }
+
         function printAllFallback(msg) {
           showToast(msg);
           /* Let the toast land before the print dialog covers it. */
@@ -5143,6 +5306,14 @@
           wActions.appendChild(wPayeeBtn);
 
           card.appendChild(wActions);
+
+          /* 🧾 In hoá đơn (Chris 2026-10-27): one-page receipt PDF
+             for this online order, same 62×101.6mm paper and the
+             same share/open delivery as the food labels. */
+          var wReceiptBtn = el("button", "btn-receipt", "🧾 IN HOÁ ĐƠN");
+          wReceiptBtn.type = "button";
+          wReceiptBtn.addEventListener("click", function () { printWebReceipt(o); });
+          card.appendChild(wReceiptBtn);
           return card;
         }
 
@@ -6205,7 +6376,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261027-0007";
+window.__BUILD__ = "20261027-0125";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
