@@ -3359,6 +3359,7 @@
           if (/^wix\s*#/i.test(label)) return true;
           var text = (label + " " + String(o.note || "")).toLowerCase();
           return text.indexOf("(web)") !== -1 ||
+            text.indexOf("order app #") !== -1 ||
             text.indexOf("đơn online") !== -1 ||
             text.indexOf("qua web") !== -1;
         }
@@ -3407,7 +3408,7 @@
           return {
             id: "web-" + o.id,
             grp: String(o.method || "").toLowerCase() === "delivery" ? "GIAO SÁNG" : "PICK UP",
-            label: (o.customer_name || "Đơn online") + " (web)",
+            label: "Order app #" + o.id + " — " + (o.customer_name || "Đơn online"),
             name: o.customer_name || "",
             note: "",
             dishes: lines
@@ -6169,7 +6170,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-1930";
+window.__BUILD__ = "20261026-1945";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
