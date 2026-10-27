@@ -3513,7 +3513,7 @@
         function buildSettleTable(title, g, kind) {
           var block = el("div", "kt-block");
           block.appendChild(el("div", "totals-label", title));
-          if (g.breakdown) block.appendChild(el("div", "kt-breakdown", g.breakdown));
+          /* Portions breakdown line removed 2026-10-26 — Chris: "Anh ko còn cần thông tin đó nữa". */
           if (!g.rows.length) {
             block.appendChild(el("div", "kt-empty", "Không có order"));
             return block;
@@ -6169,7 +6169,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-1912";
+window.__BUILD__ = "20261026-1930";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
