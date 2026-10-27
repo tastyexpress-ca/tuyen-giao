@@ -507,6 +507,7 @@
       var PRODUCTS_URL = SUPABASE_URL.replace(/\/web_orders$/, "/shop_products") + "?shop=eq.ace-creamery&available=eq.true&order=sort.asc,created_at.asc";
       var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
       var CHECKOUT_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/functions/v1/create-checkout";
+      var RECEIPT_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/functions/v1/order-receipt";
       var CHECKOUT_SUCCESS_URL = "https://tastyexpress-ca.github.io/tuyen-giao/dat-kem/?paid=1";
       var CHECKOUT_CANCEL_URL = "https://tastyexpress-ca.github.io/tuyen-giao/dat-kem/?paid=0";
 
@@ -1047,11 +1048,13 @@
           v.innerHTML = '<div class="card result-card"><p class="big ok">✅ Đặt hàng &amp; thanh toán thành công!</p>' +
             '<p>Tiệm sẽ gọi lại số <b>' + esc(order.phone) + '</b> để xác nhận đơn. Cảm ơn bạn!</p>' +
             summaryHTML(order) +
+            '<div id="receiptBox"></div>' +
             '<button class="btn accent block" type="button" id="againBtn">Đặt thêm đơn mới</button></div>';
         } else if (kind === "unpaid") {
           v.innerHTML = '<div class="card result-card"><p class="big">⚠️ Thanh toán chưa hoàn tất</p>' +
             '<p>Đơn của bạn đã được ghi nhận — tiệm sẽ gọi lại số <b>' + esc(order.phone) + '</b> để xác nhận.</p>' +
             summaryHTML(order) +
+            '<div id="receiptBox"></div>' +
             '<button class="btn accent block" type="button" id="againBtn">Quay lại menu</button></div>';
         } else if (kind === "payerror") {
           v.innerHTML = '<div class="card result-card"><p class="big bad">Chưa mở được trang thanh toán</p>' +
@@ -1070,6 +1073,7 @@
         }
         v.classList.add("show");
         window.scrollTo(0, 0);
+        if ((kind === "paid" || kind === "unpaid") && checkoutSid) loadOrderReceipt(order, kind === "paid");
         var again = $("againBtn");
         if (again) again.addEventListener("click", function () {
           cart = [];
@@ -1113,6 +1117,7 @@
           },
           body: JSON.stringify({
             order_id: orderId,
+            phone: order.phone || "",
             amount_cents: Math.round(order.total * 100),
             shop: "ace-creamery",
             tax_cents: Math.round(order.tax * 100),
@@ -1166,10 +1171,92 @@
         });
       }
 
+
+      /* ================= HOÁ ĐƠN + RECEIPT STRIPE ================= */
+      var checkoutSid = null;
+
+      function loadOrderReceipt(order, isPaid) {
+        var box = $("receiptBox");
+        if (!box || !checkoutSid) return;
+        fetch(RECEIPT_URL, {
+          method: "POST",
+          headers: {
+            "apikey": SUPABASE_ANON,
+            "Authorization": "Bearer " + SUPABASE_ANON,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ session_id: checkoutSid })
+        }).then(function (res) {
+          if (!res.ok) throw new Error("receipt failed");
+          return res.json();
+        }).then(function (data) {
+          if (!data) return;
+          var html = "";
+          if (data.order_id) {
+            html += '<p style="font-size:19px;margin:14px 0 4px;">Mã đơn của bạn: <b>Order app #' + esc(String(data.order_id)) + '</b></p>' +
+              '<p style="margin:0 0 6px;color:#6b5d4f;">Cho tiệm biết mã này khi cần hỗ trợ nhé.</p>';
+          }
+          if (order && isPaid) {
+            html += '<button class="btn block" type="button" id="invoiceBtn" style="margin-top:10px;">🧾 Tải hoá đơn</button>';
+          }
+          if (data.receipt_url) {
+            html += '<a class="btn ghost block" style="margin-top:8px;text-align:center;text-decoration:none;" target="_blank" rel="noopener" href="' + esc(data.receipt_url) + '">Xem receipt Stripe</a>';
+          }
+          box.innerHTML = html;
+          var inv = $("invoiceBtn");
+          if (inv) inv.addEventListener("click", function () { printInvoice(order, data.order_id); });
+        }).catch(function () { /* không lấy được receipt thì thôi — đơn vẫn đã ghi nhận */ });
+      }
+
+      function printInvoice(order, orderId) {
+        var rows = "";
+        order.items.forEach(function (it) {
+          rows += '<div class="row"><div class="l"><b>' + esc(it.name) + ' × ' + it.qty + '</b>' +
+            (it.detail ? '<div class="d">' + esc(it.detail) + '</div>' : "") +
+            '</div><div class="r">' + money(it.price * it.qty) + '</div></div>';
+        });
+        var methodLine = order.method === "pickup"
+          ? 'Pick up: ' + SHOP_ADDRESS + ' (QT Golden Market Place)'
+          : 'Giao hàng: ' + esc(order.address || "");
+        var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hoá đơn — Order app #' + esc(String(orderId || "")) + '</title><style>' +
+          'body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#1e1912;margin:0;padding:24px 14px;}' +
+          '.inv{max-width:340px;margin:0 auto;}' +
+          'h1{font-size:22px;margin:0;text-align:center;letter-spacing:.5px;} h2{font-size:16px;margin:2px 0 14px;text-align:center;}' +
+          '.meta{font-size:14px;line-height:1.55;} .rule{border-top:1px solid #d8cdbf;margin:12px 0;}' +
+          '.row{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin:8px 0;} .row .d{color:#6f6355;font-size:12.5px;margin-top:2px;} .r{white-space:nowrap;}' +
+          '.kv{display:flex;justify-content:space-between;font-size:14px;margin:5px 0;}' +
+          '.total{display:flex;justify-content:space-between;font-size:18px;font-weight:700;margin-top:8px;}' +
+          '.paid{color:#16803a;font-weight:700;text-align:center;font-size:16px;margin:16px 0 10px;}' +
+          '.foot{text-align:center;font-size:13px;line-height:1.6;} .foot b{font-size:14px;}' +
+          '@media print{body{padding:0;}}' +
+          '</style></head><body><div class="inv">' +
+          '<h1>ACE CREAMERY</h1><h2>HOÁ ĐƠN</h2>' +
+          '<div class="meta"><b>Order app #' + esc(String(orderId || "")) + ' · ' + esc(order.weekday_label || "") + '</b><br>' +
+          esc(order.customer_name || "") + '<br>SĐT: ' + esc(order.phone || "") + '<br>' + methodLine + '</div>' +
+          '<div class="rule"></div>' + rows +
+          '<div class="rule"></div>' +
+          '<div class="kv"><span>Tạm tính</span><span>' + money(order.subtotal) + '</span></div>' +
+          (order.delivery_fee != null ? '<div class="kv"><span>Phí giao hàng</span><span>' + money(order.delivery_fee) + '</span></div>' : "") +
+          '<div class="kv"><span>Thuế 8.75%</span><span>' + money(order.tax) + '</span></div>' +
+          '<div class="total"><span>TỔNG CỘNG</span><span>' + money(order.total) + '</span></div>' +
+          '<div class="paid">ĐÃ THANH TOÁN</div>' +
+          '<div class="foot"><b>CẢM ƠN QUÝ KHÁCH!</b><br>Order: 626-283-9994 · CREAMERYACE.COM</div>' +
+          '</div><script>window.onload=function(){setTimeout(function(){window.print();},250);};</' + 'script></body></html>';
+        var w = window.open("", "_blank");
+        if (!w) return;
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+      }
+
       /* ================= TRỞ VỀ TỪ TRANG THANH TOÁN ================= */
       function handlePaidReturn() {
         var paid = null;
-        try { paid = new URLSearchParams(window.location.search).get("paid"); } catch (e) { return; }
+        try {
+          var qs = new URLSearchParams(window.location.search);
+          paid = qs.get("paid");
+          checkoutSid = qs.get("session_id");
+        } catch (e) { return; }
         if (paid !== "1" && paid !== "0") return;
         try { history.replaceState(null, "", window.location.pathname + window.location.hash); } catch (e) {}
         var order = null;
@@ -1191,9 +1278,11 @@
           '<p>' + (paid === "1"
             ? "Cảm ơn bạn! Tiệm sẽ gọi lại để xác nhận đơn của bạn."
             : "Đơn của bạn đã được ghi nhận — tiệm sẽ gọi lại để xác nhận.") + '</p>' +
+          '<div id="receiptBox"></div>' +
           '<button class="btn accent block" type="button" id="againBtn">Quay lại menu</button></div>';
         v.classList.add("show");
         window.scrollTo(0, 0);
+        if (checkoutSid) loadOrderReceipt(null, paid === "1");
         $("againBtn").addEventListener("click", function () {
           v.classList.remove("show");
           v.innerHTML = "";
@@ -1252,7 +1341,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261027-1112";
+window.__BUILD__ = "20261027-1210";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
