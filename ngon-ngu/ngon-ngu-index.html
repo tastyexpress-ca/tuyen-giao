@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Chọn Ngôn Ngữ — Tasty Express</title>
+<link rel="icon" type="image/png" href="https://tastyexpress-ca.github.io/tuyen-giao/assets/favicon.png" />
+<link rel="apple-touch-icon" href="https://tastyexpress-ca.github.io/tuyen-giao/assets/apple-touch-icon.png" />
+<link rel="manifest" href="../manifest.webmanifest" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Tasty Express" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="theme-color" content="#54301a" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Chọn Ngôn Ngữ — Tasty Express" />
+<meta property="og:description" content="Tasty Express — Đặt món online, giao đến tận nơi. Order: 626-283-9994" />
+<meta property="og:image" content="https://tastyexpress-ca.github.io/tuyen-giao/assets/logo-og.jpg" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #fff8ef;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity .5s ease;
+  }
+  body.fade-out { opacity: 0; }
+  .stage { width: min(88vw, 430px); text-align: center; padding: 24px 0 40px; }
+  .logo { width: 62%; height: auto; display: block; margin: 0 auto; animation: pop .7s cubic-bezier(.2, 1.4, .4, 1) both; }
+  @keyframes pop { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }
+  h1 {
+    margin-top: 18px; color: #54301a;
+    font-size: clamp(21px, 6vw, 26px); font-weight: 800; line-height: 1.35;
+    animation: rise .7s .15s ease both;
+  }
+  h1 .en { display: block; font-size: .72em; color: #a4713d; font-weight: 700; margin-top: 2px; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .choices { margin-top: 26px; display: flex; flex-direction: column; gap: 14px; animation: rise .7s .3s ease both; }
+  .choice {
+    display: flex; align-items: center; gap: 16px;
+    width: 100%; text-align: left; cursor: pointer;
+    background: #ffffff; border: 2px solid #f0ddc4; border-radius: 20px;
+    padding: 20px 18px; box-shadow: 0 6px 18px rgba(120, 66, 10, .10);
+    color: #54301a; font-family: inherit;
+  }
+  .choice:active { transform: scale(.985); }
+  .choice .flag { font-size: 44px; line-height: 1; flex: 0 0 auto; }
+  .choice .name { display: block; font-size: 24px; font-weight: 800; line-height: 1.2; }
+  .choice .sub { display: block; margin-top: 3px; font-size: 15px; font-weight: 600; color: #a4713d; }
+  .choice .arrow { margin-left: auto; font-size: 26px; font-weight: 900; color: #e07b2a; flex: 0 0 auto; }
+  .choice.picked { border-color: #22a355; box-shadow: 0 0 0 3px rgba(34, 163, 85, .22), 0 6px 18px rgba(120, 66, 10, .10); }
+  .choice .tick { display: none; margin-left: auto; font-size: 15px; font-weight: 800; color: #22a355; flex: 0 0 auto; }
+  .choice.picked .tick { display: block; }
+  .choice.picked .arrow { display: none; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <img class="logo" src="../assets/logo.png" alt="Tasty Express" />
+    <h1>Chọn ngôn ngữ của bạn<span class="en">Choose your language</span></h1>
+    <div class="choices">
+      <button type="button" class="choice" id="pickVi">
+        <span class="flag" aria-hidden="true">🇻🇳</span>
+        <span>
+          <span class="name">Tiếng Việt</span>
+          <span class="sub">Tiếp tục bằng tiếng Việt</span>
+        </span>
+        <span class="tick">✓ Đang chọn</span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </button>
+      <button type="button" class="choice" id="pickEn">
+        <span class="flag" aria-hidden="true">🇺🇸</span>
+        <span>
+          <span class="name">English</span>
+          <span class="sub">Continue in English</span>
+        </span>
+        <span class="tick">✓ Selected</span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </button>
+    </div>
+  </div>
+<script>
+  /* Trang chon ngon ngu (Chris 2026-10-26): sau trang mo dau,
+     khach chon 1 trong 2 bang ngon ngu — lua chon luu vao
+     localStorage "te-lang", cac trang sau doc de hien dung ban. */
+  (function () {
+    var current = "vi";
+    try { current = localStorage.getItem("te-lang") || "vi"; } catch (e) {}
+    if (current === "en") document.getElementById("pickEn").classList.add("picked");
+    else document.getElementById("pickVi").classList.add("picked");
+
+    function choose(lang) {
+      try { localStorage.setItem("te-lang", lang); } catch (e) {}
+      document.body.classList.add("fade-out");
+      setTimeout(function () { window.location.href = "../home/?v=" + Date.now(); }, 350);
+    }
+    document.getElementById("pickVi").addEventListener("click", function () { choose("vi"); });
+    document.getElementById("pickEn").addEventListener("click", function () { choose("en"); });
+  })();
+</script>
+<script>
+/* Tu dong cap nhat ban moi (Chris 2026-10-26) */
+window.__BUILD__ = "20261026-2015";
+(function () {
+  var KEY = "build-reloaded-for";
+  function check() {
+    fetch("/tuyen-giao/version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.build) return;
+        if (j.build === window.__BUILD__) {
+          try { sessionStorage.removeItem(KEY); } catch (e) {}
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(KEY) === j.build) return;
+          sessionStorage.setItem(KEY, j.build);
+        } catch (e) {}
+        location.reload();
+      })
+      .catch(function () {});
+  }
+  check();
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) check();
+  });
+  setInterval(check, 300000);
+})();
+</script>
+</body>
+</html>
