@@ -34,8 +34,15 @@ self.addEventListener("notificationclick", function (event) {
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (wins) {
       for (var i = 0; i < wins.length; i++) {
-        if (wins[i].url.indexOf("/tuyen-giao/") !== -1 && "focus" in wins[i]) {
-          return wins[i].focus();
+        if (wins[i].url.indexOf("/tuyen-giao/") !== -1) {
+          if ("navigate" in wins[i]) {
+            return wins[i].navigate(target).then(function (w) {
+              if (w && "focus" in w) return w.focus();
+            }).catch(function () {
+              if ("focus" in wins[i]) return wins[i].focus();
+            });
+          }
+          if ("focus" in wins[i]) return wins[i].focus();
         }
       }
       if (self.clients.openWindow) return self.clients.openWindow(target);
