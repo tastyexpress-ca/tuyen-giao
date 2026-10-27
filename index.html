@@ -489,6 +489,9 @@
         font-weight: 800;
         line-height: 1.25;
       }
+      .shift-tabs { display: flex; gap: 8px; margin: 4px 0 10px; }
+      .shift-tab { flex: 1; padding: 10px 6px; border-radius: 999px; border: 2px solid #d8c6ac; background: #fff8ef; font-weight: 800; font-size: 15px; color: #7a5a33; cursor: pointer; }
+      .shift-tab.active { background: #b3541e; border-color: #b3541e; color: #ffffff; }
       .day-badge.shift { background: #f3e2c7; color: #8a5a19; }
       .day-card.toi-card { background: #f6f1ff; border-color: #cdbcf0; }
       .day-badge {
@@ -1971,7 +1974,7 @@
       <header>
         <div class="wrap">
           <button type="button" class="back-btn" id="backBtn">← Danh sách ngày</button>
-          <div class="brand">Think's Kitchen <span class="route-name">· Tuyến giao sáng</span></div>
+          <div class="brand">Think's Kitchen <span class="route-name" id="routeName">· Tuyến giao sáng</span></div>
           <div class="dayline" id="routeDayline"></div>
           <div class="origin">Xuất phát: <strong>14131 Roxanne Dr, Westminster, CA 92683</strong></div>
           <a class="btn-route-all" id="routeAllBtn" href="#" target="_blank" rel="noopener" hidden>🗺 Chỉ đường cả tuyến</a>
@@ -2399,6 +2402,7 @@
         var dayList = document.getElementById("dayList");
         var stopList = document.getElementById("stopList");
         var routeDayline = document.getElementById("routeDayline");
+        var routeName = document.getElementById("routeName");
         var routeAllBtn = document.getElementById("routeAllBtn");
         var routeChips = document.getElementById("routeChips");
         var fill = document.getElementById("progressFill");
@@ -2961,11 +2965,11 @@
                 foot.appendChild(makeDeleteButton("driver", rd.day, label, renderDayList));
               }
               card.appendChild(foot);
-              card.addEventListener("click", function () { openDay(rd); });
+              card.addEventListener("click", function () { openDay(rd, shift); });
               card.addEventListener("keydown", function (ev) {
                 if (ev.key === "Enter" || ev.key === " ") {
                   ev.preventDefault();
-                  openDay(rd);
+                  openDay(rd, shift);
                 }
               });
               dayList.appendChild(card);
@@ -2982,6 +2986,7 @@
            DRIVER — route (day) view
            ================================================================ */
         var currentRouteDay = null;
+        var currentRouteShift = "sang";
         var currentStopEntries = [];
         var routeDoneDivider = null;
 
@@ -3145,11 +3150,14 @@
           if (!rd) return;
           routeDayline.textContent = routeDayLabel(rd);
           routeChips.innerHTML = "";
-          var stops = stopsByDay[rd.day] || [];
-          var sangStops = stops.filter(function (st) { return st.shift !== "toi"; });
-          var toiStops = stops.filter(function (st) { return st.shift === "toi"; });
-          var routeUrl = fullRouteUrl(sangStops);
-          routeAllBtn.textContent = toiStops.length ? "\uD83D\uDDFA Chỉ đường cả tuyến ca sáng" : "\uD83D\uDDFA Chỉ đường cả tuyến";
+          var dayStopsAll = stopsByDay[rd.day] || [];
+          var hasToiStops = dayStopsAll.some(function (st) { return st.shift === "toi"; });
+          if (currentRouteShift === "toi" && !hasToiStops) currentRouteShift = "sang";
+          var isToi = currentRouteShift === "toi";
+          if (routeName) routeName.textContent = isToi ? "· Tuyến giao tối" : "· Tuyến giao sáng";
+          var stops = dayStopsAll.filter(function (st) { return isToi ? st.shift === "toi" : st.shift !== "toi"; });
+          var routeUrl = fullRouteUrl(stops);
+          routeAllBtn.textContent = hasToiStops ? (isToi ? "\uD83D\uDDFA Chỉ đường cả tuyến ca tối" : "\uD83D\uDDFA Chỉ đường cả tuyến ca sáng") : "\uD83D\uDDFA Chỉ đường cả tuyến";
           if (routeUrl) {
             routeAllBtn.href = routeUrl;
             routeAllBtn.hidden = false;
@@ -3158,7 +3166,7 @@
             routeAllBtn.removeAttribute("href");
           }
           routeChips.appendChild(el("span", "chip", stops.length + " điểm giao"));
-          var miles = fmtMiles(rd.miles);
+          var miles = isToi ? null : fmtMiles(rd.miles);
           if (miles) routeChips.appendChild(el("span", "chip", miles));
           var eta = fmtEta(rd.drive_mins, stops.length);
           if (eta) routeChips.appendChild(el("span", "chip", eta));
@@ -3167,45 +3175,39 @@
              this header — they are on the totals view (💵 button below
              the chips), computed there from the same day's stops. */
           /* Remove previously rendered stop cards (keep the hint line). */
-          Array.prototype.slice.call(stopList.querySelectorAll(".stop-card, .shift-head, .shift-empty")).forEach(function (n) {
+          Array.prototype.slice.call(stopList.querySelectorAll(".stop-card, .shift-head, .shift-empty, .shift-tabs")).forEach(function (n) {
             n.parentNode.removeChild(n);
           });
           if (routeDoneDivider && routeDoneDivider.parentNode) {
             routeDoneDivider.parentNode.removeChild(routeDoneDivider);
           }
           routeDoneDivider = null;
-          var orderedStops = sangStops.concat(toiStops);
           currentStopEntries = [];
-          var sangHead = el("div", "group-head shift-head", "\uD83C\uDF05 GIAO HÀNG CA SÁNG 9AM - 11AM");
-          sangHead.style.order = "-1";
-          stopList.appendChild(sangHead);
-          orderedStops.forEach(function (stop, i) {
-            if (i === sangStops.length && toiStops.length) {
-              var toiHead = el("div", "group-head shift-head", "\uD83C\uDF19 GIAO HÀNG CA TỐI 7PM - 11PM");
-              toiHead.style.order = "55";
-              var tUrl = fullRouteUrl(toiStops);
-              if (tUrl) {
-                var tBtn = el("a", "btn-route-all", "\uD83D\uDDFA Chỉ đường cả tuyến ca tối");
-                tBtn.href = tUrl;
-                tBtn.target = "_blank";
-                tBtn.rel = "noopener";
-                toiHead.appendChild(tBtn);
-              }
-              stopList.appendChild(toiHead);
-            }
+          if (hasToiStops) {
+            var tabs = el("div", "shift-tabs");
+            tabs.style.order = "-2";
+            [["sang", "\uD83C\uDF05 Ca sáng 9–11AM"], ["toi", "\uD83C\uDF19 Ca tối 7–11PM"]].forEach(function (tb) {
+              var b = el("button", "shift-tab" + (currentRouteShift === tb[0] ? " active" : ""), tb[1]);
+              b.type = "button";
+              b.addEventListener("click", function () {
+                currentRouteShift = tb[0];
+                renderRouteDay();
+              });
+              tabs.appendChild(b);
+            });
+            stopList.appendChild(tabs);
+          }
+          if (!stops.length) {
+            var emptyNote = el("div", "shift-empty", isToi ? "Chưa có đơn giao ca tối" : "Chưa có đơn giao ca sáng");
+            emptyNote.style.order = "0";
+            stopList.appendChild(emptyNote);
+          }
+          stops.forEach(function (stop, i) {
             var entry = buildStopCard(rd, stop, i);
-            entry.dispOrder = stop.shift === "toi" ? 60 + (i - sangStops.length) : i;
+            entry.dispOrder = i;
             currentStopEntries.push(entry);
             stopList.appendChild(entry.card);
           });
-          if (!toiStops.length) {
-            var toiHead2 = el("div", "group-head shift-head", "\uD83C\uDF19 GIAO HÀNG CA TỐI 7PM - 11PM");
-            toiHead2.style.order = "55";
-            stopList.appendChild(toiHead2);
-            var toiEmpty = el("div", "shift-empty", "Chưa có đơn giao ca tối");
-            toiEmpty.style.order = "56";
-            stopList.appendChild(toiEmpty);
-          }
           /* Delivered stops sink below this divider (mirroring the
              kitchen side's "ĐÃ XONG" divider): flex order 99 parks it
              between the pending stops (order = route index) and the
@@ -3219,8 +3221,9 @@
           renderRouteProgress();
         }
 
-        function openDay(rd) {
+        function openDay(rd, shift) {
           currentRouteDay = rd;
+          currentRouteShift = shift === "toi" ? "toi" : "sang";
           renderRouteDay();
           showView(routeView);
         }
@@ -6166,7 +6169,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-1850";
+window.__BUILD__ = "20261026-1912";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
