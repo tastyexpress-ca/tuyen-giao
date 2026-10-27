@@ -1229,6 +1229,8 @@
         font-weight: 700;
         color: var(--paid-ink);
       }
+      .shift-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .shift-empty { color: #97826d; font-size: 14px; padding: 2px 2px 12px; }
       .group-head {
         font-size: 15px;
         font-weight: 900;
@@ -2975,7 +2977,7 @@
             var isCash = getToggle(dayStr, key, "cash");
             entry.card.classList.toggle("done", isDone);
             /* Pending stops keep route order on top; delivered stops sink below but stay visible. */
-            entry.card.style.order = isDone ? String(100 + entry.order) : String(entry.order);
+            entry.card.style.order = isDone ? String(100 + entry.order) : String(entry.dispOrder != null ? entry.dispOrder : entry.order);
             entry.doneBtn.textContent = isDone ? "✅ ĐÃ GIAO" : "☐ ĐÃ GIAO";
             entry.doneBtn.setAttribute("aria-pressed", isDone ? "true" : "false");
             entry.foodBtn.textContent = isPicked ? "✅ ĐÃ LẤY FOOD" : "☐ ĐÃ LẤY FOOD";
@@ -3126,7 +3128,10 @@
           routeDayline.textContent = routeDayLabel(rd);
           routeChips.innerHTML = "";
           var stops = stopsByDay[rd.day] || [];
-          var routeUrl = fullRouteUrl(stops);
+          var sangStops = stops.filter(function (st) { return st.shift !== "toi"; });
+          var toiStops = stops.filter(function (st) { return st.shift === "toi"; });
+          var routeUrl = fullRouteUrl(sangStops);
+          routeAllBtn.textContent = toiStops.length ? "\uD83D\uDDFA Chỉ đường cả tuyến ca sáng" : "\uD83D\uDDFA Chỉ đường cả tuyến";
           if (routeUrl) {
             routeAllBtn.href = routeUrl;
             routeAllBtn.hidden = false;
@@ -3144,18 +3149,45 @@
              this header — they are on the totals view (💵 button below
              the chips), computed there from the same day's stops. */
           /* Remove previously rendered stop cards (keep the hint line). */
-          Array.prototype.slice.call(stopList.querySelectorAll(".stop-card")).forEach(function (n) {
+          Array.prototype.slice.call(stopList.querySelectorAll(".stop-card, .shift-head, .shift-empty")).forEach(function (n) {
             n.parentNode.removeChild(n);
           });
           if (routeDoneDivider && routeDoneDivider.parentNode) {
             routeDoneDivider.parentNode.removeChild(routeDoneDivider);
           }
           routeDoneDivider = null;
-          currentStopEntries = stops.map(function (stop, i) {
+          var orderedStops = sangStops.concat(toiStops);
+          currentStopEntries = [];
+          var sangHead = el("div", "group-head shift-head", "\uD83C\uDF05 GIAO HÀNG CA SÁNG 9AM - 11AM");
+          sangHead.style.order = "-1";
+          stopList.appendChild(sangHead);
+          orderedStops.forEach(function (stop, i) {
+            if (i === sangStops.length && toiStops.length) {
+              var toiHead = el("div", "group-head shift-head", "\uD83C\uDF19 GIAO HÀNG CA TỐI 7PM - 11PM");
+              toiHead.style.order = "55";
+              var tUrl = fullRouteUrl(toiStops);
+              if (tUrl) {
+                var tBtn = el("a", "btn-route-all", "\uD83D\uDDFA Chỉ đường cả tuyến ca tối");
+                tBtn.href = tUrl;
+                tBtn.target = "_blank";
+                tBtn.rel = "noopener";
+                toiHead.appendChild(tBtn);
+              }
+              stopList.appendChild(toiHead);
+            }
             var entry = buildStopCard(rd, stop, i);
+            entry.dispOrder = stop.shift === "toi" ? 60 + (i - sangStops.length) : i;
+            currentStopEntries.push(entry);
             stopList.appendChild(entry.card);
-            return entry;
           });
+          if (!toiStops.length) {
+            var toiHead2 = el("div", "group-head shift-head", "\uD83C\uDF19 GIAO HÀNG CA TỐI 7PM - 11PM");
+            toiHead2.style.order = "55";
+            stopList.appendChild(toiHead2);
+            var toiEmpty = el("div", "shift-empty", "Chưa có đơn giao ca tối");
+            toiEmpty.style.order = "56";
+            stopList.appendChild(toiEmpty);
+          }
           /* Delivered stops sink below this divider (mirroring the
              kitchen side's "ĐÃ XONG" divider): flex order 99 parks it
              between the pending stops (order = route index) and the
@@ -6116,7 +6148,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-1645";
+window.__BUILD__ = "20261026-1745";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -6155,7 +6187,19 @@ window.__BUILD__ = "20261026-1645";
   var SESSION_KEY = "tasty-express-session";
   var supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
   var btn = document.getElementById("pushNotifyBtn");
-  if (!supported || !btn) return;
+  if (!btn) return;
+  if (!supported) {
+    var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    var standalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+    if (isIOS && !standalone) {
+      btn.hidden = false;
+      btn.textContent = "\uD83D\uDD14 Nhận thông báo: thêm app vào màn hình chính";
+      btn.addEventListener("click", function () {
+        alert("Để nhận thông báo đơn mới trên iPhone:\n1. Bấm nút Chia sẻ (ô vuông có mũi tên lên) ở dưới Safari\n2. Chọn 'Thêm vào Màn hình chính'\n3. Mở app từ biểu tượng ngoài màn hình chính (đăng nhập lại nếu app hỏi)\n4. Bấm nút \uD83D\uDD14 và chọn Cho phép (Allow)");
+      });
+    }
+    return;
+  }
 
   function urlB64ToUint8Array(base64String) {
     var padding = "=".repeat((4 - (base64String.length % 4)) % 4);
