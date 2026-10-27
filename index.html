@@ -3321,7 +3321,8 @@
           }
           var priceM = /\$\s*([\d]+(?:[.,]\d+)?)/.exec(name);
           if (priceM) {
-            return { type: "monle", money: qty * parseFloat(priceM[1].replace(",", ".")) };
+            var unitPrice = parseFloat(priceM[1].replace(",", "."));
+            return { type: "monle", money: qty * unitPrice, unit: unitPrice };
           }
           if (name.toLowerCase().indexOf("kem") !== -1) {
             return { type: "kem" };
@@ -3461,14 +3462,23 @@
             var gkey = grpInfo(o.grp).key;
             var g = groups[gkey];
             var portions = 0;
+            var portionsDisp = 0;
             var monLe = 0;
             var profit = 0;
             (Array.isArray(o.dishes) ? o.dishes : []).forEach(function (d) {
               var p = parseKitchenDish(d);
               if (p.type === "monle") {
                 monLe += p.money;
+                /* Món lẻ counts toward the displayed Phần total at
+                   price ÷ 10 (a $10 món lẻ = 1 phần, $5 = 0.5) — Chris
+                   2026-10-26: Chương Trần's order is 4 phần, not
+                   1 phần + $30. Money math below is unchanged (the
+                   80/20 split already equals $8/$2 per $10). Tray-class
+                   lines (unit > $10) stay money-only. */
+                if (p.unit <= 10) portionsDisp += p.money / 10;
               } else if (p.type === "food") {
                 portions += p.qty;
+                portionsDisp += p.qty;
                 profit += p.qty * (isPremiumDish(p.name) ? 4 : 2);
                 var key = p.name.toLowerCase();
                 if (!g.nameTotals[key]) {
@@ -3500,10 +3510,10 @@
             }
             g.rows.push({
               label: o.label || o.name || "",
-              portions: portions, monLe: monLe, payee: payee,
+              portions: portionsDisp, monLe: monLe, payee: payee,
               fee: fee, anhTra: anhTra, tiemNo: tiemNo
             });
-            g.portions += portions;
+            g.portions += portionsDisp;
             g.monLe += monLe;
             g.anhTra += anhTra;
             g.tiemNo += tiemNo;
@@ -6186,7 +6196,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-2210";
+window.__BUILD__ = "20261026-2359";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
