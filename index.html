@@ -2839,14 +2839,15 @@
         /* ---------- Progress counts (from the states table) ---------- */
         function driverCounts(dayStr, shift) {
           var stops = stopsByDay[dayStr] || [];
-          var picked = 0, delivered = 0;
+          var picked = 0, delivered = 0, total = 0;
           stops.forEach(function (s) {
             if (shift && (s.shift === "toi") !== (shift === "toi")) return;
+            total++;
             var key = "stop-" + s.id;
             if (getToggle(dayStr, key, "picked")) picked++;
             if (getToggle(dayStr, key, "delivered")) delivered++;
           });
-          return { picked: picked, delivered: delivered, total: stops.length };
+          return { picked: picked, delivered: delivered, total: total };
         }
         function kitchenCounts(dayStr) {
           var orders = kitchenOrdersByDay[dayStr] || [];
@@ -2948,9 +2949,9 @@
                 top.appendChild(el("span", "day-badge newest", "TUYẾN MỚI NHẤT"));
               }
               card.appendChild(top);
-              if (shift !== "toi") {
-                var miles = fmtMiles(rd.miles);
-                if (miles) card.appendChild(el("div", "day-summary", "🛣 " + miles));
+              {
+                var miles = fmtMiles(shift === "toi" ? rd.miles_toi : rd.miles);
+                if (miles) card.appendChild(el("div", "day-summary", "\uD83D\uDEE3 " + miles));
               }
               var summary = portionsSummary(rd.day, shift);
               if (summary) card.appendChild(el("div", "day-summary", "🍱 " + summary));
@@ -3014,7 +3015,7 @@
             if (isDone) doneCount++;
           });
           if (routeDoneDivider) routeDoneDivider.hidden = doneCount === 0;
-          var counts = driverCounts(currentRouteDay.day);
+          var counts = driverCounts(currentRouteDay.day, currentRouteShift);
           var total = currentStopEntries.length;
           fill.style.width = (total ? (doneCount / total) * 100 : 0) + "%";
           progressText.textContent = "Đã lấy " + counts.picked + "/" + total + " · Đã giao " + counts.delivered + "/" + total;
@@ -3166,9 +3167,9 @@
             routeAllBtn.removeAttribute("href");
           }
           routeChips.appendChild(el("span", "chip", stops.length + " điểm giao"));
-          var miles = isToi ? null : fmtMiles(rd.miles);
+          var miles = fmtMiles(isToi ? rd.miles_toi : rd.miles);
           if (miles) routeChips.appendChild(el("span", "chip", miles));
-          var eta = fmtEta(rd.drive_mins, stops.length);
+          var eta = fmtEta(isToi ? rd.drive_mins_toi : rd.drive_mins, stops.length);
           if (eta) routeChips.appendChild(el("span", "chip", eta));
           if (rd.driver_name) routeChips.appendChild(el("span", "chip", "Tài xế: " + rd.driver_name));
           /* Portions totals and the shop-return amount no longer live in
@@ -6170,7 +6171,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-1945";
+window.__BUILD__ = "20261026-2000";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
