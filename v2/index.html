@@ -5351,6 +5351,21 @@
         function renderWebOrders() {
           var kd = currentKitchenDay;
           var list = kd ? (webOrdersByDay[kd.day] || []) : [];
+          /* Hide the 🌐 card when this web order already has a kitchen
+             card below: a kitchen row IS the web order when its note
+             carries "Đơn online #<id>" OR its label is "Order app #<id>"
+             (same link test as settlementOrders). Without this filter
+             the day view showed both cards and looked like a duplicate
+             order (Chris 2026-10-27: Anh Giang #17 + Hanh Nguyen #29). */
+          if (kd) {
+            var linkedWo = {};
+            (kitchenOrdersByDay[kd.day] || []).forEach(function (o) {
+              var m = /Đơn online #(\d+)/i.exec(String(o.note || "")) ||
+                /^Order app #(\d+)/i.exec(String(o.label || ""));
+              if (m) linkedWo[m[1]] = true;
+            });
+            list = list.filter(function (o) { return !linkedWo[String(o.id)]; });
+          }
           webOrdersList.innerHTML = "";
           webDoneList.innerHTML = "";
           var pending = [], done = [];
@@ -6407,7 +6422,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261027-1210";
+window.__BUILD__ = "20261027-1247";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
