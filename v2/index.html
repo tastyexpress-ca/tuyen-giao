@@ -3468,14 +3468,23 @@
             (Array.isArray(o.dishes) ? o.dishes : []).forEach(function (d) {
               var p = parseKitchenDish(d);
               if (p.type === "monle") {
-                monLe += p.money;
-                /* Món lẻ counts toward the displayed Phần total at
-                   price ÷ 10 (a $10 món lẻ = 1 phần, $5 = 0.5) — Chris
-                   2026-10-26: Chương Trần's order is 4 phần, not
-                   1 phần + $30. Money math below is unchanged (the
-                   80/20 split already equals $8/$2 per $10). Tray-class
-                   lines (unit > $10) stay money-only. */
-                if (p.unit <= 10) portionsDisp += p.money / 10;
+                if (p.unit <= 10) {
+                  /* Món lẻ is NOT listed separately — it folds into
+                     the portion count at price ÷ 10 ($10 = 1 phần,
+                     $5 = 0.5) for display AND money (Chris 2026-10-26
+                     late: "Mấy món lẻ em đừng ghi, mà hãy cộng vô số
+                     phần"; Chương Trần's order = 4 phần). The money is
+                     identical to the old 80/20 món lẻ split: eq × $8
+                     owed / eq × $2 profit back. */
+                  var eq = p.money / 10;
+                  portions += eq;
+                  portionsDisp += eq;
+                  profit += eq * 2;
+                } else {
+                  /* Tray-class priced lines (unit > $10) stay on the
+                     money track — trays settle by tray, not by phần. */
+                  monLe += p.money;
+                }
               } else if (p.type === "food") {
                 portions += p.qty;
                 portionsDisp += p.qty;
@@ -6196,7 +6205,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261026-2359";
+window.__BUILD__ = "20261027-0007";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
