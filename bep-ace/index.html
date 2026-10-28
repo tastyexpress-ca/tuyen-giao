@@ -1,1 +1,334 @@
-x
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="description" content="App bếp ACE Creamery — xem đơn kem cần làm theo ngày, bấm nhận và xong từng đơn." />
+    <link rel="icon" type="image/png" href="../assets/favicon.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Bếp ACE" />
+    <meta name="theme-color" content="#3a2110" />
+    <title>Bếp ACE Creamery · Tasty Express</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        --bg:#faf5ec; --card:#fffdf8; --ink:#26221a; --muted:#6b6252;
+        --line:#e4d9c4; --brown:#54301a; --header-bg:#3a2110; --header-ink:#fff7ec; --header-muted:#e8c9a8;
+        --green:#1d6b3a; --paid-bg:#e9f7ee; --paid-ink:#166534; --paid-line:#bfe6cc;
+        --no-bg:#fdecec; --no-ink:#b91c1c; --no-line:#f5b8b8;
+        --accent:#c2410c; --shadow:0 8px 22px rgba(64,48,20,.12);
+      }
+      *{box-sizing:border-box}
+      body{margin:0;font-family:"Be Vietnam Pro",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+      header{background:var(--header-bg);color:var(--header-ink);padding:14px 16px 12px;position:sticky;top:0;z-index:5}
+      header .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      header h1{font-size:17px;margin:0;letter-spacing:.4px}
+      header h1 small{display:block;font-size:11px;color:var(--header-muted);letter-spacing:1.6px;margin-bottom:2px}
+      header .sub{font-size:12.5px;color:var(--header-muted);margin-top:6px}
+      .hbtn{background:rgba(255,247,236,.14);color:var(--header-ink);border:1px solid rgba(255,247,236,.25);border-radius:999px;padding:7px 12px;font:600 12.5px "Be Vietnam Pro",sans-serif;cursor:pointer}
+      main{max-width:640px;margin:0 auto;padding:14px 12px 40px}
+      .search{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:14px;font:500 15px "Be Vietnam Pro",sans-serif;background:#fff;margin-bottom:6px}
+      .day{margin-top:18px}
+      .day-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 8px}
+      .day-head b{font-size:16.5px;color:var(--brown)}
+      .day-head span{font-size:12.5px;color:var(--muted);font-weight:600}
+      .k-card{background:var(--card);border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:13px 14px;margin-bottom:11px}
+      .k-card.done{opacity:.55}
+      .k-card.received{border-color:#9cc7a8}
+      .k-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:7px}
+      .tag{font:800 11px "Be Vietnam Pro",sans-serif;letter-spacing:.6px;padding:4px 9px;border-radius:999px;background:#f5e7cd;color:#7c4a12}
+      .tag.del{background:#dbeafe;color:#1e40af}
+      .pill{font:700 11px "Be Vietnam Pro",sans-serif;padding:4px 9px;border-radius:999px;border:1px solid}
+      .pill.ok{background:var(--paid-bg);color:var(--paid-ink);border-color:var(--paid-line)}
+      .pill.no{background:var(--no-bg);color:var(--no-ink);border-color:var(--no-line)}
+      .pill.new{background:#fff3cd;color:#856404;border-color:#ecd9a8}
+      .customer{font-size:19px;font-weight:800;line-height:1.25}
+      .sdt{font-size:14.5px;color:var(--muted);font-weight:600;margin-top:1px}
+      .place{font-size:14px;margin-top:3px}
+      .dishes{margin-top:9px;background:#faf3e3;border-radius:10px;padding:9px 11px}
+      .dish{font-size:15.5px;font-weight:600;line-height:1.45}
+      .dish .dtl{display:block;font-size:13.5px;font-weight:500;color:var(--muted);margin:1px 0 3px 14px}
+      .note{margin-top:8px;font-size:14px;background:#fff7e8;border:1px dashed #d9a441;border-radius:10px;padding:7px 10px}
+      .total{margin-top:8px;font-size:14px;font-weight:700}
+      .k-actions{display:flex;gap:8px;margin-top:11px}
+      .k-actions button{flex:1;padding:12px 8px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font:700 13.5px "Be Vietnam Pro",sans-serif;cursor:pointer}
+      .k-actions button.on{background:var(--green);border-color:var(--green);color:#fff}
+      .k-actions button:disabled{opacity:.5}
+      .empty{background:#fff;border:1.5px dashed var(--line);border-radius:14px;padding:22px 14px;text-align:center;color:var(--muted);font-weight:600;margin-top:16px}
+      .foot{margin-top:22px;text-align:center;color:var(--muted);font-size:12px;line-height:1.6}
+      /* login */
+      .login-wrap{max-width:400px;margin:8vh auto 0;padding:0 16px}
+      .login-card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:22px 18px}
+      .login-card h2{margin:0 0 4px;font-size:19px;color:var(--brown)}
+      .login-card p{margin:0 0 14px;color:var(--muted);font-size:13.5px}
+      .login-card label{display:block;font:600 12.5px "Be Vietnam Pro",sans-serif;color:var(--muted);margin:10px 0 5px}
+      .login-card input{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:12px;font:500 15px "Be Vietnam Pro",sans-serif}
+      .login-card .submit{width:100%;margin-top:16px;padding:13px;border:0;border-radius:12px;background:var(--brown);color:#fff;font:700 15px "Be Vietnam Pro",sans-serif;cursor:pointer}
+      .err{display:none;margin-top:10px;color:var(--no-ink);font-size:13.5px;font-weight:600}
+      [hidden]{display:none!important}
+    </style>
+  </head>
+  <body>
+    <!-- LOGIN -->
+    <div class="login-wrap" id="loginView" hidden>
+      <div class="login-card">
+        <h2>🍦 Bếp ACE Creamery</h2>
+        <p>Đăng nhập bằng tài khoản ACE Creamery để xem đơn kem cần làm.</p>
+        <form id="authForm">
+          <label for="fEmail">Email</label>
+          <input id="fEmail" type="email" autocomplete="username" value="acecreamery@creameryace.com" />
+          <label for="fPass">Mật khẩu</label>
+          <input id="fPass" type="password" autocomplete="current-password" />
+          <button class="submit" id="authBtn" type="submit">Đăng nhập</button>
+          <div class="err" id="authErr"></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- BOARD -->
+    <div id="boardView" hidden>
+      <header>
+        <div class="row">
+          <h1><small>ACE CREAMERY · NHÀ BẾP</small><span id="hdrDay">Đơn kem cần làm</span></h1>
+          <div>
+            <button class="hbtn" id="refreshBtn" type="button">🔄 Làm mới</button>
+            <button class="hbtn" id="logoutBtn" type="button">Đăng xuất</button>
+          </div>
+        </div>
+        <div class="sub" id="hdrSub">Đang tải…</div>
+      </header>
+      <main>
+        <input class="search" id="search" type="search" placeholder="Tìm theo 4 số cuối, tên khách…" />
+        <div id="days"></div>
+        <div class="foot">Đơn trên trang này là đơn đặt qua app/web của ACE Creamery.<br/>Đơn qua Wix vẫn xử lý theo cách cũ.</div>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+        var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+        var BASE = "https://kxfvxtsoncpjleoiupwf.supabase.co";
+        var KEY = "ace_bep_session";
+        var SLUG = "ace-creamery";
+        var session = null;
+        try { session = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { session = null; }
+        var orders = [];
+
+        function $(id) { return document.getElementById(id); }
+        function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+        function money(n) { return "$" + (Math.round((Number(n) || 0) * 100) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function api(path, opts) {
+          opts = opts || {};
+          var headers = { "apikey": ANON, "Authorization": "Bearer " + (session ? session.access_token : ANON), "Content-Type": "application/json" };
+          if (opts.headers) for (var k in opts.headers) headers[k] = opts.headers[k];
+          return fetch(BASE + path, { method: opts.method || "GET", headers: headers, body: opts.body || undefined })
+            .then(function (r) { if (!r.ok) throw new Error("api " + r.status); return r.status === 204 ? null : r.json().catch(function () { return null; }); });
+        }
+        function todayStr() {
+          var d = new Date(), p = function (n) { return (n < 10 ? "0" : "") + n; };
+          return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+        }
+        function fmtDM(iso) { var p = String(iso || "").split("-"); return p.length === 3 ? (+p[2]) + "/" + (+p[1]) : String(iso || ""); }
+        function status(o) { return String(o.status || "new").toLowerCase(); }
+        function parseItems(o) {
+          var items = o.items;
+          if (typeof items === "string") { try { items = JSON.parse(items); } catch (e) { items = null; } }
+          return Array.isArray(items) ? items : [];
+        }
+
+        /* ---------- auth ---------- */
+        function show(which) {
+          $("loginView").hidden = which !== "login";
+          $("boardView").hidden = which !== "board";
+        }
+        $("authForm").addEventListener("submit", function (ev) {
+          ev.preventDefault();
+          var btn = $("authBtn"), err = $("authErr");
+          var email = $("fEmail").value.trim(), pass = $("fPass").value;
+          err.style.display = "none";
+          btn.disabled = true; btn.textContent = "Đang đăng nhập…";
+          fetch(BASE + "/auth/v1/token?grant_type=password", {
+            method: "POST",
+            headers: { "apikey": ANON, "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email, password: pass })
+          }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+            .then(function (res) {
+              btn.disabled = false; btn.textContent = "Đăng nhập";
+              if (!res.ok || !res.d.access_token) {
+                err.textContent = "Đăng nhập chưa được — kiểm tra lại email/mật khẩu nhé.";
+                err.style.display = "block";
+                return;
+              }
+              session = { access_token: res.d.access_token, refresh_token: res.d.refresh_token, email: email };
+              localStorage.setItem(KEY, JSON.stringify(session));
+              enter();
+            })
+            .catch(function () {
+              btn.disabled = false; btn.textContent = "Đăng nhập";
+              err.textContent = "Mạng có vấn đề — thử lại nhé.";
+              err.style.display = "block";
+            });
+        });
+        $("logoutBtn").addEventListener("click", function () {
+          session = null; orders = [];
+          localStorage.removeItem(KEY);
+          show("login");
+        });
+
+        /* ---------- board ---------- */
+        function loadOrders() {
+          return api("/rest/v1/web_orders?shop=eq." + SLUG + "&order=created_at.desc&limit=200")
+            .then(function (rows) { orders = rows || []; render(); })
+            .catch(function () { $("hdrSub").textContent = "Không tải được dữ liệu — thử Làm mới."; });
+        }
+        function patchStatus(id, next, btn) {
+          if (btn) btn.disabled = true;
+          api("/rest/v1/web_orders?id=eq." + id, { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify({ status: next }) })
+            .then(function () { loadOrders(); })
+            .catch(function () { if (btn) btn.disabled = false; alert("Cập nhật chưa được — thử lại nhé."); });
+        }
+        function cardHtml(o) {
+          var s = status(o);
+          var isDone = s === "done", isRecv = s === "in_kitchen" || isDone;
+          var isDelivery = String(o.method || "").toLowerCase() === "delivery";
+          var when = isDelivery ? (String(o.shift || "").toLowerCase() === "tối" || String(o.shift || "").toLowerCase() === "toi" ? "GIAO TỐI" : "GIAO SÁNG") : "PICK UP" + (o.pickup_time ? " · " + o.pickup_time : "");
+          var html = '<article class="k-card' + (isDone ? " done" : "") + (isRecv && !isDone ? " received" : "") + '" data-search="' + esc(((o.customer_name || "") + " " + (o.phone || "")).toLowerCase()) + '">';
+          html += '<div class="k-top"><span class="tag' + (isDelivery ? " del" : "") + '">' + esc(when) + "</span>";
+          html += o.paid === true ? '<span class="pill ok">ĐÃ TRẢ</span>' : '<span class="pill no">CHƯA TRẢ</span>';
+          if (s === "new") html += '<span class="pill new">MỚI</span>';
+          html += "</div>";
+          html += '<div class="customer">' + esc(o.customer_name || "Khách") + "</div>";
+          if (o.phone) html += '<div class="sdt">' + esc(o.phone) + "</div>";
+          if (isDelivery && o.address) html += '<div class="place">📍 ' + esc(o.address) + "</div>";
+          var items = parseItems(o);
+          if (items.length) {
+            html += '<div class="dishes">' + items.map(function (it) {
+              var line = '<div class="dish">• ' + (Number(it.qty) || 1) + "x " + esc(it.name || "Món");
+              if (it.detail) line += '<span class="dtl">' + esc(it.detail) + "</span>";
+              return line + "</div>";
+            }).join("") + "</div>";
+          }
+          if (o.note) html += '<div class="note">📝 ' + esc(o.note) + "</div>";
+          html += '<div class="total">Tổng: ' + money(o.total) + "</div>";
+          html += '<div class="k-actions">' +
+            '<button type="button" data-toggle="recv" data-id="' + o.id + '" class="' + (isRecv ? "on" : "") + '">' + (isRecv ? "✅ BẾP ĐÃ NHẬN" : "☐ BẾP ĐÃ NHẬN") + "</button>" +
+            '<button type="button" data-toggle="done" data-id="' + o.id + '" class="' + (isDone ? "on" : "") + '">' + (isDone ? "✅ XONG" : "☐ XONG") + "</button>" +
+            "</div>";
+          html += "</article>";
+          return html;
+        }
+        function rank(o) { var s = status(o); return s === "new" ? 0 : s === "in_kitchen" ? 1 : s === "done" ? 3 : 2; }
+        function render() {
+          var today = todayStr();
+          var byDay = {}, dayList = [];
+          orders.forEach(function (o) {
+            if (status(o) === "cancelled") return;
+            var d = o.day || "";
+            if (!d) return;
+            if (!byDay[d]) { byDay[d] = []; dayList.push(d); }
+            byDay[d].push(o);
+          });
+          dayList.sort();
+          var totalOpen = 0;
+          var html = "";
+          dayList.forEach(function (d) {
+            var list = byDay[d];
+            var open = list.filter(function (o) { return status(o) !== "done"; });
+            if (d < today && !open.length) return; // past day, all done — hide
+            totalOpen += open.length;
+            list.sort(function (a, b) {
+              var r = rank(a) - rank(b);
+              if (r) return r;
+              return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+            });
+            var label = (list[0].weekday_label || "") + " · " + fmtDM(d);
+            html += '<section class="day"><div class="day-head"><b>' + esc(label) + '</b><span>' + list.length + " đơn · " + open.length + " chưa xong</span></div>";
+            html += list.map(cardHtml).join("");
+            html += "</section>";
+          });
+          $("days").innerHTML = html || '<div class="empty">Chưa có đơn kem nào sắp tới 🍦</div>';
+          $("hdrSub").textContent = totalOpen + " đơn chưa xong · Tự cập nhật mỗi 30 giây";
+          Array.prototype.forEach.call($("days").querySelectorAll("button[data-toggle]"), function (b) {
+            b.addEventListener("click", function () {
+              var id = b.getAttribute("data-id"), kind = b.getAttribute("data-toggle");
+              var o = null;
+              orders.forEach(function (x) { if (String(x.id) === String(id)) o = x; });
+              if (!o) return;
+              var s = status(o), next;
+              if (kind === "recv") next = s === "new" ? "in_kitchen" : "new";
+              else next = s === "done" ? "in_kitchen" : "done";
+              patchStatus(id, next, b);
+            });
+          });
+          applyFilter();
+        }
+        function applyFilter() {
+          var q = $("search").value.replace(/^\s+|\s+$/g, "").toLowerCase();
+          var qd = q.replace(/\D/g, "");
+          Array.prototype.forEach.call($("days").querySelectorAll(".day"), function (sec) {
+            var any = false;
+            Array.prototype.forEach.call(sec.querySelectorAll(".k-card"), function (card) {
+              var text = card.getAttribute("data-search") || "";
+              var digits = text.replace(/\D/g, "");
+              var match = !q || (qd !== "" && digits.indexOf(qd) !== -1) || text.indexOf(q) !== -1;
+              card.style.display = match ? "" : "none";
+              if (match) any = true;
+            });
+            sec.style.display = any ? "" : "none";
+          });
+        }
+        $("search").addEventListener("input", applyFilter);
+        $("refreshBtn").addEventListener("click", loadOrders);
+
+        function enter() {
+          show("board");
+          var d = new Date();
+          var wd = ["Chủ Nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"][d.getDay()];
+          $("hdrDay").textContent = wd + " · " + d.getDate() + "/" + (d.getMonth() + 1);
+          loadOrders();
+          setInterval(function () { if (session) loadOrders(); }, 30000);
+        }
+        if (session && session.access_token) enter(); else show("login");
+      })();
+    </script>
+    <script>
+/* Tu dong cap nhat ban moi (Chris 2026-10-26): moi lan mo app /
+   quay lai app / moi 5 phut, trang tu kiem tra version.json tren
+   server — neu server co ban moi hon ban dang chay thi tu load
+   lai 1 lan. Dien thoai khong con giu ban cu. */
+window.__BUILD__ = "20261027-2230";
+(function () {
+  var KEY = "build-reloaded-for";
+  function check() {
+    fetch("/tuyen-giao/version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.build) return;
+        if (j.build === window.__BUILD__) {
+          try { sessionStorage.removeItem(KEY); } catch (e) {}
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(KEY) === j.build) return;
+          sessionStorage.setItem(KEY, j.build);
+        } catch (e) {}
+        location.reload();
+      })
+      .catch(function () {});
+  }
+  check();
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) check();
+  });
+  setInterval(check, 300000);
+})();
+    </script>
+  </body>
+</html>
