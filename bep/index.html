@@ -32,6 +32,8 @@
       header h1 small{display:block;font-size:11px;color:var(--header-muted);letter-spacing:1.6px;margin-bottom:2px}
       header .sub{font-size:12.5px;color:var(--header-muted);margin-top:6px}
       .hbtn{background:rgba(255,247,236,.14);color:var(--header-ink);border:1px solid rgba(255,247,236,.25);border-radius:999px;padding:7px 12px;font:600 12.5px "Be Vietnam Pro",sans-serif;cursor:pointer}
+      .btnrow{display:flex;gap:8px;margin-top:10px}
+      .btnrow .hbtn{flex:1;text-align:center;padding:9px 6px}
       main{max-width:640px;margin:0 auto;padding:14px 12px 40px}
       .search{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:14px;font:500 15px "Be Vietnam Pro",sans-serif;background:#fff;margin-bottom:6px}
       .day{margin-top:18px}
@@ -181,11 +183,11 @@
       <header>
         <div class="row">
           <h1><small id="hdrShop">NHÀ BẾP · ĐỐI TÁC</small><span id="hdrDay">Đơn cần làm</span></h1>
-          <div>
-            <button class="hbtn" id="homeBtn" type="button">← Trang chủ</button>
-            <button class="hbtn" id="refreshBtn" type="button">🔄 Làm mới</button>
-            <button class="hbtn" id="logoutBtn" type="button">Đăng xuất</button>
-          </div>
+        </div>
+        <div class="btnrow">
+          <button class="hbtn" id="homeBtn" type="button">← Trang chủ</button>
+          <button class="hbtn" id="refreshBtn" type="button">🔄 Làm mới</button>
+          <button class="hbtn" id="logoutBtn" type="button">Đăng xuất</button>
         </div>
         <div class="sub" id="hdrSub">Đang tải…</div>
       </header>
