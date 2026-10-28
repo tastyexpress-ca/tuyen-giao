@@ -139,6 +139,8 @@
         cursor: pointer;
       }
       .logout-btn:active { background: rgba(255, 247, 236, 0.28); }
+      .pillrow { display: flex; gap: 6px; flex-wrap: nowrap; margin-top: 8px; }
+      .pillrow .logout-btn { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; padding: 7px 2px; font-size: 11.5px; text-align: center; }
       .dayline {
         font-size: 16.5px;
         font-weight: 800;
@@ -1891,8 +1893,8 @@
           <div class="head-row">
             <div class="brand">Think's Kitchen</div>
           </div>
-          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <div class="dayline">Trang chủ</div>
+          <div class="dayline">Trang chủ</div>
+          <div class="pillrow">
             <button type="button" class="logout-btn" id="openChrisMonthBtn">💵 Chris all month</button>
             <button type="button" class="logout-btn" id="pushNotifyBtn" hidden>🔔 Bật thông báo đơn mới</button>
             <button type="button" class="logout-btn" id="logoutBtn">Đăng xuất</button>
@@ -6510,7 +6512,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261028-0200";
+window.__BUILD__ = "20261028-0815";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
