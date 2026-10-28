@@ -258,6 +258,18 @@
           return html;
         }
         function rank(o) { var s = status(o); return s === "new" ? 0 : s === "in_kitchen" ? 1 : s === "done" ? 3 : 2; }
+        // Icon badge (Chris 2026-10-28): the home-screen icon shows the
+        // number of unfinished orders, like native apps. Needs the app
+        // added to the home screen + notification permission (iOS 16.4+).
+        function updateBadge() {
+          if (!("setAppBadge" in navigator)) return;
+          var n = 0;
+          orders.forEach(function (o) { if (status(o) !== "done" && status(o) !== "cancelled") n++; });
+          try {
+            if (n > 0) navigator.setAppBadge(n);
+            else if ("clearAppBadge" in navigator) navigator.clearAppBadge();
+          } catch (e) {}
+        }
         function render() {
           var today = todayStr();
           // Tab badges: open (not done/cancelled) orders per category
@@ -323,6 +335,7 @@
           var emptyText = curTab === "pickup" ? "Chưa có đơn pick up nào 🍦" : curTab === "delivery" ? "Chưa có đơn giao nào 🍦" : "Chưa có đơn ship nào 🍦";
           $("days").innerHTML = html || '<div class="empty">' + emptyText + "</div>";
           $("hdrSub").textContent = totalOpen + " đơn chưa xong · Tự cập nhật mỗi 30 giây";
+          updateBadge();
           Array.prototype.forEach.call($("days").querySelectorAll("button[data-toggle]"), function (b) {
             b.addEventListener("click", function () {
               var id = b.getAttribute("data-id"), kind = b.getAttribute("data-toggle");
