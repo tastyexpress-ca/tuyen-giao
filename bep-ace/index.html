@@ -48,6 +48,10 @@
       .pill.ok{background:var(--paid-bg);color:var(--paid-ink);border-color:var(--paid-line)}
       .pill.no{background:var(--no-bg);color:var(--no-ink);border-color:var(--no-line)}
       .pill.new{background:#fff3cd;color:#856404;border-color:#ecd9a8}
+      .badge{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--brown);color:#fff;font:800 13px "Be Vietnam Pro",sans-serif;margin-right:7px;vertical-align:2px}
+      .moneyline{margin-top:8px;font-size:14px;font-weight:700}
+      .moneyline.collect{color:var(--no-ink)}
+      .mapsbtn{display:block;width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:#eef4ff;color:#1e40af;font:700 13.5px "Be Vietnam Pro",sans-serif;text-align:center;text-decoration:none;margin-bottom:11px}
       .customer{font-size:19px;font-weight:800;line-height:1.25}
       .sdt{font-size:14.5px;color:var(--muted);font-weight:600;margin-top:1px}
       .place{font-size:14px;margin-top:3px}
@@ -215,7 +219,7 @@
             .then(function () { loadOrders(); })
             .catch(function () { if (btn) btn.disabled = false; alert("Cập nhật chưa được — thử lại nhé."); });
         }
-        function cardHtml(o) {
+        function cardHtml(o, badge) {
           var s = status(o);
           var isDone = s === "done", isRecv = s === "in_kitchen" || isDone;
           var isDelivery = String(o.method || "").toLowerCase() === "delivery";
@@ -225,7 +229,7 @@
           html += o.paid === true ? '<span class="pill ok">ĐÃ TRẢ</span>' : '<span class="pill no">CHƯA TRẢ</span>';
           if (s === "new") html += '<span class="pill new">MỚI</span>';
           html += "</div>";
-          html += '<div class="customer">' + esc(o.customer_name || "Khách") + "</div>";
+          html += '<div class="customer">' + (badge ? '<span class="badge">' + badge + "</span>" : "") + esc(o.customer_name || "Khách") + "</div>";
           if (o.phone) html += '<div class="sdt">' + esc(o.phone) + "</div>";
           if ((isDelivery || category(o) === "ship") && o.address) html += '<div class="place">📍 ' + esc(o.address) + "</div>";
           var items = parseItems(o);
@@ -237,10 +241,18 @@
             }).join("") + "</div>";
           }
           if (o.note) html += '<div class="note">📝 ' + esc(o.note) + "</div>";
-          html += '<div class="total">Tổng: ' + money(o.total) + "</div>";
+          if (curTab === "delivery") {
+            // Money line like the Think's Kitchen driver board
+            html += o.paid === true
+              ? '<div class="moneyline">Đã trả qua app ' + money(o.total) + " · Không thu tiền</div>"
+              : '<div class="moneyline collect">THU ' + money(o.total) + " khi giao (chưa trả)</div>";
+          } else {
+            html += '<div class="total">Tổng: ' + money(o.total) + "</div>";
+          }
+          var doneLabel = curTab === "delivery" ? "ĐÃ GIAO" : "XONG";
           html += '<div class="k-actions">' +
             '<button type="button" data-toggle="recv" data-id="' + o.id + '" class="' + (isRecv ? "on" : "") + '">' + (isRecv ? "✅ BẾP ĐÃ NHẬN" : "☐ BẾP ĐÃ NHẬN") + "</button>" +
-            '<button type="button" data-toggle="done" data-id="' + o.id + '" class="' + (isDone ? "on" : "") + '">' + (isDone ? "✅ XONG" : "☐ XONG") + "</button>" +
+            '<button type="button" data-toggle="done" data-id="' + o.id + '" class="' + (isDone ? "on" : "") + '">' + (isDone ? "✅ " + doneLabel : "☐ " + doneLabel) + "</button>" +
             "</div>";
           html += "</article>";
           return html;
@@ -278,13 +290,34 @@
             if (d < today && !open.length) return; // past day, all done — hide
             totalOpen += open.length;
             list.sort(function (a, b) {
+              if (curTab === "delivery") {
+                // Route order like the TK driver board: open stops keep
+                // their sequence (received or not); delivered sink last.
+                var da = status(a) === "done" ? 1 : 0, db = status(b) === "done" ? 1 : 0;
+                if (da !== db) return da - db;
+                return String(a.created_at || "").localeCompare(String(b.created_at || ""));
+              }
               var r = rank(a) - rank(b);
               if (r) return r;
               return String(b.created_at || "").localeCompare(String(a.created_at || ""));
             });
             var label = (list[0].weekday_label || "") + " · " + fmtDM(d);
             html += '<section class="day"><div class="day-head"><b>' + esc(label) + '</b><span>' + list.length + " đơn · " + open.length + " chưa xong</span></div>";
-            html += list.map(cardHtml).join("");
+            if (curTab === "delivery") {
+              var stopsAddr = open.filter(function (o) { return o.address; }).map(function (o) { return o.address; });
+              if (stopsAddr.length) {
+                var mapsUrl = "https://www.google.com/maps/dir/?api=1&origin=" + encodeURIComponent("9772 W Garden Grove Blvd, Garden Grove, CA 92844") + "&destination=" + encodeURIComponent(stopsAddr[stopsAddr.length - 1]) + (stopsAddr.length > 1 ? "&waypoints=" + encodeURIComponent(stopsAddr.slice(0, -1).join("|")) : "") + "&travelmode=driving";
+                html += '<a class="mapsbtn" href="' + mapsUrl + '" target="_blank" rel="noopener">🗺 Mở đường đi Google Maps (' + stopsAddr.length + " điểm)</a>";
+              }
+              var li = 0;
+              html += list.map(function (o) {
+                var badge = "";
+                if (status(o) !== "done") { badge = String.fromCharCode(65 + (li % 26)); li++; }
+                return cardHtml(o, badge);
+              }).join("");
+            } else {
+              html += list.map(function (o) { return cardHtml(o, ""); }).join("");
+            }
             html += "</section>";
           });
           var emptyText = curTab === "pickup" ? "Chưa có đơn pick up nào 🍦" : curTab === "delivery" ? "Chưa có đơn giao nào 🍦" : "Chưa có đơn ship nào 🍦";
