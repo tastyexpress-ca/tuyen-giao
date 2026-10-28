@@ -1365,6 +1365,10 @@
       .k-search::placeholder { color: var(--muted); font-weight: 600; }
       .k-search:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+      /* ---------- Route (driver) search ---------- */
+      .route-search-row { margin-top: 10px; }
+      .route-search-count { margin-top: 6px; font-size: 13px; font-weight: 700; color: #ffd9a8; }
+
       /* ---------- Kitchen card action buttons ---------- */
       .k-actions {
         display: flex;
@@ -2020,6 +2024,10 @@
             </div>
             <div class="progress-text" id="progressText"></div>
           </div>
+          <div class="route-search-row">
+            <input type="search" id="routeSearch" class="k-search" placeholder="🔍 Tìm điểm giao: SĐT, tên, địa chỉ…" autocomplete="off" enterkeyhint="search" aria-label="Tìm điểm giao" />
+          </div>
+          <div class="route-search-count" id="routeSearchCount" hidden></div>
         </div>
       </header>
 
@@ -2439,6 +2447,8 @@
         var routeName = document.getElementById("routeName");
         var routeAllBtn = document.getElementById("routeAllBtn");
         var routeChips = document.getElementById("routeChips");
+        var routeSearch = document.getElementById("routeSearch");
+        var routeSearchCount = document.getElementById("routeSearchCount");
         var fill = document.getElementById("progressFill");
         var progressText = document.getElementById("progressText");
         var bar = document.getElementById("progressBar");
@@ -3061,6 +3071,43 @@
           bar.setAttribute("aria-valuemax", String(total));
         }
 
+        /* Live filter for the route's stop cards — same behaviour as
+           the kitchen search: digits match with spaces/dashes ignored,
+           other text matches phone/label/name/address/items. Filtering
+           only toggles visibility; toggle states and flex order are
+           untouched. */
+        function applyRouteFilter() {
+          if (!routeSearch) return;
+          var q = routeSearch.value.replace(/^\s+|\s+$/g, "").toLowerCase();
+          var qDigits = q.replace(/\D/g, "");
+          var visible = 0;
+          currentStopEntries.forEach(function (entry) {
+            var match = true;
+            if (q) {
+              var text = entry.searchText || "";
+              var digits = text.replace(/\D/g, "");
+              match = (qDigits !== "" && digits.indexOf(qDigits) !== -1) || text.indexOf(q) !== -1;
+            }
+            entry.card.style.display = match ? "" : "none";
+            if (match) visible++;
+          });
+          if (routeSearchCount) {
+            routeSearchCount.hidden = !q;
+            if (q) routeSearchCount.textContent = "Tìm thấy " + visible + "/" + currentStopEntries.length + " điểm giao";
+          }
+          if (routeDoneDivider) {
+            if (q) {
+              var anyDoneVisible = currentStopEntries.some(function (entry) {
+                return entry.card.style.display !== "none" && currentRouteDay && getToggle(currentRouteDay.day, "stop-" + entry.stop.id, "delivered");
+              });
+              routeDoneDivider.hidden = !anyDoneVisible;
+            } else {
+              renderRouteProgress();
+            }
+          }
+        }
+        routeSearch.addEventListener("input", applyRouteFilter);
+
         function isWixStop(stop) {
           return !!(stop.label && stop.label.indexOf("Wix") === 0);
         }
@@ -3154,7 +3201,7 @@
           if (cashBtn) stopActions.appendChild(cashBtn);
           card.appendChild(stopActions);
 
-          return { card: card, stop: stop, order: index, foodBtn: foodBtn, doneBtn: doneBtn, cashBtn: cashBtn };
+          return { card: card, stop: stop, order: index, foodBtn: foodBtn, doneBtn: doneBtn, cashBtn: cashBtn, searchText: ((stop.phone || "") + " " + (stop.label || "") + " " + (stop.name || "") + " " + (stop.address || "") + " " + (stop.items || "") + " " + (stop.money || "")).toLowerCase() };
         }
 
         /* Full-route directions URL for one day's stops (already in seq
@@ -3258,11 +3305,13 @@
           routeDoneDivider.hidden = true;
           stopList.appendChild(routeDoneDivider);
           renderRouteProgress();
+          applyRouteFilter();
         }
 
         function openDay(rd, shift) {
           currentRouteDay = rd;
           currentRouteShift = shift === "toi" ? "toi" : "sang";
+          if (routeSearch) routeSearch.value = "";
           renderRouteDay();
           showView(routeView);
         }
@@ -6426,7 +6475,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261027-1341";
+window.__BUILD__ = "20261027-1947";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
