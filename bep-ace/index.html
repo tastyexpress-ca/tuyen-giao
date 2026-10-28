@@ -60,6 +60,11 @@
       .k-actions button{flex:1;padding:12px 8px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font:700 13.5px "Be Vietnam Pro",sans-serif;cursor:pointer}
       .k-actions button.on{background:var(--green);border-color:var(--green);color:#fff}
       .k-actions button:disabled{opacity:.5}
+      .tabs{display:flex;gap:8px;margin-bottom:4px}
+      .tabs button{flex:1;padding:12px 6px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font:700 13.5px "Be Vietnam Pro",sans-serif;cursor:pointer;color:var(--muted)}
+      .tabs button.on{background:var(--brown);border-color:var(--brown);color:#fff}
+      .tabs button .n{display:inline-block;min-width:20px;padding:0 5px;border-radius:999px;background:#f5e7cd;color:#7c4a12;font-size:11.5px;margin-left:3px}
+      .tabs button.on .n{background:rgba(255,247,236,.25);color:#fff}
       .empty{background:#fff;border:1.5px dashed var(--line);border-radius:14px;padding:22px 14px;text-align:center;color:var(--muted);font-weight:600;margin-top:16px}
       .foot{margin-top:22px;text-align:center;color:var(--muted);font-size:12px;line-height:1.6}
       /* login */
@@ -97,6 +102,7 @@
         <div class="row">
           <h1><small>ACE CREAMERY · NHÀ BẾP</small><span id="hdrDay">Đơn kem cần làm</span></h1>
           <div>
+            <button class="hbtn" id="pushNotifyBtn" type="button" hidden>🔔 Nhận thông báo đơn mới</button>
             <button class="hbtn" id="refreshBtn" type="button">🔄 Làm mới</button>
             <button class="hbtn" id="logoutBtn" type="button">Đăng xuất</button>
           </div>
@@ -104,9 +110,14 @@
         <div class="sub" id="hdrSub">Đang tải…</div>
       </header>
       <main>
+        <div class="tabs" id="tabs">
+          <button type="button" data-tab="pickup">🧺 Pick up <span class="n" id="nPickup">0</span></button>
+          <button type="button" data-tab="delivery">🚗 Giao <span class="n" id="nDelivery">0</span></button>
+          <button type="button" data-tab="ship">📦 Ship <span class="n" id="nShip">0</span></button>
+        </div>
         <input class="search" id="search" type="search" placeholder="Tìm theo 4 số cuối, tên khách…" />
         <div id="days"></div>
-        <div class="foot">Đơn trên trang này là đơn đặt qua app/web của ACE Creamery.<br/>Đơn qua Wix vẫn xử lý theo cách cũ.</div>
+        <div class="foot">Đơn trên trang này là đơn đặt qua app/web của ACE Creamery.</div>
       </main>
     </div>
 
@@ -120,6 +131,16 @@
         var session = null;
         try { session = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { session = null; }
         var orders = [];
+        var curTab = "pickup";
+        // 3 muc (Chris 2026-10-27): pick up / giao tan noi / ship gui di.
+        // dat-kem writes method 'pickup' | 'delivery'; anything else
+        // (e.g. 'ship') belongs to the Ship tab.
+        function category(o) {
+          var m = String(o.method || "").toLowerCase();
+          if (m === "pickup") return "pickup";
+          if (m === "delivery") return "delivery";
+          return "ship";
+        }
 
         function $(id) { return document.getElementById(id); }
         function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -198,7 +219,7 @@
           var s = status(o);
           var isDone = s === "done", isRecv = s === "in_kitchen" || isDone;
           var isDelivery = String(o.method || "").toLowerCase() === "delivery";
-          var when = isDelivery ? (String(o.shift || "").toLowerCase() === "tối" || String(o.shift || "").toLowerCase() === "toi" ? "GIAO TỐI" : "GIAO SÁNG") : "PICK UP" + (o.pickup_time ? " · " + o.pickup_time : "");
+          var when = category(o) === "ship" ? "SHIP 📦" : isDelivery ? (String(o.shift || "").toLowerCase() === "tối" || String(o.shift || "").toLowerCase() === "toi" ? "GIAO TỐI" : "GIAO SÁNG") : "PICK UP" + (o.pickup_time ? " · " + o.pickup_time : "");
           var html = '<article class="k-card' + (isDone ? " done" : "") + (isRecv && !isDone ? " received" : "") + '" data-search="' + esc(((o.customer_name || "") + " " + (o.phone || "")).toLowerCase()) + '">';
           html += '<div class="k-top"><span class="tag' + (isDelivery ? " del" : "") + '">' + esc(when) + "</span>";
           html += o.paid === true ? '<span class="pill ok">ĐÃ TRẢ</span>' : '<span class="pill no">CHƯA TRẢ</span>';
@@ -206,7 +227,7 @@
           html += "</div>";
           html += '<div class="customer">' + esc(o.customer_name || "Khách") + "</div>";
           if (o.phone) html += '<div class="sdt">' + esc(o.phone) + "</div>";
-          if (isDelivery && o.address) html += '<div class="place">📍 ' + esc(o.address) + "</div>";
+          if ((isDelivery || category(o) === "ship") && o.address) html += '<div class="place">📍 ' + esc(o.address) + "</div>";
           var items = parseItems(o);
           if (items.length) {
             html += '<div class="dishes">' + items.map(function (it) {
@@ -227,9 +248,22 @@
         function rank(o) { var s = status(o); return s === "new" ? 0 : s === "in_kitchen" ? 1 : s === "done" ? 3 : 2; }
         function render() {
           var today = todayStr();
+          // Tab badges: open (not done/cancelled) orders per category
+          var counts = { pickup: 0, delivery: 0, ship: 0 };
+          orders.forEach(function (o) {
+            if (status(o) === "cancelled" || status(o) === "done") return;
+            counts[category(o)]++;
+          });
+          $("nPickup").textContent = counts.pickup;
+          $("nDelivery").textContent = counts.delivery;
+          $("nShip").textContent = counts.ship;
+          Array.prototype.forEach.call($("tabs").querySelectorAll("button"), function (b) {
+            b.classList.toggle("on", b.getAttribute("data-tab") === curTab);
+          });
           var byDay = {}, dayList = [];
           orders.forEach(function (o) {
             if (status(o) === "cancelled") return;
+            if (category(o) !== curTab) return;
             var d = o.day || "";
             if (!d) return;
             if (!byDay[d]) { byDay[d] = []; dayList.push(d); }
@@ -253,7 +287,8 @@
             html += list.map(cardHtml).join("");
             html += "</section>";
           });
-          $("days").innerHTML = html || '<div class="empty">Chưa có đơn kem nào sắp tới 🍦</div>';
+          var emptyText = curTab === "pickup" ? "Chưa có đơn pick up nào 🍦" : curTab === "delivery" ? "Chưa có đơn giao nào 🍦" : "Chưa có đơn ship nào 🍦";
+          $("days").innerHTML = html || '<div class="empty">' + emptyText + "</div>";
           $("hdrSub").textContent = totalOpen + " đơn chưa xong · Tự cập nhật mỗi 30 giây";
           Array.prototype.forEach.call($("days").querySelectorAll("button[data-toggle]"), function (b) {
             b.addEventListener("click", function () {
@@ -286,6 +321,9 @@
         }
         $("search").addEventListener("input", applyFilter);
         $("refreshBtn").addEventListener("click", loadOrders);
+        Array.prototype.forEach.call($("tabs").querySelectorAll("button"), function (b) {
+          b.addEventListener("click", function () { curTab = b.getAttribute("data-tab"); render(); });
+        });
 
         function enter() {
           show("board");
@@ -297,6 +335,96 @@
         }
         if (session && session.access_token) enter(); else show("login");
       })();
+    </script>
+    <script>
+/* ===== Push notifications for new orders (Web Push, ACE kitchen) =====
+   Self-contained: reads the saved ACE session (ace_bep_session) from
+   localStorage and upserts this device's push subscription into
+   push_subscriptions. Mirrors the doi-tac back-office push button. */
+(function () {
+  "use strict";
+  var VAPID_PUBLIC = "BDbtCvknmDPz4iGTULx6PWeF_Yy3wQEuAOAfrjwwVGfkymI5N4oKdsxKcC4R9Vu1tdbwZ4Qb2TMEvFnYH5ZDeFM";
+  var SUPABASE_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co";
+  var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+  var SESSION_KEY = "ace_bep_session";
+  var btn = document.getElementById("pushNotifyBtn");
+  if (!btn) return;
+  var supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  if (!supported) {
+    var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    var standalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+    if (isIOS && !standalone) {
+      btn.hidden = false;
+      btn.textContent = "🔔 Nhận thông báo: thêm app vào màn hình chính";
+      btn.addEventListener("click", function () {
+        alert("Để nhận thông báo đơn mới trên iPhone:\n1. Bấm nút Chia sẻ (ô vuông có mũi tên lên) ở thanh Safari\n2. Chọn 'Thêm vào Màn hình chính'\n3. Mở app từ biểu tượng ngoài màn hình chính (đăng nhập lại nếu app hỏi)\n4. Bấm nút 🔔 và chọn Cho phép (Allow)");
+      });
+    }
+    return;
+  }
+  btn.hidden = false;
+  function urlB64ToUint8Array(base64String) {
+    var padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    var base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    var raw = window.atob(base64);
+    var out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+  function sessionToken() {
+    try {
+      var s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+      return (s && (s.access_token || s.token)) || null;
+    } catch (e) { return null; }
+  }
+  function refreshLabel() {
+    if (Notification.permission !== "granted") return;
+    navigator.serviceWorker.getRegistration("/tuyen-giao/").then(function (reg) {
+      if (!reg) return;
+      reg.pushManager.getSubscription().then(function (sub) {
+        if (sub) btn.textContent = "🔔 Đã bật thông báo ✅";
+      }).catch(function () {});
+    }).catch(function () {});
+  }
+  btn.addEventListener("click", function () {
+    btn.disabled = true;
+    Notification.requestPermission().then(function (perm) {
+      if (perm !== "granted") {
+        alert("Chưa được cho phép thông báo. Vào Cài đặt > Thông báo, bật cho app rồi thử lại nhé.");
+        return null;
+      }
+      return navigator.serviceWorker.register("/tuyen-giao/sw.js").then(function () {
+        return navigator.serviceWorker.ready;
+      }).then(function (reg) {
+        return reg.pushManager.getSubscription().then(function (existing) {
+          if (existing) return existing;
+          return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC) });
+        });
+      }).then(function (sub) {
+        if (!sub) return null;
+        var json = sub.toJSON();
+        var token = sessionToken();
+        return fetch(SUPABASE_URL + "/rest/v1/push_subscriptions?on_conflict=endpoint", {
+          method: "POST",
+          headers: {
+            "apikey": ANON_KEY,
+            "Authorization": "Bearer " + (token || ANON_KEY),
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates"
+          },
+          body: JSON.stringify({ endpoint: sub.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth })
+        }).then(function (resp) {
+          if (!resp.ok) throw new Error("save failed " + resp.status);
+          btn.textContent = "🔔 Đã bật thông báo ✅";
+          alert("Đã bật thông báo đơn mới cho máy này ✅");
+        });
+      });
+    }).catch(function (err) {
+      alert("Chưa bật được thông báo: " + (err && err.message ? err.message : err));
+    }).then(function () { btn.disabled = false; });
+  });
+  refreshLabel();
+})();
     </script>
     <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26): moi lan mo app /
