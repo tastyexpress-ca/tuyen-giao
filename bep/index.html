@@ -52,6 +52,20 @@
       .moneyline{margin-top:8px;font-size:14px;font-weight:700}
       .moneyline.collect{color:var(--no-ink)}
       .mapsbtn{display:block;width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:#eef4ff;color:#1e40af;font:700 13.5px "Be Vietnam Pro",sans-serif;text-align:center;text-decoration:none;margin-bottom:11px}
+      button.mapsbtn{cursor:pointer}
+      .routeinfo{text-align:center;font-weight:800;font-size:15px;color:var(--green);margin:-3px 0 11px}
+      #printArea{display:none}
+      @media print{
+        body>*{display:none !important}
+        body>#printArea{display:block !important}
+      }
+      .receipt{max-width:62mm;margin:0 auto 10px;font-family:ui-monospace,Menlo,monospace;color:#000;font-size:12px;line-height:1.45;page-break-after:always}
+      .receipt:last-child{page-break-after:auto}
+      .receipt h2{text-align:center;font-size:16px;margin:0 0 2px;font-family:ui-monospace,Menlo,monospace}
+      .receipt .c{text-align:center}
+      .receipt hr{border:none;border-top:1px dashed #000;margin:7px 0}
+      .receipt .row{display:flex;justify-content:space-between;gap:8px}
+      .receipt .tot{font-weight:800;font-size:14px}
       .customer{font-size:19px;font-weight:800;line-height:1.25}
       .sdt{font-size:14.5px;color:var(--muted);font-weight:600;margin-top:1px}
       .place{font-size:14px;margin-top:3px}
@@ -193,11 +207,14 @@
         var KEY = "bep_partner_session";
         var SLUG = "";
         var SHOP_ADDR = "";
+        var SHOP_NAME = "";
         var session = null;
         try { session = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { session = null; }
         var orders = [];
         var curTab = "pickup";
         var openDay = null;
+        var routeCache = { key: "", html: "" };
+        var geoCache = {};
         // 3 muc (Chris 2026-10-27): pick up / giao tan noi / ship gui di.
         // dat-kem writes method 'pickup' | 'delivery'; anything else
         // (e.g. 'ship') belongs to the Ship tab.
@@ -282,7 +299,7 @@
             });
         });
         function doLogout() {
-          session = null; orders = []; SLUG = ""; SHOP_ADDR = "";
+          session = null; orders = []; SLUG = ""; SHOP_ADDR = ""; SHOP_NAME = "";
           localStorage.removeItem(KEY);
           show("login");
         }
@@ -346,6 +363,7 @@
             '<button type="button" data-toggle="recv" data-id="' + o.id + '" class="' + (isRecv ? "on" : "") + '">' + (isRecv ? "✅ BẾP ĐÃ NHẬN" : "☐ BẾP ĐÃ NHẬN") + "</button>" +
             '<button type="button" data-toggle="done" data-id="' + o.id + '" class="' + (isDone ? "on" : "") + '">' + (isDone ? "✅ " + doneLabel : "☐ " + doneLabel) + "</button>" +
             "</div>";
+          html += '<div class="k-actions"><button type="button" data-print="' + o.id + '">🧾 IN HOÁ ĐƠN</button></div>';
           html += "</article>";
           return html;
         }
@@ -433,11 +451,15 @@
             });
             var dlabel = (dlist[0].weekday_label || "") + " · " + fmtDM(openDay);
             detailHtml += '<section class="day"><div class="day-head"><b>' + esc(dlabel) + "</b><span>" + dlist.length + " đơn · " + dopen.length + " chưa xong</span></div>";
+            detailHtml += '<button type="button" class="mapsbtn" id="printAllBtn">🖨 In tất cả hoá đơn (' + dlist.length + " đơn)</button>";
             if (curTab === "delivery") {
               var stopsAddr = dopen.filter(function (o) { return o.address; }).map(function (o) { return o.address; });
               if (stopsAddr.length) {
                 var mapsUrl = "https://www.google.com/maps/dir/?api=1" + (SHOP_ADDR ? "&origin=" + encodeURIComponent(SHOP_ADDR) : "") + "&destination=" + encodeURIComponent(stopsAddr[stopsAddr.length - 1]) + (stopsAddr.length > 1 ? "&waypoints=" + encodeURIComponent(stopsAddr.slice(0, -1).join("|")) : "") + "&travelmode=driving";
                 detailHtml += '<a class="mapsbtn" href="' + mapsUrl + '" target="_blank" rel="noopener">🗺 Mở đường đi Google Maps (' + stopsAddr.length + " điểm)</a>";
+                var rKey = openDay + "|" + stopsAddr.join("|");
+                if (routeCache.key === rKey && routeCache.html) detailHtml += '<div class="routeinfo">' + routeCache.html + "</div>";
+                else detailHtml += '<button type="button" class="mapsbtn" id="routeTotalBtn">🧮 Tính tổng đường đi</button><div class="routeinfo" id="routeInfo"></div>';
               }
               var li = 0;
               detailHtml += dlist.map(function (o) {
@@ -471,7 +493,127 @@
               patchStatus(id, next, b);
             });
           });
+          Array.prototype.forEach.call($("days").querySelectorAll("button[data-print]"), function (b) {
+            b.addEventListener("click", function () {
+              var o = null;
+              orders.forEach(function (x) { if (String(x.id) === String(b.getAttribute("data-print"))) o = x; });
+              if (o) printReceipts([o]);
+            });
+          });
+          var paBtn = $("printAllBtn");
+          if (paBtn) paBtn.addEventListener("click", function () {
+            if (openDay && byDay[openDay]) printReceipts(byDay[openDay]);
+          });
+          var rtBtn = $("routeTotalBtn");
+          if (rtBtn) rtBtn.addEventListener("click", function () { computeRoute(); });
           applyFilter();
+        }
+        // ----- Receipts (🧾 per order + 🖨 print all) -----
+        function receiptHtml(o) {
+          var cat = category(o);
+          var methodLine = cat === "delivery" ? "Giao hàng" + (o.shift ? " · Ca " + o.shift : "") : cat === "ship" ? "Ship" : "Pick up" + (o.pickup_time ? " · " + o.pickup_time : "");
+          var items = parseItems(o);
+          var h = '<div class="receipt">';
+          h += "<h2>" + esc(SHOP_NAME || "Tiệm") + "</h2>";
+          h += '<div class="c">HOÁ ĐƠN · Order app #' + o.id + "</div>";
+          h += '<div class="c">' + esc(((o.weekday_label || "") + " " + (o.day || "")).replace(/^\s+|\s+$/g, "")) + "</div><hr>";
+          h += "<div>Khách: " + esc(o.customer_name || "") + "</div>";
+          if (o.phone) h += "<div>SĐT: " + esc(o.phone) + "</div>";
+          h += "<div>" + esc(methodLine) + "</div>";
+          if (o.address) h += "<div>Địa chỉ: " + esc(o.address) + "</div>";
+          h += "<hr>";
+          items.forEach(function (it) {
+            h += '<div class="row"><span>' + (Number(it.qty) || 1) + "x " + esc(it.name || "Món") + "</span><span>" + (it.price != null && it.price !== "" ? money(it.price) : "") + "</span></div>";
+            if (it.detail) h += "<div>" + esc(it.detail) + "</div>";
+          });
+          h += "<hr>";
+          if (o.subtotal != null) h += '<div class="row"><span>Tạm tính</span><span>' + money(o.subtotal) + "</span></div>";
+          if (Number(o.delivery_fee)) h += '<div class="row"><span>Phí giao</span><span>' + money(o.delivery_fee) + "</span></div>";
+          if (o.tax != null) h += '<div class="row"><span>Thuế</span><span>' + money(o.tax) + "</span></div>";
+          h += '<div class="row tot"><span>TỔNG</span><span>' + money(o.total) + "</span></div>";
+          h += "<div>" + (o.paid ? "Đã thanh toán qua app ✅" : "Chưa thanh toán") + "</div>";
+          if (o.note) h += "<div>Ghi chú: " + esc(o.note) + "</div>";
+          h += '<hr><div class="c">Cảm ơn quý khách! 🙏</div>';
+          return h + "</div>";
+        }
+        function printReceipts(list) {
+          if (!list || !list.length) return;
+          $("printArea").innerHTML = list.map(receiptHtml).join("");
+          setTimeout(function () { window.print(); }, 80);
+        }
+        // ----- Route total (Nominatim geocode + OSRM, like the fee quote) -----
+        function geocode(addr) {
+          if (geoCache[addr]) return Promise.resolve(geoCache[addr]);
+          function nom(q) {
+            return fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(q))
+              .then(function (r) { return r.json(); })
+              .then(function (j) { return j && j[0] ? { lat: parseFloat(j[0].lat), lon: parseFloat(j[0].lon) } : null; })
+              .catch(function () { return null; });
+          }
+          // Some addresses only resolve without the ZIP, or without the
+          // "W" directional (verified with the ACE address) — try variants,
+          // then Photon as a last resort.
+          var noZip = addr.replace(/,?\s*\d{5}(-\d{4})?\s*$/, "");
+          var variants = [addr, noZip, noZip.replace(/^(\d+)\s+W\s+/, "$1 ")];
+          var chain = Promise.resolve(null);
+          variants.forEach(function (v) {
+            chain = chain.then(function (c) { return c || nom(v); });
+          });
+          return chain.then(function (c) {
+            if (c) return c;
+            return fetch("https://photon.komoot.io/api/?limit=1&q=" + encodeURIComponent(addr))
+              .then(function (r) { return r.json(); })
+              .then(function (j) {
+                var f = j && j.features && j.features[0];
+                return f ? { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] } : null;
+              })
+              .catch(function () { return null; });
+          }).then(function (c) { geoCache[addr] = c; return c; });
+        }
+        function computeRoute() {
+          var info = $("routeInfo"), btn = $("routeTotalBtn");
+          function say(t) { if (info) info.textContent = t; if (btn) btn.textContent = "🧮 Tính tổng đường đi"; }
+          if (!SHOP_ADDR) { say("Tiệm chưa có địa chỉ — chưa tính được đường đi."); return; }
+          if (!openDay) return;
+          var stops = orders.filter(function (o) {
+            return category(o) === "delivery" && o.day === openDay && status(o) !== "done" && status(o) !== "cancelled" && o.address;
+          });
+          stops.sort(function (a, b) { return String(a.created_at || "").localeCompare(String(b.created_at || "")); });
+          if (!stops.length) { say("Không còn điểm giao nào chưa xong."); return; }
+          if (btn) { btn.textContent = "⏳ Đang tính…"; btn.disabled = true; }
+          var addrs = stops.map(function (o) { return o.address; });
+          geocode(SHOP_ADDR).then(function (origin) {
+            if (!origin) { say("Không tìm thấy địa chỉ tiệm trên bản đồ."); return null; }
+            var chain = Promise.resolve([origin]);
+            addrs.forEach(function (a) {
+              chain = chain.then(function (pts) {
+                return geocode(a).then(function (c) {
+                  if (!c) throw new Error("Không tìm thấy địa chỉ: " + a);
+                  pts.push(c);
+                  return pts;
+                });
+              });
+            });
+            return chain;
+          }).then(function (pts) {
+            if (!pts) return;
+            var coords = pts.map(function (c) { return c.lon + "," + c.lat; }).join(";");
+            return fetch("https://router.project-osrm.org/route/v1/driving/" + coords + "?overview=false")
+              .then(function (r) { return r.json(); })
+              .then(function (j) {
+                var rt = j && j.routes && j.routes[0];
+                if (!rt) { say("Không tính được đường đi — thử lại sau."); return; }
+                var mi = (rt.distance / 1609.34).toFixed(1);
+                var eta = Math.round(rt.duration / 60) + 5 * stops.length;
+                var text = "🚗 Tổng đường đi: " + mi + " mi · ~" + eta + " phút (" + stops.length + " điểm giao)";
+                routeCache = { key: openDay + "|" + addrs.join("|"), html: text };
+                if (btn) btn.style.display = "none";
+                if (info) info.textContent = text;
+              });
+          }).catch(function (e) {
+            say(e && e.message ? e.message : "Không tính được đường đi — thử lại sau.");
+            if (btn) btn.disabled = false;
+          });
         }
         function applyFilter() {
           var q = $("search").value.replace(/^\s+|\s+$/g, "").toLowerCase();
@@ -507,6 +649,7 @@
               }
               SLUG = row.slug || slugify(row.shop_name);
               SHOP_ADDR = row.address || "";
+              SHOP_NAME = row.shop_name || "";
               $("hdrShop").textContent = String(row.shop_name || "Tiệm của bạn").toUpperCase() + " · NHÀ BẾP";
               $("hdrShopHome").textContent = String(row.shop_name || "Tiệm của bạn").toUpperCase();
               document.title = (row.shop_name || "App Bếp") + " · Nhà bếp";
@@ -647,5 +790,6 @@ window.__BUILD__ = "20261027-2230";
   setInterval(check, 300000);
 })();
     </script>
+    <div id="printArea"></div>
   </body>
 </html>
