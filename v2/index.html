@@ -2638,6 +2638,25 @@
         function getToggle(day, cardKey, toggle) {
           return stateMap[stateKey(day, cardKey, toggle)] === true;
         }
+        // Icon badge (Chris 2026-10-28, same as the partner kitchen
+        // app): the home-screen icon shows how many kitchen orders
+        // from today onward are not done yet. Needs the app added to
+        // the home screen + notification permission (iOS 16.4+).
+        function updateAppBadge() {
+          if (!("setAppBadge" in navigator)) return;
+          var today = localDayStr(new Date());
+          var n = 0;
+          Object.keys(kitchenOrdersByDay).forEach(function (day) {
+            if (day < today) return;
+            (kitchenOrdersByDay[day] || []).forEach(function (o) {
+              if (!getToggle(day, "ko-" + o.id, "done")) n++;
+            });
+          });
+          try {
+            if (n > 0) navigator.setAppBadge(n);
+            else if ("clearAppBadge" in navigator) navigator.clearAppBadge();
+          } catch (e) {}
+        }
         function loadData() {
           return Promise.all([
             dataGet("/rest/v1/route_days?select=*&order=day.desc"),
@@ -6331,6 +6350,7 @@
                no branch here, so a form in progress is never disturbed. */
             loadTkProducts(true);
           }
+          updateAppBadge();
           if (y) window.scrollTo(0, y);
         }
 
@@ -6452,6 +6472,7 @@
         function startApp() {
           showView(loadingView);
           loadData().then(function () {
+            updateAppBadge();
             showView(homeView);
             setupRealtime();
           }, function (err) {
@@ -6489,7 +6510,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261027-2230";
+window.__BUILD__ = "20261028-0115";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
