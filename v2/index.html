@@ -5811,11 +5811,25 @@
               var mx = line.match(/^(\d+)\s*x\s+/i);
               if (mx) { mult = parseInt(mx[1], 10) || 1; line = line.slice(mx[0].length).trim(); }
               var cp = line.match(/^(?:(\d+)\s*)?phần cơm\s*[—–-]\s*Mặn:\s*(.+?)\s*·\s*Xào:\s*(.+?)\s*·\s*Canh:\s*(.+)$/i);
+              var cpNew = !cp && line.match(/^cơm phần\s*:\s*(.+)$/i);
               if (cp) {
                 var n = (cp[1] ? parseInt(cp[1], 10) || 1 : 1) * mult;
                 cookTallyAdd(compMap, compOrder, "Mặn: " + cp[2].trim(), n);
                 cookTallyAdd(compMap, compOrder, "Xào: " + cp[3].trim(), n);
                 cookTallyAdd(compMap, compOrder, "Canh: " + cp[4].trim(), n);
+              } else if (cpNew) {
+                /* Current line format (Chris 2026-10-26): "Cơm phần:
+                   <mặn> · <xào> · <canh>" — split into per-dish counts
+                   (Chris 2026-10-27: the cook list shows each dish's
+                   portion count, not whole combos). Trailing segments
+                   like "Không lấy cơm" are not dishes — skip them. */
+                var segs = cpNew[1].split("·").map(function (s) { return s.trim(); }).filter(function (s) {
+                  return s && !/^không lấy cơm$/i.test(s) && !/^ít cơm$/i.test(s);
+                });
+                var roles = ["Mặn: ", "Xào: ", "Canh: "];
+                for (var si = 0; si < segs.length && si < 3; si++) {
+                  cookTallyAdd(compMap, compOrder, roles[si] + segs[si], mult);
+                }
               } else {
                 cookTallyAdd(lineMap, lineOrder, line, mult);
               }
@@ -6475,7 +6489,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261027-1947";
+window.__BUILD__ = "20261027-2230";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
