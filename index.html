@@ -1274,6 +1274,41 @@
         color: var(--accent-strong);
         margin: 10px 2px -4px;
       }
+      /* 3 thẻ nhóm trong trang bếp của từng ngày — Giao hàng /
+         Pick up / Bếp giao, đơn gom vào đúng thẻ của nhóm mình
+         (Chris 2026-10-29) */
+      .k-grp-card {
+        background: #fff7ea;
+        border: 2px solid var(--line);
+        border-radius: 22px;
+        padding: 4px 12px 14px;
+      }
+      .k-grp-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 19px;
+        font-weight: 900;
+        color: var(--ink);
+        padding: 10px 2px 2px;
+      }
+      .k-grp-count {
+        margin-left: auto;
+        font-size: 13.5px;
+        font-weight: 800;
+        background: var(--card);
+        border: 1.5px solid var(--line);
+        border-radius: 999px;
+        padding: 3px 10px;
+        color: var(--accent-strong);
+        white-space: nowrap;
+      }
+      .k-grp-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 10px;
+      }
       .done-divider {
         color: var(--muted);
         border-top: 2px dashed var(--line);
@@ -5553,11 +5588,11 @@
           currentKitchenHeads = [];
           kitchenDoneDivider = null;
           var seq = 0;
-          var lastHeading = null;
           var pending = [];
           var doneEntries = [];
           decorated.forEach(function (d) {
             var entry = buildKitchenCard(kd, d.order);
+            entry.grpKey = d.info.key;
             entry.grpHeading = d.info.heading;
             entry.seq = seq;
             seq++;
@@ -5565,17 +5600,32 @@
             if (entry.isDone) doneEntries.push(entry);
             else pending.push(entry);
           });
-          pending.forEach(function (entry) {
-            if (entry.grpHeading !== lastHeading) {
-              lastHeading = entry.grpHeading;
-              var head = el("div", "group-head", lastHeading);
-              kitchenGroups.appendChild(head);
-              currentKitchenHeads.push(head);
-              entry.headEl = head;
-            } else if (currentKitchenHeads.length) {
-              entry.headEl = currentKitchenHeads[currentKitchenHeads.length - 1];
-            }
-            kitchenGroups.appendChild(entry.card);
+          /* 3 thẻ nhóm trong ngày: đơn nào gom vào đúng thẻ của
+             nhóm đó (Chris 2026-10-29) — Giao hàng · Pick up ·
+             Bếp giao. Thẻ chỉ hiện khi nhóm có đơn chưa xong;
+             đơn đã xong vẫn chìm xuống mục ĐÃ XONG như cũ. */
+          var K_GROUPS = [
+            { key: "sang", label: "🚗 Giao hàng" },
+            { key: "pickup", label: "🧺 Pick Up" },
+            { key: "bep", label: "🌙 Bếp Giao" }
+          ];
+          K_GROUPS.forEach(function (g) {
+            var inGrp = pending.filter(function (e) { return e.grpKey === g.key; });
+            if (!inGrp.length) return;
+            var totalGrp = currentKitchenEntries.filter(function (e) { return e.grpKey === g.key; }).length;
+            var box = el("section", "k-grp-card");
+            var ghead = el("div", "k-grp-head");
+            ghead.appendChild(el("span", "", g.label));
+            ghead.appendChild(el("span", "k-grp-count", inGrp.length + " chưa xong / " + totalGrp + " đơn"));
+            box.appendChild(ghead);
+            var gbody = el("div", "k-grp-body");
+            inGrp.forEach(function (entry) {
+              entry.headEl = box;
+              gbody.appendChild(entry.card);
+            });
+            box.appendChild(gbody);
+            kitchenGroups.appendChild(box);
+            currentKitchenHeads.push(box);
           });
           if (doneEntries.length) {
             kitchenDoneDivider = el("div", "group-head done-divider", "ĐÃ XONG");
@@ -6835,7 +6885,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261029-0830";
+window.__BUILD__ = "20261029-0840";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
