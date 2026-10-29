@@ -5143,6 +5143,25 @@
           foot.appendChild(el("div", "pl-foot-2", "Order: 626-283-9994"));
           /* CREAMERYACE.COM bỏ khỏi hoá đơn luôn (Chris 2026-10-28). */
           bodyBox.appendChild(foot);
+
+          /* 2 QR codes at the end of the receipt too (Chris
+             2026-10-28: "Anh ko thấy qr code em" — the receipt is
+             what the customer actually takes home, so it carries
+             the same QR row as the food label). */
+          var qrRow = el("div", "pl-qr");
+          [
+            { src: "/tuyen-giao/assets/qr-app.png", cap: "ĐẶT MÓN QUA APP" },
+            { src: "/tuyen-giao/assets/qr-web.png", cap: "WEBSITE" },
+          ].forEach(function (q) {
+            var cell = el("div", "pl-qr-cell");
+            var img = document.createElement("img");
+            img.src = q.src;
+            img.alt = q.cap;
+            cell.appendChild(img);
+            cell.appendChild(el("div", "pl-qr-cap", q.cap));
+            qrRow.appendChild(cell);
+          });
+          bodyBox.appendChild(qrRow);
           label.appendChild(bodyBox);
 
           label.appendChild(el("div", "pl-cut"));
@@ -6553,7 +6572,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261028-1955";
+window.__BUILD__ = "20261028-1965";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
