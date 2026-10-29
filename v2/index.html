@@ -1607,6 +1607,14 @@
       #printArea .pl-foot-1 { font-size: 11pt; font-weight: 800; }
       #printArea .pl-foot-2 { margin-top: 0.02in; font-size: 8.5pt; font-weight: 600; }
       #printArea .pl-foot-3 { margin-top: 0.01in; font-size: 13pt; font-weight: 900; letter-spacing: 0; white-space: nowrap; }
+      /* Customer QR row (Chris 2026-10-28): two codes on every
+         printed order label — scan to the ordering app intro page
+         and to the website. Images live in /tuyen-giao/assets/ so
+         the same absolute path works from both / and /v2/. */
+      #printArea .pl-qr { display: flex; justify-content: center; gap: 0.2in; padding-top: 0.1in; }
+      #printArea .pl-qr-cell { text-align: center; }
+      #printArea .pl-qr-cell img { display: block; width: 0.92in; height: 0.92in; }
+      #printArea .pl-qr-cap { margin-top: 0.03in; font-size: 8pt; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap; }
       #printArea .pl-cut {
         margin: 0.05in 0.1in 0.06in;
         border-top: 2px dashed #000;
@@ -4657,6 +4665,14 @@
            band, tag pill, name, place, SĐT, dishes, note, footer and
            the dashed cut line. Shared by the single-order print and
            "🖨 In tất cả" so both always render identically. */
+        /* Preload the two customer QR images at startup so a label
+           print (window.print or the html2canvas PDF capture) never
+           rasterizes before they arrive. */
+        ["/tuyen-giao/assets/qr-app.png", "/tuyen-giao/assets/qr-web.png"].forEach(function (src) {
+          var pre = new Image();
+          pre.src = src;
+        });
+
         function buildPrintLabel(kd, order) {
           var label = el("div", "pl-label");
 
@@ -4695,6 +4711,21 @@
           foot.appendChild(el("div", "pl-foot-2", "Order online"));
           foot.appendChild(el("div", "pl-foot-3", "CREAMERYACE.COM"));
           bodyBox.appendChild(foot);
+
+          var qrRow = el("div", "pl-qr");
+          [
+            { src: "/tuyen-giao/assets/qr-app.png", cap: "ĐẶT MÓN QUA APP" },
+            { src: "/tuyen-giao/assets/qr-web.png", cap: "WEBSITE" },
+          ].forEach(function (q) {
+            var cell = el("div", "pl-qr-cell");
+            var img = document.createElement("img");
+            img.src = q.src;
+            img.alt = q.cap;
+            cell.appendChild(img);
+            cell.appendChild(el("div", "pl-qr-cap", q.cap));
+            qrRow.appendChild(cell);
+          });
+          bodyBox.appendChild(qrRow);
           label.appendChild(bodyBox);
 
           label.appendChild(el("div", "pl-cut"));
@@ -6512,7 +6543,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261028-0815";
+window.__BUILD__ = "20261028-1905";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
