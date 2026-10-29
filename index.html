@@ -1132,10 +1132,10 @@
       .stop-card .items { font-size: 13px; margin-top: 8px; padding: 6px 9px; }
       .stop-card .money { font-size: 12.5px; margin-top: 7px; padding: 6px 9px; }
       .stop-card .money.collect, .stop-card .money.due { font-size: 14px; }
-      .stop-card .actions { gap: 7px; margin-top: 8px; }
-      .stop-actions { gap: 7px; margin-top: 8px; }
-      .stop-actions .btn-done { min-height: 42px; font-size: 13px; }
-      .stop-actions .btn-cash { min-height: 42px; font-size: 12.5px; }
+      .stop-card .actions { gap: 7px; margin-top: 8px; flex-wrap: nowrap; }
+      .stop-card .actions .btn-done { flex: 1; width: auto; margin-top: 0; min-height: 40px; font-size: 12.5px; }
+      .stop-card .actions .btn-cash { flex: 1; min-height: 40px; font-size: 12px; }
+      .stop-card .actions .btn-dir-block, .stop-card .actions .btn-food-toggle { font-size: 12.5px; }
       .k-actions .btn-cash { min-height: 42px; font-size: 12px; }
       .k-actions .btn-payee { min-height: 42px; font-size: 12px; }
       .k-actions .btn-received { font-size: 15px; }
@@ -3345,7 +3345,6 @@
             renderRouteProgress();
           });
           actions.appendChild(foodBtn);
-          card.appendChild(actions);
 
           var doneBtn = el("button", "btn-done", "☐ ĐÃ GIAO");
           doneBtn.type = "button";
@@ -3354,10 +3353,11 @@
             setToggle(dayStr, cardKey, "delivered", !getToggle(dayStr, cardKey, "delivered"), renderRouteProgress);
             renderRouteProgress();
           });
+          actions.appendChild(doneBtn);
 
           /* TRẢ CASH only applies while money is still owed at the
              door: prepaid stops (Zelle/Venmo/web/cash in advance) get
-             no cash button at all, and ĐÃ GIAO takes the whole row. */
+             no cash button at all. */
           var cashBtn = null;
           if (isCollectStop(stop)) {
             cashBtn = el("button", "btn-cash", "💵 TRẢ CASH");
@@ -3367,12 +3367,12 @@
               setToggle(dayStr, cardKey, "cash", !getToggle(dayStr, cardKey, "cash"), renderRouteProgress);
               renderRouteProgress();
             });
+            actions.appendChild(cashBtn);
           }
 
-          var stopActions = el("div", "stop-actions");
-          stopActions.appendChild(doneBtn);
-          if (cashBtn) stopActions.appendChild(cashBtn);
-          card.appendChild(stopActions);
+          /* Cả 4 nút — Chỉ đường · ĐÃ LẤY FOOD · ĐÃ GIAO · TRẢ CASH —
+             nằm trên MỘT hàng thẳng (Chris 2026-10-29). */
+          card.appendChild(actions);
 
           return { card: card, stop: stop, order: index, foodBtn: foodBtn, doneBtn: doneBtn, cashBtn: cashBtn, dragHandle: dragHandle, searchText: ((stop.phone || "") + " " + (stop.label || "") + " " + (stop.name || "") + " " + (stop.address || "") + " " + (stop.items || "") + " " + (stop.money || "")).toLowerCase() };
         }
@@ -6974,7 +6974,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261029-1252";
+window.__BUILD__ = "20261029-1300";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
