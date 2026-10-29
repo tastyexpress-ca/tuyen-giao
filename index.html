@@ -1124,8 +1124,8 @@
         font-size: 18px;
       }
       .stop-actions .btn-cash { min-height: 66px; }
-      .k-actions .btn-cash { min-height: 60px; font-size: 14.5px; }
-      .k-actions .btn-payee { min-height: 60px; font-size: 14.5px; }
+      .k-actions .btn-cash { min-height: 42px; font-size: 12px; }
+      .k-actions .btn-payee { min-height: 42px; font-size: 12px; }
       .k-actions .btn-received { font-size: 15px; }
 
       /* Delivered state */
@@ -1317,8 +1317,8 @@
       .k-card {
         background: var(--card);
         border: 1.5px solid var(--line);
-        border-radius: 18px;
-        padding: 16px;
+        border-radius: 14px;
+        padding: 10px 11px;
         box-shadow: var(--shadow);
         transition: background 0.25s ease, opacity 0.25s ease, border-color 0.25s ease;
       }
@@ -1389,6 +1389,17 @@
         padding: 9px 12px;
       }
       .k-card .note-line.note-top { margin-top: 0; margin-bottom: 10px; }
+      /* Thẻ đơn GỌN lại ~50% (Chris 2026-10-29: "to quá em") —
+         chỉ gọn trong thẻ bếp, không đụng thẻ điểm giao tài xế. */
+      .k-card .customer { font-size: 15.5px; }
+      .k-card .sdt-line { font-size: 12.5px; margin-top: 1px; }
+      .k-card .place { font-size: 12.5px; margin-top: 3px; }
+      .k-card .dishes { margin-top: 8px; padding: 6px 9px; }
+      .k-card .dish { font-size: 12.5px; padding: 1px 0; }
+      .k-card .note-line { font-size: 12px; padding: 6px 9px; margin-top: 7px; }
+      .k-card .note-line.note-top { margin-bottom: 7px; }
+      .k-card .tag-pill { font-size: 11px; padding: 3px 8px; margin-bottom: 7px; }
+      .k-card .k-name { font-size: 13px; }
       .k-card.received {
         border-color: var(--accent);
         box-shadow: 0 0 0 1.5px var(--accent), var(--shadow);
@@ -1438,21 +1449,22 @@
       /* ---------- Kitchen card action buttons ---------- */
       .k-actions {
         display: flex;
-        gap: 10px;
-        margin-top: 10px;
+        gap: 7px;
+        margin-top: 8px;
       }
       .k-actions .btn-done {
         width: auto;
         flex: 1;
         margin-top: 0;
-        min-height: 60px;
-        font-size: 17px;
+        min-height: 42px;
+        font-size: 13px;
       }
+      .k-actions .btn-print { min-height: 38px; font-size: 13px; }
       .btn-received {
         flex: 1;
-        min-height: 60px;
+        min-height: 42px;
         border-radius: 12px;
-        font-size: 16.5px;
+        font-size: 12.5px;
         font-weight: 900;
         letter-spacing: 0.02em;
         background: var(--card);
@@ -1469,10 +1481,10 @@
       /* 🧾 In hoá đơn on online-order cards (Chris 2026-10-27). */
       .btn-receipt {
         width: 100%;
-        margin-top: 10px;
-        min-height: 52px;
+        margin-top: 7px;
+        min-height: 40px;
         border-radius: 12px;
-        font-size: 16.5px;
+        font-size: 13px;
         font-weight: 900;
         letter-spacing: 0.02em;
         background: #000;
@@ -4762,6 +4774,9 @@
            "ĐÃ XONG" divider, dimmed; un-marking restores its place.
            ================================================================ */
         var currentKitchenDay = null;
+        /* Nhóm bếp đang mở trong ngày (null = đang xem 3 thẻ nhóm,
+           bấm vào thẻ mới hiện đơn — Chris 2026-10-29) */
+        var currentKitchenGroup = null;
         var currentKitchenEntries = [];
         /* Orders of the open kitchen day in display order — the list
            "🖨 In tất cả" prints (all of them, search filter aside). */
@@ -4821,7 +4836,18 @@
             renderKitchenProgress();
           }
         }
-        kitchenSearch.addEventListener("input", applyKitchenFilter);
+        /* Khi bắt đầu / ngừng tìm kiếm thì dựng lại cả ngày: đang
+           tìm = hiện mọi nhóm như cũ, ngừng tìm = quay về 3 thẻ. */
+        var lastSearchEmpty = true;
+        kitchenSearch.addEventListener("input", function () {
+          var empty = kitchenSearch.value.replace(/^\s+|\s+$/g, "") === "";
+          if (empty !== lastSearchEmpty) {
+            lastSearchEmpty = empty;
+            renderKitchenDay();
+          } else {
+            applyKitchenFilter();
+          }
+        });
 
         function buildKitchenCard(kd, order) {
           var dayStr = kd.day;
@@ -5600,22 +5626,25 @@
             if (entry.isDone) doneEntries.push(entry);
             else pending.push(entry);
           });
-          /* 3 thẻ nhóm trong ngày: đơn nào gom vào đúng thẻ của
-             nhóm đó (Chris 2026-10-29) — Giao hàng · Pick up ·
-             Bếp giao. Thẻ chỉ hiện khi nhóm có đơn chưa xong;
-             đơn đã xong vẫn chìm xuống mục ĐÃ XONG như cũ. */
+          /* 3 thẻ nhóm kiểu trang chủ (Chris 2026-10-29): mở ngày
+             ra chỉ thấy 3 thẻ Giao Hàng · Pick Up · Bếp Giao —
+             BẤM vào thẻ mới hiện đơn của nhóm đó. Đang tìm kiếm
+             thì hiện tất cả các nhóm như cũ. */
           var K_GROUPS = [
-            { key: "sang", label: "🚗 Giao hàng" },
-            { key: "pickup", label: "🧺 Pick Up" },
-            { key: "bep", label: "🌙 Bếp Giao" }
+            { key: "sang", icon: "🚗", title: "Giao Hàng" },
+            { key: "pickup", icon: "🧺", title: "Pick Up" },
+            { key: "bep", icon: "🌙", title: "Bếp Giao" }
           ];
+          var searching = kitchenSearch.value.replace(/^\s+|\s+$/g, "") !== "";
+          var openGrp = searching ? null : currentKitchenGroup;
+          var grpBoxes = {};
           K_GROUPS.forEach(function (g) {
             var inGrp = pending.filter(function (e) { return e.grpKey === g.key; });
             if (!inGrp.length) return;
             var totalGrp = currentKitchenEntries.filter(function (e) { return e.grpKey === g.key; }).length;
             var box = el("section", "k-grp-card");
             var ghead = el("div", "k-grp-head");
-            ghead.appendChild(el("span", "", g.label));
+            ghead.appendChild(el("span", "", g.icon + " " + g.title));
             ghead.appendChild(el("span", "k-grp-count", inGrp.length + " chưa xong / " + totalGrp + " đơn"));
             box.appendChild(ghead);
             var gbody = el("div", "k-grp-body");
@@ -5624,13 +5653,59 @@
               gbody.appendChild(entry.card);
             });
             box.appendChild(gbody);
-            kitchenGroups.appendChild(box);
-            currentKitchenHeads.push(box);
+            grpBoxes[g.key] = box;
           });
-          if (doneEntries.length) {
+          var visibleDone = doneEntries;
+          if (searching) {
+            K_GROUPS.forEach(function (g) {
+              if (grpBoxes[g.key]) {
+                kitchenGroups.appendChild(grpBoxes[g.key]);
+                currentKitchenHeads.push(grpBoxes[g.key]);
+              }
+            });
+          } else if (!openGrp) {
+            visibleDone = [];
+            var navList = el("div", "section-list");
+            K_GROUPS.forEach(function (g) {
+              var totalGrp = currentKitchenEntries.filter(function (e) { return e.grpKey === g.key; }).length;
+              if (!totalGrp) return;
+              var openCount = pending.filter(function (e) { return e.grpKey === g.key; }).length;
+              var navBtn = el("button", "section-card");
+              navBtn.type = "button";
+              navBtn.appendChild(el("span", "section-icon", g.icon));
+              var navMid = el("span", "");
+              navMid.appendChild(el("span", "section-title", g.title));
+              navMid.appendChild(el("span", "section-sub", totalGrp + " đơn · " + openCount + " chưa xong"));
+              navBtn.appendChild(navMid);
+              navBtn.appendChild(el("span", "section-arrow", "→"));
+              navBtn.addEventListener("click", function () {
+                currentKitchenGroup = g.key;
+                renderKitchenDay();
+              });
+              navList.appendChild(navBtn);
+            });
+            kitchenGroups.appendChild(navList);
+          } else {
+            var grpBackBtn = el("button", "back-btn", "← Tất cả nhóm");
+            grpBackBtn.type = "button";
+            grpBackBtn.addEventListener("click", function () {
+              currentKitchenGroup = null;
+              renderKitchenDay();
+            });
+            kitchenGroups.appendChild(grpBackBtn);
+            if (grpBoxes[openGrp]) {
+              kitchenGroups.appendChild(grpBoxes[openGrp]);
+              currentKitchenHeads.push(grpBoxes[openGrp]);
+            }
+            visibleDone = doneEntries.filter(function (e) { return e.grpKey === openGrp; });
+            if (!grpBoxes[openGrp] && !visibleDone.length) {
+              kitchenGroups.appendChild(el("div", "shift-empty", "Chưa có đơn trong nhóm này"));
+            }
+          }
+          if (visibleDone.length) {
             kitchenDoneDivider = el("div", "group-head done-divider", "ĐÃ XONG");
             kitchenGroups.appendChild(kitchenDoneDivider);
-            doneEntries.forEach(function (entry) {
+            visibleDone.forEach(function (entry) {
               entry.headEl = kitchenDoneDivider;
               kitchenGroups.appendChild(entry.card);
             });
@@ -5642,7 +5717,9 @@
 
         function openKitchenDay(kd) {
           currentKitchenDay = kd;
+          currentKitchenGroup = null;
           kitchenSearch.value = "";
+          lastSearchEmpty = true;
           renderKitchenDay();
           showView(kitchenView);
         }
@@ -6885,7 +6962,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261029-0840";
+window.__BUILD__ = "20261029-0912";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
