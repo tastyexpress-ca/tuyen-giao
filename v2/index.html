@@ -4712,7 +4712,8 @@
           var foot = el("div", "pl-foot");
           foot.appendChild(el("div", "pl-foot-1", "CHÚC QUÝ KHÁCH NGON MIỆNG!"));
           foot.appendChild(el("div", "pl-foot-2", "Order online"));
-          foot.appendChild(el("div", "pl-foot-3", "CREAMERYACE.COM"));
+          /* Dòng chữ CREAMERYACE.COM đã bỏ (Chris 2026-10-28) —
+             khách scan mã QR WEBSITE bên dưới là đủ. */
           bodyBox.appendChild(foot);
 
           var qrRow = el("div", "pl-qr");
@@ -5133,7 +5134,7 @@
           var foot = el("div", "pl-foot");
           foot.appendChild(el("div", "pl-foot-1", "CẢM ƠN QUÝ KHÁCH!"));
           foot.appendChild(el("div", "pl-foot-2", "Order: 626-283-9994"));
-          foot.appendChild(el("div", "pl-foot-3", "CREAMERYACE.COM"));
+          /* CREAMERYACE.COM bỏ khỏi hoá đơn luôn (Chris 2026-10-28). */
           bodyBox.appendChild(foot);
           label.appendChild(bodyBox);
 
@@ -6546,7 +6547,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261028-1915";
+window.__BUILD__ = "20261028-1925";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
