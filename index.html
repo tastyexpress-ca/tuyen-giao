@@ -4984,31 +4984,32 @@
                    edge to edge; only a genuinely taller label is
                    scaled down proportionally to fit the 101.6mm
                    height, never clipped. */
+                /* FULL-SIZE DYNAMIC HEIGHT (Chris 2026-10-28 — "app
+                   có thể thay đổi khổ để in full ko em"): the page
+                   is exactly as tall as the label itself — 62mm wide
+                   × the label's natural height from the captured
+                   image's own aspect ratio — so nothing is ever
+                   scaled down: text prints at its true size and the
+                   continuous roll simply feeds longer. Height is
+                   clamped to [40, 300]mm so a freak capture can
+                   never produce an absurd page (a genuinely taller
+                   label is squashed into 300mm, never clipped). */
                 var heightMm = canvas.width > 0
                   ? 62 * (canvas.height / canvas.width)
                   : 101.6;
+                if (heightMm < 40) heightMm = 40;
+                if (heightMm > 300) heightMm = 300;
                 if (!pdf) {
                   pdf = new JsPDF({
                     unit: "mm",
-                    format: [62, 101.6],
+                    format: [62, heightMm],
                     orientation: "portrait",
                     compress: true
                   });
                 } else {
-                  pdf.addPage([62, 101.6], "portrait");
+                  pdf.addPage([62, heightMm], "portrait");
                 }
-                /* Fit the label onto the fixed page, top-aligned:
-                   natural size at the full 62mm width when its
-                   height fits within 101.6mm; otherwise scaled
-                   down proportionally (height exactly 101.6mm,
-                   width shrunk by the same factor, centered). */
-                var drawW = 62;
-                var drawH = heightMm;
-                if (drawH > 101.6) {
-                  drawW = 62 * (101.6 / drawH);
-                  drawH = 101.6;
-                }
-                pdf.addImage(img, "JPEG", (62 - drawW) / 2, 0, drawW, drawH);
+                pdf.addImage(img, "JPEG", 0, 0, 62, heightMm);
               }, function (err) {
                 try { printArea.classList.remove("capturing"); } catch (e2) {}
                 throw err;
@@ -5156,22 +5157,21 @@
           }).then(function (canvas) {
             printArea.classList.remove("capturing");
             var img = canvas.toDataURL("image/jpeg", 0.92);
+            /* Dynamic height, same rule as the labels (Chris
+               2026-10-28 "in full"): page = 62mm × the receipt's
+               natural height, clamped [40, 300]mm — no scale-down. */
             var heightMm = canvas.width > 0
               ? 62 * (canvas.height / canvas.width)
               : 101.6;
+            if (heightMm < 40) heightMm = 40;
+            if (heightMm > 300) heightMm = 300;
             var pdf = new JsPDF({
               unit: "mm",
-              format: [62, 101.6],
+              format: [62, heightMm],
               orientation: "portrait",
               compress: true
             });
-            var drawW = 62;
-            var drawH = heightMm;
-            if (drawH > 101.6) {
-              drawW = 62 * (101.6 / drawH);
-              drawH = 101.6;
-            }
-            pdf.addImage(img, "JPEG", (62 - drawW) / 2, 0, drawW, drawH);
+            pdf.addImage(img, "JPEG", 0, 0, 62, heightMm);
             return pdf;
           }, function (err) {
             try { printArea.classList.remove("capturing"); } catch (e2) {}
@@ -6547,7 +6547,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261028-1925";
+window.__BUILD__ = "20261028-1950";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
