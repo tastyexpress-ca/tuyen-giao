@@ -4961,6 +4961,37 @@
            size [62mm × 101.6mm], the label fitted onto the page
            per the rule above. Resolves with the finished jsPDF
            document. */
+        /* FAST PRINT IMAGE (Chris 2026-10-28 — "in chậm quá
+           chừng"): the Brother QL-810W is a 1-bit thermal printer,
+           so a full-colour JPEG only makes AirPrint spool a big
+           file for nothing. Threshold the capture to pure black &
+           white and embed it as PNG — a fraction of the size, the
+           phone sends far less data and the printer starts much
+           sooner. Captures also run at scale 2 instead of 3. */
+        function printFastImage(canvas) {
+          try {
+            var c2 = document.createElement("canvas");
+            c2.width = canvas.width;
+            c2.height = canvas.height;
+            var ctx = c2.getContext("2d");
+            ctx.drawImage(canvas, 0, 0);
+            var id = ctx.getImageData(0, 0, c2.width, c2.height);
+            var d = id.data;
+            for (var i = 0; i < d.length; i += 4) {
+              var g = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000;
+              var v = g < 170 ? 0 : 255;
+              d[i] = v;
+              d[i + 1] = v;
+              d[i + 2] = v;
+              d[i + 3] = 255;
+            }
+            ctx.putImageData(id, 0, 0);
+            return c2.toDataURL("image/png");
+          } catch (e) {
+            return canvas.toDataURL("image/jpeg", 0.92);
+          }
+        }
+
         function buildLabelsPdf(kd, orders) {
           var JsPDF = window.jspdf.jsPDF;
           var pdf = null;
@@ -4973,12 +5004,12 @@
               printArea.appendChild(label);
               printArea.classList.add("capturing");
               return window.html2canvas(label, {
-                scale: 3,
+                scale: 2,
                 backgroundColor: "#ffffff",
                 logging: false
               }).then(function (canvas) {
                 printArea.classList.remove("capturing");
-                var img = canvas.toDataURL("image/jpeg", 0.92);
+                var img = printFastImage(canvas);
                 /* FULL-PAGE fit (Chris 2026-10-24): the label's
                    natural height comes from the captured image's
                    OWN aspect ratio — the ground truth of what was
@@ -5015,7 +5046,7 @@
                 } else {
                   pdf.addPage([62, heightMm], "portrait");
                 }
-                pdf.addImage(img, "JPEG", 0, 0, 62, heightMm);
+                pdf.addImage(img, "PNG", 0, 0, 62, heightMm);
               }, function (err) {
                 try { printArea.classList.remove("capturing"); } catch (e2) {}
                 throw err;
@@ -5176,12 +5207,12 @@
           printArea.appendChild(label);
           printArea.classList.add("capturing");
           return window.html2canvas(label, {
-            scale: 3,
+            scale: 2,
             backgroundColor: "#ffffff",
             logging: false
           }).then(function (canvas) {
             printArea.classList.remove("capturing");
-            var img = canvas.toDataURL("image/jpeg", 0.92);
+            var img = printFastImage(canvas);
             /* Dynamic height, same rule as the labels (Chris
                2026-10-28 "in full"): page = 62mm × the receipt's
                natural height, clamped [40, 300]mm — no scale-down. */
@@ -5196,7 +5227,7 @@
               orientation: "portrait",
               compress: true
             });
-            pdf.addImage(img, "JPEG", 0, 0, 62, heightMm);
+            pdf.addImage(img, "PNG", 0, 0, 62, heightMm);
             return pdf;
           }, function (err) {
             try { printArea.classList.remove("capturing"); } catch (e2) {}
@@ -6572,7 +6603,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261028-1965";
+window.__BUILD__ = "20261028-1975";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
