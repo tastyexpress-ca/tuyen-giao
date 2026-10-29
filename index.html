@@ -4558,14 +4558,17 @@
           /* Màu riêng theo seq để dễ phân biệt từng order (Chris 2026-10-26) */
           card.classList.add("tint-" + (((Number(order.seq) || 1) - 1) % 6));
 
-          /* Thẻ gọn (Chris 2026-10-26): bỏ tag pill riêng — note
-             (giờ lấy, thanh toán…) lên trên cùng thay chỗ tag; đơn
-             không có note mới hiện tag. Tên chỉ hiện 1 lần: dòng tên
-             dưới label chỉ hiện khi khác label. */
+          /* Nhãn loại đơn LUÔN hiện trên đầu thẻ (Chris 2026-10-28:
+             bản cũ giấu tag khi đơn có note nên không biết đơn nào
+             giao / pick up, và giờ pick up nằm trong tag cũng mất
+             luôn). Tag trống thì lấy heading của nhóm để thẻ nào
+             cũng có nhãn. Note xuống dưới tag. Tên chỉ hiện 1 lần:
+             dòng tên dưới label chỉ hiện khi khác label. */
+          var tagText2 = order.tag || info.heading;
+          var tagIcon = info.key === "pickup" ? "🧺 " : (info.key === "bep" ? "🌙 " : "🚗 ");
+          card.appendChild(el("span", "tag-pill " + info.tagClass, tagIcon + tagText2));
           if (order.note) {
             card.appendChild(el("div", "note-line note-top", order.note));
-          } else if (order.tag) {
-            card.appendChild(el("span", "tag-pill " + info.tagClass, order.tag));
           }
           card.appendChild(el("div", "customer", order.label || ""));
           if (order.name && String(order.name).replace(/^\s+|\s+$/g, "").toLowerCase() !== String(order.label || "").replace(/^\s+|\s+$/g, "").toLowerCase()) {
@@ -6543,7 +6546,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261028-1905";
+window.__BUILD__ = "20261028-1915";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
