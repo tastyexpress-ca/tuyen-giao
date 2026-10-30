@@ -66,6 +66,9 @@
       .moneyline.collect{color:var(--no-ink)}
       .mapsbtn{display:block;width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:#eef4ff;color:#1e40af;font:700 13.5px "Be Vietnam Pro",sans-serif;text-align:center;text-decoration:none;margin-bottom:11px}
       button.mapsbtn{cursor:pointer}
+      /* 3 nút đầu ngày gộp 1 hàng gọn (Chris 2026-10-29) */
+      .day-tools{display:flex;gap:8px;margin-bottom:11px}
+      .day-tools .mapsbtn{flex:1 1 0;width:auto;margin-bottom:0;padding:9px 4px;font-size:12.5px;line-height:1.3;display:flex;align-items:center;justify-content:center}
       .routeinfo{text-align:center;font-weight:800;font-size:15px;color:var(--green);margin:-3px 0 11px}
       #printArea{display:none}
       @media print{
@@ -510,16 +513,16 @@
             });
             var dlabel = (dlist[0].weekday_label || "") + " · " + fmtDM(openDay);
             detailHtml += '<section class="day"><div class="day-head"><b>' + esc(dlabel) + "</b><span>" + dlist.length + " đơn · " + dopen.length + " chưa xong</span></div>";
-            detailHtml += '<button type="button" class="mapsbtn" id="printAllBtn">🖨 In tất cả hoá đơn (' + dlist.length + " đơn)</button>";
+            detailHtml += '<div class="day-tools"><button type="button" class="mapsbtn" id="printAllBtn">🖨 In tất cả (' + dlist.length + ")</button>";
             if (curTab === "delivery") {
               var stopsAddr = dopen.filter(function (o) { return o.address; }).map(function (o) { return o.address; });
               if (stopsAddr.length) {
                 var mapsUrl = "https://www.google.com/maps/dir/?api=1" + (SHOP_ADDR ? "&origin=" + encodeURIComponent(SHOP_ADDR) : "") + "&destination=" + encodeURIComponent(stopsAddr[stopsAddr.length - 1]) + (stopsAddr.length > 1 ? "&waypoints=" + encodeURIComponent(stopsAddr.slice(0, -1).join("|")) : "") + "&travelmode=driving";
-                detailHtml += '<a class="mapsbtn" href="' + mapsUrl + '" target="_blank" rel="noopener">🗺 Mở đường đi Google Maps (' + stopsAddr.length + " điểm)</a>";
+                detailHtml += '<a class="mapsbtn" href="' + mapsUrl + '" target="_blank" rel="noopener">🗺 Đường đi (' + stopsAddr.length + ")</a>";
                 var rKey = openDay + "|" + stopsAddr.join("|");
-                if (routeCache.key === rKey && routeCache.html) detailHtml += '<div class="routeinfo">' + routeCache.html + "</div>";
-                else detailHtml += '<button type="button" class="mapsbtn" id="routeTotalBtn">🧮 Tính tổng đường đi</button><div class="routeinfo" id="routeInfo"></div>';
-              }
+                if (routeCache.key === rKey && routeCache.html) detailHtml += "</div>" + '<div class="routeinfo">' + routeCache.html + "</div>";
+                else detailHtml += '<button type="button" class="mapsbtn" id="routeTotalBtn">🧮 Tổng đường</button></div><div class="routeinfo" id="routeInfo"></div>';
+              } else detailHtml += "</div>";
               var li = 0;
               detailHtml += dlist.map(function (o, ix) {
                 var badge = "";
@@ -527,7 +530,7 @@
                 return cardHtml(o, badge, ix);
               }).join("");
             } else {
-              detailHtml += dlist.map(function (o, ix) { return cardHtml(o, "", ix); }).join("");
+              detailHtml += "</div>" + dlist.map(function (o, ix) { return cardHtml(o, "", ix); }).join("");
             }
             detailHtml += "</section>";
             $("hdrDay").textContent = dlabel;
@@ -826,7 +829,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261029-2352";
+window.__BUILD__ = "20261029-2359";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
