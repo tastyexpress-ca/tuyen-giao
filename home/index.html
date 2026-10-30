@@ -143,31 +143,19 @@
     <div class="wrap">
 
       <main>
-          <div class="app-promo">
-            <h2>📱 Tasty Express — Nơi hội tụ món ngon Bolsa</h2>
-            <p>Tasty Express là nơi bạn có thể lựa chọn những món ăn thuần tuý Việt từ những nhà hàng nổi tiếng ở Bolsa — bạn có thể pick up hoặc được giao đến tận nơi.</p>
-            <div class="card-actions">
-              <a class="btn btn-order" href="https://tastyexpress-ca.github.io/tuyen-giao/dat-com/?login=1">Đăng nhập</a>
-              <a class="btn btn-call" href="../cac-tiem/">Tiếp tục với khách</a>
-            </div>
-            <button class="btn btn-call" id="shareAppBtn" type="button" style="width:100%;margin-top:12px">📤 Chia sẻ app</button>
-            <p style="margin:12px 0 0;text-align:center"><button type="button" class="lang-toggle" style="border:1.5px solid #d8b98c;background:#fff;color:#7a4a21;border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;cursor:pointer">🌐 EN</button></p>
-            <p style="margin:14px 0 0;text-align:center"><a href="../dang-ky-tiem/" style="color:#8a4b12;font-weight:600;text-decoration:none">🏪 Bạn có tiệm? Hãy làm thành viên phục vụ thực khách với Tasty Express →</a></p>
-            <a class="btn btn-call" href="../doi-tac/" style="display:block;width:100%;margin-top:12px;text-align:center;text-decoration:none;box-sizing:border-box">🏪 Nhà hàng check-in</a>
-          </div>
         <!-- TENB: notify bar -->
         <div id="teNotifyBar" style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #c94f42;border-radius:14px;padding:12px 14px;margin:0 0 14px;box-shadow:0 4px 14px rgba(0,0,0,.06)">
-          <div style="font-size:1.3rem" aria-hidden="true">🔔</div>
-          <div style="flex:1;min-width:0">
+          <div style="flex:none;font-size:1.3rem" aria-hidden="true">🔔</div>
+          <div style="flex:1 1 auto;min-width:0">
             <div id="teNotifyTitle" style="font-weight:700;font-size:.95rem;color:#26221a">Nhận thông báo ưu đãi & món mới</div>
             <div id="teNotifySub" style="font-size:.83rem;color:#6b6252">Pop ngay trên màn hình khi có món mới, ưu đãi ngon</div>
           </div>
-          <button id="teNotifyBtn" type="button" style="border:0;background:#c94f42;color:#fff;font-weight:700;border-radius:999px;padding:10px 16px;font-size:.9rem;cursor:pointer;white-space:nowrap">Bật thông báo</button>
+          <button id="teNotifyBtn" type="button" style="flex:0 1 auto;border:0;background:#c94f42;color:#fff;font-weight:700;border-radius:999px;padding:10px 16px;font-size:.9rem;cursor:pointer;text-align:center">Bật thông báo</button>
         </div>
         <script>
         (function () {
           "use strict";
-          var VAPID = "BDzQ7p_j_7yT0aCVNU4rg3EDGEMwZwnXFa6PkLgJ3FtkfHD_eFrbzmjxk2fYaBXSvZ1UV8AO2vWhZZRM5VoPjVE";
+          var VAPID = "BDbtCvknmDPz4iGTULx6PWeF_Yy3wQEuAOAfrjwwVGfkymI5N4oKdsxKcC4R9Vu1tdbwZ4Qb2TMEvFnYH5ZDeFM";
           var API = "https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/customer_push_subscriptions";
           var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
           var EN = false;
@@ -183,9 +171,10 @@
           };
           var bar = document.getElementById("teNotifyBar");
           var btn = document.getElementById("teNotifyBtn");
+          var subEl = document.getElementById("teNotifySub");
           if (!bar || !btn) return;
           document.getElementById("teNotifyTitle").textContent = S.title;
-          document.getElementById("teNotifySub").textContent = S.sub;
+          subEl.textContent = S.sub;
           btn.textContent = S.btn;
           if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) { bar.style.display = "none"; return; }
           function urlB64(s) {
@@ -206,11 +195,14 @@
             btn.disabled = true; btn.textContent = S.busy;
             try {
               var perm = await Notification.requestPermission();
-              if (perm !== "granted") { btn.disabled = false; btn.textContent = S.no; return; }
+              if (perm !== "granted") { btn.disabled = false; btn.textContent = S.btn; subEl.textContent = S.no; return; }
               var reg = await navigator.serviceWorker.register("../sw.js");
               await navigator.serviceWorker.ready;
               var sub = await reg.pushManager.getSubscription();
-              if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(VAPID) });
+              if (!sub) {
+                try { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(VAPID) }); }
+                catch (e1) { var old = await reg.pushManager.getSubscription(); if (old) { try { await old.unsubscribe(); } catch (x) {} } sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(VAPID) }); }
+              }
               var j = sub.toJSON();
               var r = await fetch(API + "?on_conflict=endpoint", {
                 method: "POST",
@@ -219,11 +211,23 @@
               });
               if (!r.ok) throw new Error("rest " + r.status);
               setOn();
-            } catch (e) { btn.disabled = false; btn.textContent = S.fail + " [" + String((e && (e.name || e.message)) || e).slice(0, 40) + "]"; }
+            } catch (e) { btn.disabled = false; btn.textContent = S.btn; subEl.textContent = S.fail + " [" + String((e && (e.name || "")) || "") + ": " + String((e && e.message) || e).slice(0, 60) + "]"; }
           });
         })();
         </script>
         <!-- /TENB -->
+          <div class="app-promo">
+            <h2>📱 Tasty Express — Nơi hội tụ món ngon Bolsa</h2>
+            <p>Tasty Express là nơi bạn có thể lựa chọn những món ăn thuần tuý Việt từ những nhà hàng nổi tiếng ở Bolsa — bạn có thể pick up hoặc được giao đến tận nơi.</p>
+            <div class="card-actions">
+              <a class="btn btn-order" href="https://tastyexpress-ca.github.io/tuyen-giao/dat-com/?login=1">Đăng nhập</a>
+              <a class="btn btn-call" href="../cac-tiem/">Tiếp tục với khách</a>
+            </div>
+            <button class="btn btn-call" id="shareAppBtn" type="button" style="width:100%;margin-top:12px">📤 Chia sẻ app</button>
+            <p style="margin:12px 0 0;text-align:center"><button type="button" class="lang-toggle" style="border:1.5px solid #d8b98c;background:#fff;color:#7a4a21;border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;cursor:pointer">🌐 EN</button></p>
+            <p style="margin:14px 0 0;text-align:center"><a href="../dang-ky-tiem/" style="color:#8a4b12;font-weight:600;text-decoration:none">🏪 Bạn có tiệm? Hãy làm thành viên phục vụ thực khách với Tasty Express →</a></p>
+            <a class="btn btn-call" href="../doi-tac/" style="display:block;width:100%;margin-top:12px;text-align:center;text-decoration:none;box-sizing:border-box">🏪 Nhà hàng check-in</a>
+          </div>
       </main>
     </div>
       <div id="installBar" style="display:none;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:999;background:#54301a;color:#fdf3e0;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.28);align-items:center;gap:10px;font-size:14px;line-height:1.45">
@@ -270,7 +274,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1325";
+window.__BUILD__ = "20261030-1344";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -312,7 +316,7 @@ window.__BUILD__ = "20261030-1325";
 <script>
 (function () {
   "use strict";
-  var VAPID = "BDzQ7p_j_7yT0aCVNU4rg3EDGEMwZwnXFa6PkLgJ3FtkfHD_eFrbzmjxk2fYaBXSvZ1UV8AO2vWhZZRM5VoPjVE";
+  var VAPID = "BDbtCvknmDPz4iGTULx6PWeF_Yy3wQEuAOAfrjwwVGfkymI5N4oKdsxKcC4R9Vu1tdbwZ4Qb2TMEvFnYH5ZDeFM";
   var API = "https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/customer_push_subscriptions";
   var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
   var EN = false;
@@ -367,7 +371,10 @@ window.__BUILD__ = "20261030-1325";
       var reg = await navigator.serviceWorker.register("../sw.js");
       await navigator.serviceWorker.ready;
       var sub = await reg.pushManager.getSubscription();
-      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(VAPID) });
+      if (!sub) {
+        try { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(VAPID) }); }
+        catch (e1) { var old = await reg.pushManager.getSubscription(); if (old) { try { await old.unsubscribe(); } catch (x) {} } sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(VAPID) }); }
+      }
       var j = sub.toJSON();
       var r = await fetch(API + "?on_conflict=endpoint", {
         method: "POST",
