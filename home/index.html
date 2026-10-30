@@ -155,6 +155,75 @@
             <p style="margin:14px 0 0;text-align:center"><a href="../dang-ky-tiem/" style="color:#8a4b12;font-weight:600;text-decoration:none">🏪 Bạn có tiệm? Hãy làm thành viên phục vụ thực khách với Tasty Express →</a></p>
             <a class="btn btn-call" href="../doi-tac/" style="display:block;width:100%;margin-top:12px;text-align:center;text-decoration:none;box-sizing:border-box">🏪 Nhà hàng check-in</a>
           </div>
+        <!-- TENB: notify bar -->
+        <div id="teNotifyBar" style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #c94f42;border-radius:14px;padding:12px 14px;margin:0 0 14px;box-shadow:0 4px 14px rgba(0,0,0,.06)">
+          <div style="font-size:1.3rem" aria-hidden="true">🔔</div>
+          <div style="flex:1;min-width:0">
+            <div id="teNotifyTitle" style="font-weight:700;font-size:.95rem;color:#26221a">Nhận thông báo ưu đãi & món mới</div>
+            <div id="teNotifySub" style="font-size:.83rem;color:#6b6252">Pop ngay trên màn hình khi có món mới, ưu đãi ngon</div>
+          </div>
+          <button id="teNotifyBtn" type="button" style="border:0;background:#c94f42;color:#fff;font-weight:700;border-radius:999px;padding:10px 16px;font-size:.9rem;cursor:pointer;white-space:nowrap">Bật thông báo</button>
+        </div>
+        <script>
+        (function () {
+          "use strict";
+          var VAPID = "BDzQ7p_j_7yT0aCVNU4rg3EDGEMwZwnXFa6PkLgJ3FtkfHD_eFrbzmjxk2fYaBXSvZ1UV8AO2vWhZZRM5VoPjVE";
+          var API = "https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/customer_push_subscriptions";
+          var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+          var EN = false;
+          try { EN = localStorage.getItem("te-lang") === "en"; } catch (e) {}
+          var S = EN ? {
+            title: "Get deals & new dish alerts", sub: "Popped right on your screen when something tasty drops",
+            btn: "Turn on", busy: "Turning on…", on: "✅ On",
+            no: "Notifications are off in your browser settings", fail: "Could not turn on"
+          } : {
+            title: "Nhận thông báo ưu đãi & món mới", sub: "Pop ngay trên màn hình khi có món mới, ưu đãi ngon",
+            btn: "Bật thông báo", busy: "Đang bật…", on: "✅ Đã bật",
+            no: "Thông báo đang bị tắt trong cài đặt trình duyệt", fail: "Chưa bật được"
+          };
+          var bar = document.getElementById("teNotifyBar");
+          var btn = document.getElementById("teNotifyBtn");
+          if (!bar || !btn) return;
+          document.getElementById("teNotifyTitle").textContent = S.title;
+          document.getElementById("teNotifySub").textContent = S.sub;
+          btn.textContent = S.btn;
+          if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) { bar.style.display = "none"; return; }
+          function urlB64(s) {
+            var pad = "=".repeat((4 - s.length % 4) % 4);
+            var b = (s + pad).replace(/-/g, "+").replace(/_/g, "/");
+            var raw = atob(b), arr = new Uint8Array(raw.length);
+            for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+            return arr;
+          }
+          function setOn() { btn.textContent = S.on; btn.disabled = true; btn.style.background = "#3e9b4f"; }
+          (async function () {
+            try {
+              var reg = await navigator.serviceWorker.getRegistration("../sw.js");
+              if (reg) { var sub = await reg.pushManager.getSubscription(); if (sub) setOn(); }
+            } catch (e) {}
+          })();
+          btn.addEventListener("click", async function () {
+            btn.disabled = true; btn.textContent = S.busy;
+            try {
+              var perm = await Notification.requestPermission();
+              if (perm !== "granted") { btn.disabled = false; btn.textContent = S.no; return; }
+              var reg = await navigator.serviceWorker.register("../sw.js");
+              await navigator.serviceWorker.ready;
+              var sub = await reg.pushManager.getSubscription();
+              if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(VAPID) });
+              var j = sub.toJSON();
+              var r = await fetch(API + "?on_conflict=endpoint", {
+                method: "POST",
+                headers: { "apikey": ANON, "Authorization": "Bearer " + ANON, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+                body: JSON.stringify({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, lang: EN ? "en" : "vi" })
+              });
+              if (!r.ok) throw new Error("rest " + r.status);
+              setOn();
+            } catch (e) { btn.disabled = false; btn.textContent = S.fail + " [" + String((e && (e.name || e.message)) || e).slice(0, 40) + "]"; }
+          });
+        })();
+        </script>
+        <!-- /TENB -->
       </main>
     </div>
       <div id="installBar" style="display:none;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:999;background:#54301a;color:#fdf3e0;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.28);align-items:center;gap:10px;font-size:14px;line-height:1.45">
@@ -201,7 +270,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1240";
+window.__BUILD__ = "20261030-1314";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
