@@ -2016,6 +2016,14 @@
             </span>
             <span class="section-arrow" aria-hidden="true">→</span>
           </button>
+          <button type="button" class="section-card" id="openShipBtn">
+            <span class="section-icon" aria-hidden="true">📦</span>
+            <span>
+              <span class="section-title">Think's Kitchen Shipping</span>
+              <span class="section-sub">Đơn gửi đi xa theo ngày</span>
+            </span>
+            <span class="section-arrow" aria-hidden="true">→</span>
+          </button>
           <button type="button" class="section-card" id="shareAppBtn">
             <span class="section-icon" aria-hidden="true">📤</span>
             <span>
@@ -2353,6 +2361,51 @@
       </div>
     </div>
 
+    <!-- ================= SHIPPING LIST VIEW ================= -->
+    <div id="shipListView" hidden>
+      <header>
+        <div class="wrap">
+          <button type="button" class="back-btn" id="shipBackBtn">← Trang chủ</button>
+          <div class="brand">Think's Kitchen <span class="route-name">· Shipping</span></div>
+          <div class="dayline">📦 Think's Kitchen Shipping</div>
+          <div class="origin">Bấm vào một ngày để xem đơn ship của ngày đó</div>
+          <div class="origin">🕑 Order trước 2PM hôm nay — nhận hàng trước 5PM ngày mai · Phục vụ CA, NV và AZ</div>
+        </div>
+      </header>
+      <div class="wrap">
+        <div class="day-list" id="shipDayList"></div>
+      </div>
+    </div>
+
+    <!-- ================= SHIPPING DAY VIEW ================= -->
+    <div id="shipView" hidden>
+      <header>
+        <div class="wrap">
+          <div class="back-row">
+            <button type="button" class="back-btn" id="svBackListBtn">← Danh sách ngày ship</button>
+            <button type="button" class="back-btn" id="svBackHomeBtn">← Trang chủ</button>
+          </div>
+          <div class="brand">Think's Kitchen <span class="route-name">· Shipping</span></div>
+          <div class="dayline" id="shipDayline"></div>
+        </div>
+      </header>
+
+      <div class="wrap">
+        <section class="web-section" id="shipOrdersSection" hidden aria-label="Đơn ship">
+          <div class="web-head" id="shipOrdersHead">📦 ĐƠN SHIP</div>
+          <div class="web-list" id="shipOrdersList"></div>
+        </section>
+        <section class="web-section" id="shipDoneSection" hidden aria-label="Đơn ship đã xong">
+          <div class="web-head" id="shipDoneHead">📦 ĐƠN SHIP ĐÃ XONG</div>
+          <div class="web-list" id="shipDoneList"></div>
+        </section>
+
+        <footer>
+          <p class="fineprint">Đơn ship là các order online gửi đi xa — không phải pick up, không phải giao tận nơi trong ngày. Order trước 2PM hôm nay, khách nhận trước 5PM ngày mai. Phục vụ CA, NV và AZ.</p>
+        </footer>
+      </div>
+    </div>
+
     <!-- ================= DISH MANAGER VIEW (Quản lý món) ================= -->
     <div id="dishesView" hidden>
       <header>
@@ -2537,6 +2590,16 @@
         var kitchenListView = document.getElementById("kitchenListView");
         var kitchenView = document.getElementById("kitchenView");
         var entryView = document.getElementById("entryView");
+        var shipListView = document.getElementById("shipListView");
+        var shipView = document.getElementById("shipView");
+        var shipDayList = document.getElementById("shipDayList");
+        var shipDayline = document.getElementById("shipDayline");
+        var shipOrdersSection = document.getElementById("shipOrdersSection");
+        var shipOrdersHead = document.getElementById("shipOrdersHead");
+        var shipOrdersList = document.getElementById("shipOrdersList");
+        var shipDoneSection = document.getElementById("shipDoneSection");
+        var shipDoneHead = document.getElementById("shipDoneHead");
+        var shipDoneList = document.getElementById("shipDoneList");
         var dishesView = document.getElementById("dishesView");
         var dishFormView = document.getElementById("dishFormView");
         var dayList = document.getElementById("dayList");
@@ -2569,7 +2632,7 @@
         var dynamicPageStyle = document.getElementById("dynamicPageStyle");
         var toastTimer = null;
 
-        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenTotalsView, chrisView, chrisMonthView, kitchenListView, kitchenView, entryView, dishesView, dishFormView];
+        var ALL_VIEWS = [loadingView, loginView, errorView, homeView, driverView, routeView, totalsView, kitchenTotalsView, chrisView, chrisMonthView, kitchenListView, kitchenView, entryView, dishesView, dishFormView, shipListView, shipView];
         var currentView = null;
         function showView(v) {
           currentView = v;
@@ -5750,6 +5813,15 @@
            web_orders is part of loadData, so the realtime triggers
            and the 30s / foreground refetch all cover it.
            ================================================================ */
+        /* Shipping phân loại như app đối tác /bep/: method không phải
+           pickup / delivery thì là đơn ship gửi đi xa (Chris 2026-10-29 —
+           mục Think's Kitchen Shipping). */
+        function shipCategory(o) {
+          var m = String(o.method || "").toLowerCase();
+          if (m === "pickup") return "pickup";
+          if (m === "delivery") return "delivery";
+          return "ship";
+        }
         function webStatus(o) {
           return String(o.status || "new").toLowerCase();
         }
@@ -5770,7 +5842,8 @@
           if (it.detail) line += " — " + it.detail;
           return line;
         }
-        function buildWebCard(o) {
+        function buildWebCard(o, rerender) {
+          rerender = rerender || renderWebOrders;
           var card = el("article", "web-card");
 
           var top = el("div", "web-top");
@@ -5798,6 +5871,11 @@
           if (String(o.method || "").toLowerCase() === "delivery") {
             card.appendChild(el("div", "web-method",
               "🚗 Giao hàng" + (o.shift ? " · Ca " + o.shift : "")));
+            if (o.address) {
+              card.appendChild(el("div", "addr-line", o.address));
+            }
+          } else if (shipCategory(o) === "ship") {
+            card.appendChild(el("div", "web-method", "📦 Ship gửi đi xa"));
             if (o.address) {
               card.appendChild(el("div", "addr-line", o.address));
             }
@@ -5839,8 +5917,8 @@
           wRecvBtn.classList.toggle("on", wRecv);
           wRecvBtn.setAttribute("aria-pressed", wRecv ? "true" : "false");
           wRecvBtn.addEventListener("click", function () {
-            setToggle(wDay, wKey, "received", !getToggle(wDay, wKey, "received"), renderWebOrders);
-            renderWebOrders();
+            setToggle(wDay, wKey, "received", !getToggle(wDay, wKey, "received"), rerender);
+            rerender();
           });
           wActions.appendChild(wRecvBtn);
 
@@ -5848,8 +5926,8 @@
           wDoneBtn.type = "button";
           wDoneBtn.setAttribute("aria-pressed", wDone ? "true" : "false");
           wDoneBtn.addEventListener("click", function () {
-            setToggle(wDay, wKey, "done", !getToggle(wDay, wKey, "done"), renderWebOrders);
-            renderWebOrders();
+            setToggle(wDay, wKey, "done", !getToggle(wDay, wKey, "done"), rerender);
+            rerender();
           });
           wActions.appendChild(wDoneBtn);
 
@@ -5858,8 +5936,8 @@
           wPaidBtn.classList.toggle("on", wPaid);
           wPaidBtn.setAttribute("aria-pressed", wPaid ? "true" : "false");
           wPaidBtn.addEventListener("click", function () {
-            setToggle(wDay, wKey, "paid", !getToggle(wDay, wKey, "paid"), renderWebOrders);
-            renderWebOrders();
+            setToggle(wDay, wKey, "paid", !getToggle(wDay, wKey, "paid"), rerender);
+            rerender();
           });
           wActions.appendChild(wPaidBtn);
 
@@ -5901,6 +5979,9 @@
               if (m) linkedWo[m[1]] = true;
             });
             list = list.filter(function (o) { return !linkedWo[String(o.id)]; });
+            /* Đơn ship KHÔNG hiện ở mục bếp nữa — đã có mục
+               Think's Kitchen Shipping riêng (Chris 2026-10-29). */
+            list = list.filter(function (o) { return shipCategory(o) !== "ship"; });
           }
           webOrdersList.innerHTML = "";
           webDoneList.innerHTML = "";
@@ -5932,6 +6013,106 @@
         }
 
         /* ================================================================
+           SHIPPING — 📦 Think's Kitchen Shipping (Chris 2026-10-29):
+           the web_orders whose method is neither pickup nor delivery
+           (ship gửi đi xa). Day list → day view; cards reuse
+           buildWebCard with renderShipDay as the refresh callback, so
+           the same wo-<id> state buttons work here. Policy (Chris
+           2026-10-29): order trước 2PM hôm nay → khách nhận trước 5PM
+           ngày mai; phục vụ CA, NV và AZ.
+           ================================================================ */
+        var currentShipDay = null;
+
+        function shipOrdersOf(day) {
+          return (webOrdersByDay[day] || []).filter(function (o) {
+            return shipCategory(o) === "ship";
+          });
+        }
+
+        function renderShipList() {
+          shipDayList.innerHTML = "";
+          var days = Object.keys(webOrdersByDay).filter(function (day) {
+            return shipOrdersOf(day).length > 0;
+          }).sort().reverse();
+          days.forEach(function (day) {
+            var list = shipOrdersOf(day);
+            var done = 0;
+            list.forEach(function (o) {
+              if (getToggle(day, "wo-" + o.id, "done")) done++;
+            });
+            var label = weekdayFromDate(day) + " · " + fmtDM(day);
+            var card = el("div", "day-card");
+            card.setAttribute("role", "button");
+            card.tabIndex = 0;
+            if (day === localDayStr(new Date())) card.classList.add("today");
+            var top = el("div", "day-card-top");
+            top.appendChild(el("span", "day-date", label));
+            top.appendChild(el("span", "day-badge kitchen", "📦 SHIP"));
+            card.appendChild(top);
+            card.appendChild(el("div", "day-progress",
+              "📦 " + list.length + " đơn · Đã xong " + done + "/" + list.length));
+            var foot = el("div", "day-foot");
+            foot.appendChild(el("span", "day-open", "Xem đơn ship →"));
+            card.appendChild(foot);
+            card.addEventListener("click", function () { openShipDay(day); });
+            card.addEventListener("keydown", function (ev) {
+              if (ev.key === "Enter" || ev.key === " ") {
+                ev.preventDefault();
+                openShipDay(day);
+              }
+            });
+            shipDayList.appendChild(card);
+          });
+          if (!shipDayList.children.length) {
+            shipDayList.appendChild(el("div", "hint-line", "Chưa có đơn ship nào."));
+          }
+        }
+
+        function openShipDay(day) {
+          currentShipDay = day;
+          renderShipDay();
+          showView(shipView);
+        }
+
+        function renderShipDay() {
+          if (!currentShipDay) return;
+          shipDayline.textContent = "📦 " + weekdayFromDate(currentShipDay) + " · " + fmtDM(currentShipDay);
+          var list = shipOrdersOf(currentShipDay);
+          var pending = [], done = [];
+          list.forEach(function (o) {
+            if (getToggle(o.day, "wo-" + o.id, "done")) done.push(o);
+            else pending.push(o);
+          });
+          shipOrdersList.innerHTML = "";
+          shipDoneList.innerHTML = "";
+          if (!list.length) {
+            shipOrdersHead.textContent = "📦 ĐƠN SHIP · 0 ĐƠN";
+            shipOrdersList.appendChild(el("div", "hint-line", "Chưa có đơn ship nào."));
+            shipOrdersSection.hidden = false;
+            shipDoneSection.hidden = true;
+            return;
+          }
+          if (!pending.length) {
+            shipOrdersSection.hidden = true;
+          } else {
+            shipOrdersHead.textContent = "📦 ĐƠN SHIP · " + pending.length + " ĐƠN";
+            pending.forEach(function (o) {
+              shipOrdersList.appendChild(buildWebCard(o, renderShipDay));
+            });
+            shipOrdersSection.hidden = false;
+          }
+          if (!done.length) {
+            shipDoneSection.hidden = true;
+          } else {
+            shipDoneHead.textContent = "📦 ĐƠN SHIP ĐÃ XONG · " + done.length + " ĐƠN";
+            done.forEach(function (o) {
+              shipDoneList.appendChild(buildWebCard(o, renderShipDay));
+            });
+            shipDoneSection.hidden = false;
+          }
+        }
+
+        /* ================================================================
            NAVIGATION
            ================================================================ */
         document.getElementById("openDriverBtn").addEventListener("click", function () {
@@ -5954,6 +6135,20 @@
         document.getElementById("openKitchenBtn").addEventListener("click", function () {
           renderKitchenList();
           showView(kitchenListView);
+        });
+        document.getElementById("openShipBtn").addEventListener("click", function () {
+          renderShipList();
+          showView(shipListView);
+        });
+        document.getElementById("shipBackBtn").addEventListener("click", function () {
+          showView(homeView);
+        });
+        document.getElementById("svBackListBtn").addEventListener("click", function () {
+          renderShipList();
+          showView(shipListView);
+        });
+        document.getElementById("svBackHomeBtn").addEventListener("click", function () {
+          showView(homeView);
         });
         document.getElementById("openChrisMonthBtn").addEventListener("click", function () {
           openChrisMonthPage();
@@ -6807,6 +7002,10 @@
                password the user is halfway through typing is never
                wiped. */
             if (chrisUnlocked) renderChrisMonth();
+          } else if (currentView === shipListView) {
+            renderShipList();
+          } else if (currentView === shipView && currentShipDay) {
+            renderShipDay();
           } else if (currentView === dishesView) {
             /* Quản lý món: keep the dish list fresh on the same 30s /
                realtime cadence. loadTkProducts itself refuses to run
@@ -6974,7 +7173,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261029-1300";
+window.__BUILD__ = "20261029-1845";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
