@@ -1341,7 +1341,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1344";
+window.__BUILD__ = "20261030-1417";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -1459,7 +1459,16 @@ window.__BUILD__ = "20261030-1344";
       var reg = await navigator.serviceWorker.getRegistration("../sw.js");
       if (!reg) return false;
       var sub = await reg.pushManager.getSubscription();
-      return !!sub;
+      if (!sub) return false;
+      try {
+        var j = sub.toJSON();
+        await fetch(API + "?on_conflict=endpoint", {
+          method: "POST",
+          headers: { "apikey": ANON, "Authorization": "Bearer " + ANON, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+          body: JSON.stringify({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, lang: EN ? "en" : "vi" })
+        });
+      } catch (e) {}
+      return true;
     } catch (e) { return false; }
   }
   var deferredPrompt = null;
