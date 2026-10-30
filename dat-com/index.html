@@ -2382,7 +2382,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1224";
+window.__BUILD__ = "20261030-1240";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -2474,10 +2474,10 @@ window.__BUILD__ = "20261030-1224";
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) { btn.textContent = T.nNo; return false; }
     btn.disabled = true; btn.textContent = T.nBusy;
     try {
-      var reg = await navigator.serviceWorker.register("../sw.js");
-      await navigator.serviceWorker.ready;
       var perm = await Notification.requestPermission();
       if (perm !== "granted") { btn.disabled = false; btn.textContent = T.nNo; return false; }
+      var reg = await navigator.serviceWorker.register("../sw.js");
+      await navigator.serviceWorker.ready;
       var sub = await reg.pushManager.getSubscription();
       if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(VAPID) });
       var j = sub.toJSON();
@@ -2489,7 +2489,7 @@ window.__BUILD__ = "20261030-1224";
       if (!r.ok) throw new Error("rest " + r.status);
       btn.textContent = T.nOn; track("notify-on");
       return true;
-    } catch (e) { btn.disabled = false; btn.textContent = T.nFail; return false; }
+    } catch (e) { btn.disabled = false; btn.textContent = T.nFail + " [" + String((e && (e.name || e.message)) || e).slice(0, 40) + "]"; return false; }
   }
   async function alreadySubscribed() {
     try {
