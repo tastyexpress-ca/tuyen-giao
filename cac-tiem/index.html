@@ -492,7 +492,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1325";
+window.__BUILD__ = "20261030-1344";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -519,7 +519,7 @@ window.__BUILD__ = "20261030-1325";
   setInterval(check, 300000);
 })();
 </script>
-<script src="../assets/i18n.js?v=20261030-1325"></script>
+<script src="../assets/i18n.js?v=20261030-1344"></script>
 <!-- TEIP: install + notify + promo popup -->
 <style>
 #teip{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fff;color:#26221a;border-radius:16px;box-shadow:0 12px 34px rgba(0,0,0,.28);padding:16px 16px 13px;font-family:inherit;border:1px solid #e7ddca}
@@ -534,7 +534,7 @@ window.__BUILD__ = "20261030-1325";
 <script>
 (function () {
   "use strict";
-  var VAPID = "BDzQ7p_j_7yT0aCVNU4rg3EDGEMwZwnXFa6PkLgJ3FtkfHD_eFrbzmjxk2fYaBXSvZ1UV8AO2vWhZZRM5VoPjVE";
+  var VAPID = "BDbtCvknmDPz4iGTULx6PWeF_Yy3wQEuAOAfrjwwVGfkymI5N4oKdsxKcC4R9Vu1tdbwZ4Qb2TMEvFnYH5ZDeFM";
   var API = "https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/customer_push_subscriptions";
   var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
   var EN = false;
@@ -589,7 +589,10 @@ window.__BUILD__ = "20261030-1325";
       var reg = await navigator.serviceWorker.register("../sw.js");
       await navigator.serviceWorker.ready;
       var sub = await reg.pushManager.getSubscription();
-      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(VAPID) });
+      if (!sub) {
+        try { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(VAPID) }); }
+        catch (e1) { var old = await reg.pushManager.getSubscription(); if (old) { try { await old.unsubscribe(); } catch (x) {} } sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(VAPID) }); }
+      }
       var j = sub.toJSON();
       var r = await fetch(API + "?on_conflict=endpoint", {
         method: "POST",
