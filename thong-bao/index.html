@@ -100,7 +100,7 @@
   (async function () {
     try {
       var reg = await navigator.serviceWorker.getRegistration("../sw.js");
-      if (reg) { var sub = await reg.pushManager.getSubscription(); if (sub) setOn(); }
+      if (reg) { var sub = await reg.pushManager.getSubscription(); if (sub) { try { var j = sub.toJSON(); var r = await fetch(API + "?on_conflict=endpoint", { method: "POST", headers: { "apikey": ANON, "Authorization": "Bearer " + ANON, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, lang: EN ? "en" : "vi" }) }); if (r.ok) setOn(); } catch (e) {} } }
     } catch (e) {}
   })();
   btn.addEventListener("click", async function () {
@@ -128,7 +128,7 @@
 })();
 </script>
 <script>
-window.__BUILD__ = "20261030-1344";
+window.__BUILD__ = "20261030-1417";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
