@@ -123,8 +123,8 @@
           <div id="promoResult" style="margin-top:8px"></div>
         </div>
 
-        <h2 class="sec">🧾 Đơn online gần nhất</h2>
-        <div class="card" id="ordersBox"><div class="loading">Đang tải…</div></div>
+        <h2 class="sec" id="ordersToggle" style="cursor:pointer">🧾 Đơn online gần nhất <span id="ordersChevron">▸</span></h2>
+        <div class="card" id="ordersBox" style="display:none"><div class="loading">Đang tải…</div></div>
       </div>
     </div>
 
@@ -221,16 +221,7 @@
 
           // manual sales: form + entries by day
           var CAT = { food: "Cơm", icecream: "Kem lẻ", wholesale: "Kem sỉ", other: "Khác" };
-          var salesHtml =
-            '<div class="card"><h3>Nhập tiền lời đồ ăn</h3>' +
-            '<div class="meta">Chỉ nhập <b>tiền lời của anh</b> từ các <b>đơn đồ ăn</b> — không nhập kem, không nhập doanh số gộp. Em sẽ nhập giúp anh mỗi ngày theo kết quả chốt sổ.</div>' +
-            '<div class="sale-form" style="margin-top:10px">' +
-            '<input id="saleDay" type="date" value="' + t + '" aria-label="Ngày" />' +
-            '<select id="saleCat" aria-label="Loại"><option value="food">Đồ ăn (app)</option><option value="other">Khác</option></select>' +
-            '<input id="saleLabel" class="full" type="text" placeholder="Nội dung — vd: Tiền lời đơn app 24/10 — 3 đơn" />' +
-            '<input id="saleAmt" type="number" min="0" step="0.01" placeholder="Số tiền $" aria-label="Số tiền" />' +
-            '<button class="btn btn-ok" id="saleAdd" type="button">＋ Thêm tiền lời</button>' +
-            '</div><span class="saved-note" id="saleSaved"></span></div>';
+          var salesHtml = '';
           if (!sales.length) {
             salesHtml += '<div class="empty">Chưa có tiền lời nào được nhập.</div>';
           } else {
@@ -248,14 +239,6 @@
             }).join("") + '</div>';
           }
           $("salesBox").innerHTML = salesHtml;
-          $("saleAdd").addEventListener("click", function () {
-            var day = $("saleDay").value, label = $("saleLabel").value.trim(), cat = $("saleCat").value, amt = parseFloat($("saleAmt").value);
-            if (!day || !label || isNaN(amt) || amt <= 0) { alert("Anh nhập đủ ngày, nội dung và số tiền nhé."); return; }
-            var btn = $("saleAdd"); btn.disabled = true;
-            api("/rest/v1/manual_sales", { method: "POST", headers: { "Prefer": "return=minimal" }, body: JSON.stringify({ day: day, label: label, category: cat, amount: amt }) })
-              .then(function () { loadAll(); })
-              .catch(function () { btn.disabled = false; alert("Nhập chưa được — thử lại nhé."); });
-          });
           Array.prototype.forEach.call($("salesBox").querySelectorAll("button[data-del]"), function (b) {
             b.addEventListener("click", function () {
               if (!confirm("Xoá dòng doanh số này?")) return;
@@ -352,6 +335,14 @@
           return '<div class="stat"><div class="lbl">' + icon + " " + esc(lbl) + '</div><div class="num">' + esc(num) + '</div><div class="sub">' + esc(sub) + "</div></div>";
         }
 
+        var ordersToggle = document.getElementById("ordersToggle");
+        if (ordersToggle) ordersToggle.addEventListener("click", function () {
+          var box = document.getElementById("ordersBox");
+          var open = box.style.display !== "none";
+          box.style.display = open ? "none" : "";
+          document.getElementById("ordersChevron").textContent = open ? "▸" : "▾";
+        });
+
         var promoBtn = document.getElementById("promoSend");
         if (promoBtn) promoBtn.addEventListener("click", function () {
           var res = document.getElementById("promoResult");
@@ -380,7 +371,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1417";
+window.__BUILD__ = "20261030-1432";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
