@@ -2382,7 +2382,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-0022";
+window.__BUILD__ = "20261030-1140";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -2410,5 +2410,148 @@ window.__BUILD__ = "20261030-0022";
 })();
 </script>
 <script src="../assets/i18n.js?v=20261026-2115"></script>
+<!-- TEIP: popup cài app + nhận thông báo (khách) -->
+<style>
+#teip{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:99990;background:#fff;border:2px solid #54301a;border-radius:18px;box-shadow:0 12px 32px rgba(0,0,0,.28);padding:16px 16px 10px;color:#2b1a10;max-width:520px;margin:0 auto;font-family:inherit}
+#teip h3{margin:0 30px 6px 0;font-size:17px}
+#teip p{margin:0 0 10px;font-size:14px;line-height:1.45}
+#teip .teip-x{position:absolute;top:6px;right:8px;border:none;background:none;font-size:20px;cursor:pointer;color:#8a6d55;padding:6px;line-height:1}
+#teip .teip-main{display:block;width:100%;padding:12px;border:none;border-radius:12px;background:#54301a;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin:0 0 8px}
+#teip .teip-notify{display:block;width:100%;padding:11px;border:2px solid #54301a;border-radius:12px;background:#fff8ef;color:#54301a;font-size:15px;font-weight:700;cursor:pointer;margin:0 0 4px}
+#teip .teip-notify[disabled]{opacity:.75;cursor:default}
+#teip .teip-later{display:block;margin:2px auto 0;border:none;background:none;color:#8a6d55;font-size:13.5px;cursor:pointer;padding:6px}
+#teip .teip-steps{margin:0 0 10px;font-size:14px;line-height:1.6}
+#teip .teip-steps b{color:#54301a}
+</style>
+<script>
+(function () {
+  try {
+    if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return;
+    if (window.navigator && window.navigator.standalone) return;
+    var KEY = "te-install-snooze";
+    var snoozed = 0;
+    try { snoozed = +localStorage.getItem(KEY) || 0; } catch (e) {}
+    if (snoozed && Date.now() - snoozed < 14 * 24 * 3600 * 1000) return;
+    var lang = "vi";
+    try { lang = localStorage.getItem("te-lang") || "vi"; } catch (e) {}
+    var EN = lang === "en";
+    var T = EN ? {
+      title: "📲 Install the Tasty Express app",
+      body: "Pin the app to your home screen to order faster — no browser needed!",
+      install: "📲 Install now",
+      ios: "How to install on iPhone:<br>1️⃣ Tap the <b>Share</b> button <svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='#007aff' stroke-width='2' style='vertical-align:-2px'><path d='M12 3v12'/><path d='M7 8l5-5 5 5'/><path d='M5 13v7h14v-7'/></svg> at the bottom of the screen<br>2️⃣ Choose <b>“Add to Home Screen”</b><br>3️⃣ Tap <b>“Add”</b> — done!",
+      other: "How to install:<br>1️⃣ Tap the <b>⋮</b> menu at the top of your browser<br>2️⃣ Choose <b>“Add to Home screen”</b> or <b>“Install app”</b>",
+      notify: "🔔 Get offer notifications",
+      notifyOn: "✅ Notifications on",
+      notifyOff: "Notifications are blocked in your browser settings",
+      notifyNA: "This browser doesn't support notifications",
+      later: "Later"
+    } : {
+      title: "📲 Cài app Tasty Express",
+      body: "Ghim app ra màn hình chính để đặt món nhanh hơn — mở lên là đặt, không cần vào trình duyệt!",
+      install: "📲 Cài app ngay",
+      ios: "Cách cài trên iPhone:<br>1️⃣ Nhấn nút <b>Chia sẻ</b> <svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='#007aff' stroke-width='2' style='vertical-align:-2px'><path d='M12 3v12'/><path d='M7 8l5-5 5 5'/><path d='M5 13v7h14v-7'/></svg> ở dưới màn hình<br>2️⃣ Chọn <b>“Thêm vào Màn hình chính”</b><br>3️⃣ Nhấn <b>“Thêm”</b> — xong!",
+      other: "Cách cài:<br>1️⃣ Nhấn nút <b>⋮</b> ở góc trên trình duyệt<br>2️⃣ Chọn <b>“Thêm vào Màn hình chính”</b> hoặc <b>“Cài đặt ứng dụng”</b>",
+      notify: "🔔 Nhận thông báo ưu đãi",
+      notifyOn: "✅ Đã bật thông báo",
+      notifyOff: "Thông báo đang bị tắt trong cài đặt trình duyệt",
+      notifyNA: "Trình duyệt này không hỗ trợ thông báo",
+      later: "Để sau"
+    };
+    var SUPABASE_BASE = "https://kxfvxtsoncpjleoiupwf.supabase.co";
+    var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+    var VAPID = "BDbtCvknmDPz4iGTULx6PWeF_Yy3wQEuAOAfrjwwVGfkymI5N4oKdsxKcC4R9Vu1tdbwZ4Qb2TMEvFnYH5ZDeFM";
+    function swUrl() { return new URL("../sw.js", location.href).href; }
+    function registerSW() {
+      if (!("serviceWorker" in navigator)) return Promise.reject(new Error("no sw"));
+      return navigator.serviceWorker.register(swUrl());
+    }
+    function b64ToU8(base64String) {
+      var padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+      var base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+      var raw = window.atob(base64);
+      var arr = new Uint8Array(raw.length);
+      for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+      return arr;
+    }
+    var deferred = null;
+    var shown = false;
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault();
+      deferred = e;
+      show();
+    });
+    window.addEventListener("appinstalled", function () {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      var el = document.getElementById("teip");
+      if (el) el.remove();
+    });
+    function snooze() { try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {} }
+    function show() {
+      if (shown) return;
+      shown = true;
+      if (!document.body) { setTimeout(show, 300); shown = false; return; }
+      var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      var card = document.createElement("div");
+      card.id = "teip";
+      var installHtml;
+      if (deferred) installHtml = '<button class="teip-main" id="teipInstall" type="button">' + T.install + "</button>";
+      else if (isIOS) installHtml = '<div class="teip-steps">' + T.ios + "</div>";
+      else installHtml = '<div class="teip-steps">' + T.other + "</div>";
+      card.innerHTML = '<button class="teip-x" id="teipX" type="button" aria-label="Close">✕</button>' +
+        "<h3>" + T.title + "</h3><p>" + T.body + "</p>" + installHtml +
+        '<button class="teip-notify" id="teipNotify" type="button">' + T.notify + "</button>" +
+        '<button class="teip-later" id="teipLater" type="button">' + T.later + "</button>";
+      document.body.appendChild(card);
+      function close() { snooze(); card.remove(); }
+      document.getElementById("teipX").addEventListener("click", close);
+      document.getElementById("teipLater").addEventListener("click", close);
+      var ib = document.getElementById("teipInstall");
+      if (ib) ib.addEventListener("click", function () {
+        if (!deferred) return;
+        deferred.prompt();
+        deferred.userChoice.then(function () { deferred = null; close(); });
+      });
+      var nb = document.getElementById("teipNotify");
+      function markOn() { nb.textContent = T.notifyOn; nb.disabled = true; }
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+        nb.textContent = T.notifyNA;
+        nb.disabled = true;
+      } else if (Notification.permission === "granted") {
+        navigator.serviceWorker.getRegistration(swUrl()).then(function (reg) {
+          if (reg) reg.pushManager.getSubscription().then(function (sub) { if (sub) markOn(); });
+        }).catch(function () {});
+      }
+      nb.addEventListener("click", function () {
+        if (nb.disabled) return;
+        registerSW().then(function () {
+          return Notification.requestPermission();
+        }).then(function (perm) {
+          if (perm !== "granted") { nb.textContent = T.notifyOff; nb.disabled = true; return null; }
+          return navigator.serviceWorker.ready.then(function (reg) {
+            return reg.pushManager.getSubscription().then(function (existing) {
+              if (existing) return existing;
+              return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID) });
+            });
+          });
+        }).then(function (sub) {
+          if (!sub) return;
+          var j = sub.toJSON();
+          return fetch(SUPABASE_BASE + "/rest/v1/customer_push_subscriptions?on_conflict=endpoint", {
+            method: "POST",
+            headers: { apikey: ANON, Authorization: "Bearer " + ANON, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" },
+            body: JSON.stringify({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, lang: lang, updated_at: new Date().toISOString() })
+          }).then(function () { markOn(); });
+        }).catch(function () { nb.textContent = T.notifyOff; });
+      });
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { setTimeout(show, 1500); });
+    else setTimeout(show, 1500);
+    setTimeout(show, 4000);
+  } catch (e) {}
+})();
+</script>
+<!-- /TEIP -->
+
 </body>
 </html>
