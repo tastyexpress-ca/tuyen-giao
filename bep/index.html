@@ -95,6 +95,9 @@
       .k-actions.big button{min-height:58px;font-size:16px;font-weight:900;border-width:2.5px;letter-spacing:.02em}
       .k-actions.big button[data-toggle="recv"]:not(.on){border-color:var(--accent);color:var(--accent)}
       .k-actions.big button[data-toggle="done"]:not(.on){border-color:var(--ink);color:var(--ink)}
+      /* Nút TRẢ CASH — chỉ hiện khi đơn chưa trả (Chris 2026-10-29) */
+      .k-actions.big button[data-cash]{border-color:var(--paid-ink);color:var(--paid-ink)}
+      .k-actions.big.has-cash button{font-size:14.5px;padding-left:4px;padding-right:4px}
       .k-actions button[data-print]{font-weight:800;background:#fff7ec}
       .k-actions button:disabled{opacity:.5}
       .menu-card{display:flex;align-items:center;gap:16px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:22px 18px;margin-bottom:14px;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif}
@@ -372,6 +375,12 @@
             .then(function () { loadOrders(); })
             .catch(function () { if (btn) btn.disabled = false; alert("Cập nhật chưa được — thử lại nhé."); });
         }
+        function patchPaid(id, btn) {
+          if (btn) btn.disabled = true;
+          api("/rest/v1/web_orders?id=eq." + id, { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify({ paid: true, payment_method: "cash" }) })
+            .then(function () { loadOrders(); })
+            .catch(function () { if (btn) btn.disabled = false; alert("Cập nhật chưa được — thử lại nhé."); });
+        }
         function cardHtml(o, badge, idx) {
           var s = status(o);
           var isDone = s === "done", isRecv = s === "in_kitchen" || isDone;
@@ -388,7 +397,7 @@
           html += "</div>";
           var paid = o.paid === true;
           var banner = paid
-            ? (curTab === "delivery" ? "Đã trả qua app " : "Đã trả ") + money(o.total) + " · Không thu tiền"
+            ? (String(o.payment_method || "").toLowerCase() === "cash" ? "Đã trả cash " : (curTab === "delivery" ? "Đã trả qua app " : "Đã trả ")) + money(o.total) + " · Không thu tiền"
             : "THU " + money(o.total) + (cat === "pickup" ? " khi lấy" : " khi giao") + " (chưa trả)";
           html += '<div class="note-line' + (paid ? "" : " collect") + '">' + esc(banner) + "</div>";
           html += '<div class="customer">' + (badge ? '<span class="badge">' + badge + "</span>" : "") + esc(o.customer_name || "Khách") + "</div>";
@@ -408,9 +417,10 @@
             html += '<div class="k-actions"><a class="dirbtn" href="' + dirUrl + '" target="_blank" rel="noopener">🧭 Chỉ đường tới đây</a></div>';
           }
           var doneLabel = curTab === "delivery" ? "ĐÃ GIAO" : "XONG";
-          html += '<div class="k-actions big">' +
+          html += '<div class="k-actions big' + (paid ? "" : " has-cash") + '">' +
             '<button type="button" data-toggle="recv" data-id="' + o.id + '" class="' + (isRecv ? "on" : "") + '">' + (isRecv ? "✅ BẾP ĐÃ NHẬN" : "☐ BẾP ĐÃ NHẬN") + "</button>" +
             '<button type="button" data-toggle="done" data-id="' + o.id + '" class="' + (isDone ? "on" : "") + '">' + (isDone ? "✅ " + doneLabel : "☐ " + doneLabel) + "</button>" +
+            (paid ? "" : '<button type="button" data-cash="' + o.id + '">💵 TRẢ CASH</button>') +
             "</div>";
           html += '<div class="k-actions"><button type="button" data-print="' + o.id + '">🧾 IN HOÁ ĐƠN</button></div>';
           html += "</article>";
@@ -548,6 +558,9 @@
               orders.forEach(function (x) { if (String(x.id) === String(b.getAttribute("data-print"))) o = x; });
               if (o) printReceipts([o]);
             });
+          });
+          Array.prototype.forEach.call($("days").querySelectorAll("button[data-cash]"), function (b) {
+            b.addEventListener("click", function () { patchPaid(b.getAttribute("data-cash"), b); });
           });
           var paBtn = $("printAllBtn");
           if (paBtn) paBtn.addEventListener("click", function () {
@@ -813,7 +826,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261029-2325";
+window.__BUILD__ = "20261029-2352";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
