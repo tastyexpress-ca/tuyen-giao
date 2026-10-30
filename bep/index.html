@@ -41,12 +41,22 @@
       .day-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 8px}
       .day-head b{font-size:16.5px;color:var(--brown)}
       .day-head span{font-size:12.5px;color:var(--muted);font-weight:600}
-      .k-card{background:var(--card);border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:13px 14px;margin-bottom:11px}
+      .k-card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px;margin-bottom:11px}
+      /* Mẫu thẻ giống app bếp Think's Kitchen (Chris 2026-10-29): mỗi thẻ một màu pastel theo thứ tự trong ngày */
+      .k-card.tint-0{background:#fde8d7;border-color:#eda76a}
+      .k-card.tint-1{background:#dde9fd;border-color:#7ea6ec}
+      .k-card.tint-2{background:#dcf2e2;border-color:#6fce8b}
+      .k-card.tint-3{background:#f3e5fd;border-color:#b78fe8}
+      .k-card.tint-4{background:#fdf3c4;border-color:#e3c94f}
+      .k-card.tint-5{background:#fbdfe9;border-color:#ee8fb0}
       .k-card.done{opacity:.55}
-      .k-card.received{border-color:#9cc7a8}
-      .k-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:7px}
-      .tag{font:800 11px "Be Vietnam Pro",sans-serif;letter-spacing:.6px;padding:4px 9px;border-radius:999px;background:#f5e7cd;color:#7c4a12}
-      .tag.del{background:#dbeafe;color:#1e40af}
+      .k-card.received{border-color:var(--accent);box-shadow:0 0 0 1.5px var(--accent),var(--shadow)}
+      .k-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+      .tag{font:900 12px "Be Vietnam Pro",sans-serif;letter-spacing:.4px;padding:5px 11px;border-radius:999px;background:var(--paid-bg);color:var(--paid-ink);border:1.5px solid var(--paid-line)}
+      .tag.del{background:#fde8d7;color:#b3540c;border-color:#eda76a}
+      .tag.ship{background:#f3e5fd;color:#6d28a8;border-color:#b78fe8}
+      .note-line{margin:0 0 10px;font-size:14.5px;font-weight:800;color:var(--paid-ink);background:var(--paid-bg);border:1.5px solid var(--paid-line);border-radius:10px;padding:9px 12px}
+      .note-line.collect{color:var(--no-ink);background:var(--no-bg);border-color:var(--no-line)}
       .pill{font:700 11px "Be Vietnam Pro",sans-serif;padding:4px 9px;border-radius:999px;border:1px solid}
       .pill.ok{background:var(--paid-bg);color:var(--paid-ink);border-color:var(--paid-line)}
       .pill.no{background:var(--no-bg);color:var(--no-ink);border-color:var(--no-line)}
@@ -81,6 +91,11 @@
       .k-actions a.dirbtn{flex:1;padding:12px 8px;border-radius:12px;border:1.5px solid var(--line);background:#eef4ff;color:#1e40af;font:700 13.5px "Be Vietnam Pro",sans-serif;text-align:center;text-decoration:none}
       .k-actions button{flex:1;padding:12px 8px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font:700 13.5px "Be Vietnam Pro",sans-serif;cursor:pointer}
       .k-actions button.on{background:var(--green);border-color:var(--green);color:#fff}
+      /* Nút bấm to giống mẫu app bếp Think's Kitchen (Chris 2026-10-29) */
+      .k-actions.big button{min-height:58px;font-size:16px;font-weight:900;border-width:2.5px;letter-spacing:.02em}
+      .k-actions.big button[data-toggle="recv"]:not(.on){border-color:var(--accent);color:var(--accent)}
+      .k-actions.big button[data-toggle="done"]:not(.on){border-color:var(--ink);color:var(--ink)}
+      .k-actions button[data-print]{font-weight:800;background:#fff7ec}
       .k-actions button:disabled{opacity:.5}
       .menu-card{display:flex;align-items:center;gap:16px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:22px 18px;margin-bottom:14px;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif}
       .menu-card .ic{font-size:42px;line-height:1;flex:0 0 52px;text-align:center}
@@ -357,19 +372,28 @@
             .then(function () { loadOrders(); })
             .catch(function () { if (btn) btn.disabled = false; alert("Cập nhật chưa được — thử lại nhé."); });
         }
-        function cardHtml(o, badge) {
+        function cardHtml(o, badge, idx) {
           var s = status(o);
           var isDone = s === "done", isRecv = s === "in_kitchen" || isDone;
           var isDelivery = String(o.method || "").toLowerCase() === "delivery";
-          var when = category(o) === "ship" ? "SHIP 📦" : isDelivery ? (String(o.shift || "").toLowerCase() === "tối" || String(o.shift || "").toLowerCase() === "toi" ? "GIAO TỐI" : "GIAO SÁNG") : "PICK UP" + (o.pickup_time ? " · " + o.pickup_time : "");
-          var html = '<article class="k-card' + (isDone ? " done" : "") + (isRecv && !isDone ? " received" : "") + '" data-search="' + esc(((o.customer_name || "") + " " + (o.phone || "")).toLowerCase()) + '">';
-          html += '<div class="k-top"><span class="tag' + (isDelivery ? " del" : "") + '">' + esc(when) + "</span>";
+          var cat = category(o);
+          var when = cat === "ship" ? "📦 SHIP" : isDelivery ? (String(o.shift || "").toLowerCase() === "tối" || String(o.shift || "").toLowerCase() === "toi" ? "🚗 GIAO TỐI" : "🚗 GIAO SÁNG") : "🧺 PICK UP" + (o.pickup_time ? " · " + o.pickup_time : "");
+          // Mẫu thẻ giống app bếp Think's Kitchen (Chris 2026-10-29):
+          // thẻ pastel theo thứ tự, nhãn trên đầu, banner tiền dưới nhãn,
+          // tên/SĐT/địa chỉ, hộp món, hàng nút to, nút in riêng một hàng.
+          var html = '<article class="k-card tint-' + ((Number(idx) || 0) % 6) + (isDone ? " done" : "") + (isRecv && !isDone ? " received" : "") + '" data-search="' + esc(((o.customer_name || "") + " " + (o.phone || "")).toLowerCase()) + '">';
+          html += '<div class="k-top"><span class="tag' + (isDelivery ? " del" : "") + (cat === "ship" ? " ship" : "") + '">' + esc(when) + "</span>";
           html += o.paid === true ? '<span class="pill ok">ĐÃ TRẢ</span>' : '<span class="pill no">CHƯA TRẢ</span>';
           if (s === "new") html += '<span class="pill new">MỚI</span>';
           html += "</div>";
+          var paid = o.paid === true;
+          var banner = paid
+            ? (curTab === "delivery" ? "Đã trả qua app " : "Đã trả ") + money(o.total) + " · Không thu tiền"
+            : "THU " + money(o.total) + (cat === "pickup" ? " khi lấy" : " khi giao") + " (chưa trả)";
+          html += '<div class="note-line' + (paid ? "" : " collect") + '">' + esc(banner) + "</div>";
           html += '<div class="customer">' + (badge ? '<span class="badge">' + badge + "</span>" : "") + esc(o.customer_name || "Khách") + "</div>";
           if (o.phone) html += '<div class="sdt">' + esc(o.phone) + "</div>";
-          if ((isDelivery || category(o) === "ship") && o.address) html += '<div class="place">📍 ' + esc(o.address) + "</div>";
+          if ((isDelivery || cat === "ship") && o.address) html += '<div class="place">📍 ' + esc(o.address) + "</div>";
           var items = parseItems(o);
           if (items.length) {
             html += '<div class="dishes">' + items.map(function (it) {
@@ -379,20 +403,12 @@
             }).join("") + "</div>";
           }
           if (o.note) html += '<div class="note">📝 ' + esc(o.note) + "</div>";
-          if (curTab === "delivery") {
-            // Money line like the Think's Kitchen driver board
-            html += o.paid === true
-              ? '<div class="moneyline">Đã trả qua app ' + money(o.total) + " · Không thu tiền</div>"
-              : '<div class="moneyline collect">THU ' + money(o.total) + " khi giao (chưa trả)</div>";
-          } else {
-            html += '<div class="total">Tổng: ' + money(o.total) + "</div>";
-          }
           if (curTab === "delivery" && o.address) {
             var dirUrl = "https://www.google.com/maps/dir/?api=1" + (SHOP_ADDR ? "&origin=" + encodeURIComponent(SHOP_ADDR) : "") + "&destination=" + encodeURIComponent(o.address) + "&travelmode=driving";
             html += '<div class="k-actions"><a class="dirbtn" href="' + dirUrl + '" target="_blank" rel="noopener">🧭 Chỉ đường tới đây</a></div>';
           }
           var doneLabel = curTab === "delivery" ? "ĐÃ GIAO" : "XONG";
-          html += '<div class="k-actions">' +
+          html += '<div class="k-actions big">' +
             '<button type="button" data-toggle="recv" data-id="' + o.id + '" class="' + (isRecv ? "on" : "") + '">' + (isRecv ? "✅ BẾP ĐÃ NHẬN" : "☐ BẾP ĐÃ NHẬN") + "</button>" +
             '<button type="button" data-toggle="done" data-id="' + o.id + '" class="' + (isDone ? "on" : "") + '">' + (isDone ? "✅ " + doneLabel : "☐ " + doneLabel) + "</button>" +
             "</div>";
@@ -495,13 +511,13 @@
                 else detailHtml += '<button type="button" class="mapsbtn" id="routeTotalBtn">🧮 Tính tổng đường đi</button><div class="routeinfo" id="routeInfo"></div>';
               }
               var li = 0;
-              detailHtml += dlist.map(function (o) {
+              detailHtml += dlist.map(function (o, ix) {
                 var badge = "";
                 if (status(o) !== "done") { badge = String.fromCharCode(65 + (li % 26)); li++; }
-                return cardHtml(o, badge);
+                return cardHtml(o, badge, ix);
               }).join("");
             } else {
-              detailHtml += dlist.map(function (o) { return cardHtml(o, ""); }).join("");
+              detailHtml += dlist.map(function (o, ix) { return cardHtml(o, "", ix); }).join("");
             }
             detailHtml += "</section>";
             $("hdrDay").textContent = dlabel;
@@ -797,7 +813,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261029-2010";
+window.__BUILD__ = "20261029-2325";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
