@@ -686,6 +686,10 @@
         cursor: pointer;
       }
       .btn-totals:active { background: rgba(255, 247, 236, 0.28); }
+      /* route top row: directions + totals on one line (Chris 2026-10-30) */
+      .route-top-row { display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
+      .route-top-row .btn-route-all { flex: 1 1 auto; width: auto; margin-top: 0; min-height: 48px; }
+      .route-top-row .btn-totals { flex: 0 1 auto; margin-top: 0; display: flex; align-items: center; }
 
       /* ---------- Totals view ---------- */
       .totals-card {
@@ -2138,9 +2142,11 @@
           <div class="brand">Think's Kitchen <span class="route-name" id="routeName">· Tuyến giao sáng</span></div>
           <div class="dayline" id="routeDayline"></div>
           <div class="origin">Xuất phát: <strong>14131 Roxanne Dr, Westminster, CA 92683</strong></div>
-          <a class="btn-route-all" id="routeAllBtn" href="#" target="_blank" rel="noopener" hidden>🗺 Chỉ đường cả tuyến</a>
+          <div class="route-top-row">
+            <a class="btn-route-all" id="routeAllBtn" href="#" target="_blank" rel="noopener" hidden>🗺 Chỉ đường cả tuyến</a>
+            <button type="button" class="btn-totals" id="totalsBtn">💵 Thanh toán với tiệm</button>
+          </div>
           <div class="chips" id="routeChips"></div>
-          <button type="button" class="btn-totals" id="totalsBtn">💵 Thanh toán với tiệm</button>
           <div class="progress-row">
             <div class="progress-track" role="progressbar" aria-label="Tiến độ giao hàng" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="progressBar">
               <div class="progress-fill" id="progressFill"></div>
@@ -2156,7 +2162,6 @@
 
       <div class="wrap">
         <main id="stopList">
-          <div class="hint-line">💡 Bấm 📍 Chỉ đường trong cụm nút của mỗi điểm giao để mở Google Maps. Giữ ⠿ kéo để đổi thứ tự điểm giao — app tự lưu và tính lại đường đi.</div>
         </main>
 
         <footer>
@@ -7193,7 +7198,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1325";
+window.__BUILD__ = "20261030-1344";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
