@@ -1550,6 +1550,14 @@
       .btn-print-all:active { background: var(--line); }
       .hdr-btn-row { display: flex; gap: 8px; }
       .hdr-btn-row .btn-print-all { flex: 1; width: auto; }
+      /* 4 nút đầu trang bếp dàn 1 hàng (Chris 2026-10-30) */
+      .hdr-btn-row.main { margin-top: 9px; gap: 6px; }
+      .hdr-btn-row.main > * {
+        flex: 1 1 0; width: auto; margin-top: 0; min-height: 54px; border-radius: 13px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 2px; padding: 6px 2px; font-size: 11.5px; line-height: 1.25; text-align: center;
+      }
+      .hdr-btn-row.main .ai { font-size: 16px; line-height: 1.1; }
 
       /* ---------- Kitchen cook list (🍳 Tổng món cần nấu) ---------- */
       .cook-overlay {
@@ -2335,11 +2343,11 @@
           <div class="brand">Think's Kitchen <span class="route-name">· Nhà bếp</span></div>
           <div class="dayline" id="kitchenDayline"></div>
           <div class="chips" id="kitchenChips"></div>
-          <button type="button" class="btn-totals" id="kitchenTotalsBtn">💰 Thanh toán với tiệm</button>
-          <button type="button" class="btn-totals" id="chrisBtn">💵 Chris</button>
-          <div class="hdr-btn-row">
-            <button type="button" class="btn-print-all" id="printAllBtn">🖨 In tất cả</button>
-            <button type="button" class="btn-print-all" id="cookListBtn">🍳 Tổng món cần nấu</button>
+          <div class="hdr-btn-row main">
+            <button type="button" class="btn-totals" id="kitchenTotalsBtn"><span class="ai">💰</span><span>Thanh toán</span></button>
+            <button type="button" class="btn-totals" id="chrisBtn"><span class="ai">💵</span><span>Chris</span></button>
+            <button type="button" class="btn-print-all" id="printAllBtn"><span class="ai">🖨</span><span>In tất cả</span></button>
+            <button type="button" class="btn-print-all" id="cookListBtn"><span class="ai">🍳</span><span>Tổng món</span></button>
           </div>
           <div class="progress-row">
             <div class="progress-track" role="progressbar" aria-label="Tiến độ nấu order" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="kProgressBar">
@@ -7185,7 +7193,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-0015";
+window.__BUILD__ = "20261030-0022";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
