@@ -570,12 +570,39 @@
         function fmtRate(r) { return String(Math.round((Number(r) || 0) * 100) / 100); }
 
         // REST with the signed-in user's token (RLS scopes rows to their shop)
+        function refreshSession() {
+          if (!session || !session.refresh_token) return Promise.resolve(false);
+          return fetch(BASE + "/auth/v1/token?grant_type=refresh_token", {
+            method: "POST",
+            headers: { "apikey": ANON, "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh_token: session.refresh_token })
+          }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+            .then(function (res) {
+              if (!res.ok || !res.d.access_token) return false;
+              var next = {}; for (var k in session) next[k] = session[k];
+              next.access_token = res.d.access_token;
+              next.refresh_token = res.d.refresh_token;
+              session = next;
+              try { localStorage.setItem(KEY, JSON.stringify(session)); } catch (e) {}
+              return true;
+            })
+            .catch(function () { return false; });
+        }
         function api(path, opts) {
           opts = opts || {};
           var headers = { "apikey": ANON, "Authorization": "Bearer " + (session ? session.access_token : ANON), "Content-Type": "application/json" };
           if (opts.headers) for (var k in opts.headers) headers[k] = opts.headers[k];
           return fetch(BASE + path, { method: opts.method || "GET", headers: headers, body: opts.body || undefined })
-            .then(function (r) { if (!r.ok) throw new Error("api " + r.status); return r.status === 204 ? null : r.json().catch(function () { return null; }); });
+            .then(function (r) {
+              if (r.status === 401 && session && session.refresh_token && !opts._retried) {
+                return refreshSession().then(function (ok) {
+                  if (ok) { opts._retried = true; return api(path, opts); }
+                  throw new Error("api 401");
+                });
+              }
+              if (!r.ok) throw new Error("api " + r.status);
+              return r.status === 204 ? null : r.json().catch(function () { return null; });
+            });
         }
 
         function showView(which) {
@@ -2077,7 +2104,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261029-1955";
+window.__BUILD__ = "20261029-2010";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
