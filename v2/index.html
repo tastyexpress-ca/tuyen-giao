@@ -2025,7 +2025,7 @@
             <span class="section-icon" aria-hidden="true">🚗</span>
             <span>
               <span class="section-title">Tài Xế Giao Hàng</span>
-              <span class="section-sub">Lịch sử tuyến giao theo ngày</span>
+              <span class="section-sub">Lịch sử tuyến giao theo ngày · tự xoá sau 2 ngày</span>
             </span>
             <span class="section-arrow" aria-hidden="true">→</span>
           </button>
@@ -3229,6 +3229,12 @@
           dayList.innerHTML = "";
           routeDays.forEach(function (rd) {
             if (hidden.indexOf(rd.day) !== -1) return;
+            /* Auto-clean (Chris 2026-10-30, delivery only): a day card
+               older than 2 days removes itself from the history list.
+               Display only — the rows stay in the database so the
+               monthly money totals keep working. */
+            var ageDays = Math.round((new Date(localDayStr(new Date()) + "T00:00:00") - new Date(rd.day + "T00:00:00")) / 86400000);
+            if (ageDays > 2) return;
             var label = routeDayLabel(rd);
             var dayStops = stopsByDay[rd.day] || [];
             var hasToi = dayStops.some(function (st) { return st.shift === "toi"; });
@@ -7198,7 +7204,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1432";
+window.__BUILD__ = "20261030-1452";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
