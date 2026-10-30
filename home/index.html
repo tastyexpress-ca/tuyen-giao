@@ -201,7 +201,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1140";
+window.__BUILD__ = "20261030-1200";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -245,12 +245,13 @@ window.__BUILD__ = "20261030-1140";
 <script>
 (function () {
   try {
-    if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return;
-    if (window.navigator && window.navigator.standalone) return;
+    var FORCE = /[?&]pop=1(&|$)/.test(location.search);
+    if (!FORCE && window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return;
+    if (!FORCE && window.navigator && window.navigator.standalone) return;
     var KEY = "te-install-snooze";
     var snoozed = 0;
     try { snoozed = +localStorage.getItem(KEY) || 0; } catch (e) {}
-    if (snoozed && Date.now() - snoozed < 14 * 24 * 3600 * 1000) return;
+    if (!FORCE && snoozed && Date.now() - snoozed < 14 * 24 * 3600 * 1000) return;
     var lang = "vi";
     try { lang = localStorage.getItem("te-lang") || "vi"; } catch (e) {}
     var EN = lang === "en";
