@@ -251,7 +251,7 @@
         <article class="shop-card" data-shop="thinks-kitchen-shipping">
           <h1 class="shop-name">Think's Kitchen Shipping</h1>
           <p style="margin:0 0 8px"><span style="display:inline-block;background:#b3541e;color:#fff;font-weight:700;font-size:.8rem;letter-spacing:.06em;padding:4px 12px;border-radius:999px">COMING SOON</span></p>
-          <p class="intro">Gửi cơm nhà đi xa cho người thân: món nấu tươi trong ngày, đóng gói kỹ, ship nhanh qua đêm.</p>
+          <p class="intro">Ship to CA, NV & AZ — gửi cơm nhà đi xa cho người thân: món nấu tươi trong ngày, đóng gói kỹ, ship nhanh qua đêm.</p>
 
           <p class="dish-match" hidden></p>
 
@@ -263,10 +263,6 @@
             <li>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="5" width="13" height="11" rx="1"/><path d="M14 9h4l3 3v4h-7z"/><circle cx="6" cy="18.5" r="1.8"/><circle cx="17.5" cy="18.5" r="1.8"/></svg>
               <span>Đặt hàng trước 2PM hôm nay — nhận hàng trước 5PM ngày mai!</span>
-            </li>
-            <li>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span>Phục vụ khách ở CA, NV & AZ</span>
             </li>
           </ul>
 
@@ -297,6 +293,8 @@
             </li>
           </ul>
 
+          <div class="rev-head-row"><div class="rev-head">Khách hàng đánh giá</div><div class="rev-nav"><button type="button" id="revPrevAce" aria-label="Review trước">‹</button><button type="button" id="revNextAce" aria-label="Review kế tiếp">›</button></div></div>
+          <div class="reviews" id="revStripAce"><div class="rev-track"><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Kem mịn, vị ube thơm béo đúng gu. Cả nhà mình ai cũng mê!</div><div class="rev-who">Chị Trâm · Garden Grove</div></div><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Combo 18 ly tiện lắm, để dành ăn dần, vị nào cũng ngon.</div><div class="rev-who">Anh Khoa · Westminster</div></div><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Kem trà xanh thơm, không quá ngọt. Ăn là ghiền!</div><div class="rev-who">Chị Mai · Santa Ana</div></div><div class="rev-card"><div class="rev-stars">★★★★★</div><div class="rev-text">Đặt online giao nhanh, kem tới nơi còn lạnh cứng, ngon như ăn ở tiệm.</div><div class="rev-who">Anh Phong · Fountain Valley</div></div></div></div>
           <div class="card-actions">
             <a class="btn btn-order" href="https://tastyexpress-ca.github.io/tuyen-giao/dat-kem/">Đặt kem online</a>
             <a class="btn btn-call" href="tel:+16262839994">Gọi tiệm</a>
@@ -369,6 +367,11 @@
         var step = 262;
         document.getElementById("revPrev").addEventListener("click", function () { strip.scrollBy({ left: -step, behavior: "smooth" }); });
         document.getElementById("revNext").addEventListener("click", function () { strip.scrollBy({ left: step, behavior: "smooth" }); });
+        var stripAce = document.getElementById("revStripAce");
+        if (stripAce) {
+          document.getElementById("revPrevAce").addEventListener("click", function () { stripAce.scrollBy({ left: -step, behavior: "smooth" }); });
+          document.getElementById("revNextAce").addEventListener("click", function () { stripAce.scrollBy({ left: step, behavior: "smooth" }); });
+        }
       })();
     </script>
     <script>
@@ -489,7 +492,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261029-1938";
+window.__BUILD__ = "20261029-1955";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -516,6 +519,6 @@ window.__BUILD__ = "20261029-1938";
   setInterval(check, 300000);
 })();
 </script>
-<script src="../assets/i18n.js?v=20261029-1938"></script>
+<script src="../assets/i18n.js?v=20261029-1955"></script>
 </body>
 </html>
