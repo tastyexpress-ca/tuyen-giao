@@ -111,6 +111,18 @@
         <h2 class="sec">🍽️ Các tiệm đang bán</h2>
         <div id="shopsBox"><div class="loading">Đang tải…</div></div>
 
+        <h2 class="sec">📣 Thông báo cho khách</h2>
+        <div class="card" id="promoBox">
+          <h3>Pop thông báo cho khách đã cài app</h3>
+          <p style="color:var(--muted);margin:0 0 10px">Tin sẽ pop trên màn hình điện thoại của khách đã cài app Tasty Express và bật thông báo.</p>
+          <label for="promoTitle">Tiêu đề</label>
+          <input id="promoTitle" type="text" value="🍔 Tasty Express" style="width:100%;box-sizing:border-box;margin:4px 0 10px" />
+          <label for="promoBody">Nội dung</label>
+          <textarea id="promoBody" rows="3" style="width:100%;box-sizing:border-box;margin:4px 0 10px">Bạn có đang đói bụng không? Order đồ ăn ngay với Tasty Express</textarea>
+          <button class="submit" id="promoSend" type="button">📣 Gửi ngay</button>
+          <div id="promoResult" style="margin-top:8px"></div>
+        </div>
+
         <h2 class="sec">🧾 Đơn online gần nhất</h2>
         <div class="card" id="ordersBox"><div class="loading">Đang tải…</div></div>
       </div>
@@ -340,6 +352,26 @@
           return '<div class="stat"><div class="lbl">' + icon + " " + esc(lbl) + '</div><div class="num">' + esc(num) + '</div><div class="sub">' + esc(sub) + "</div></div>";
         }
 
+        var promoBtn = document.getElementById("promoSend");
+        if (promoBtn) promoBtn.addEventListener("click", function () {
+          var res = document.getElementById("promoResult");
+          var title = (document.getElementById("promoTitle").value || "").trim() || "Tasty Express";
+          var text = (document.getElementById("promoBody").value || "").trim();
+          if (!text) { res.textContent = "Anh nhập nội dung trước đã nhé."; return; }
+          promoBtn.disabled = true; res.textContent = "Đang gửi…";
+          fetch(BASE + "/functions/v1/notify-customers", {
+            method: "POST",
+            headers: { "apikey": ANON, "Authorization": "Bearer " + (session ? session.access_token : ANON), "Content-Type": "application/json" },
+            body: JSON.stringify({ title: title, body: text, url: "/tuyen-giao/home/" })
+          }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+            .then(function (o) {
+              promoBtn.disabled = false;
+              if (!o.ok) { res.textContent = "Gửi chưa được (" + (o.j.error || "lỗi") + ") — anh thử đăng nhập lại rồi gửi lại nhé."; return; }
+              res.textContent = "✅ Đã pop tới " + o.j.sent + " máy (tổng " + o.j.total + " khách đang bật thông báo).";
+            })
+            .catch(function () { promoBtn.disabled = false; res.textContent = "Gửi chưa được — kiểm tra mạng rồi thử lại nhé."; });
+        });
+
         if (session && session.access_token) showDash(); else showLogin();
       })();
     </script>
@@ -348,7 +380,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1209";
+window.__BUILD__ = "20261030-1224";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
