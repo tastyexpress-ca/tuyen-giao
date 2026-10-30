@@ -42,6 +42,9 @@
       .pill{ display:inline-block; font-size:.75rem; font-weight:700; padding:3px 9px; border-radius:999px; border:1px solid var(--chip-line); background:var(--chip); }
       .pill.ok{ border-color:var(--green); color:var(--green-deep); background:none; }
       .pill.no{ border-color:var(--red); color:var(--red-deep); background:none; }
+      .otabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+      .otab{ font:inherit; font-size:.85rem; font-weight:700; padding:6px 14px; border-radius:999px; border:1.5px solid var(--line); background:none; color:var(--ink); cursor:pointer; }
+      .otab.on{ background:var(--green); border-color:var(--green); color:#fff; }
       .actions{ display:flex; gap:9px; margin-top:11px; }
       .btn{ padding:10px 18px; border-radius:999px; border:0; font:inherit; font-weight:700; cursor:pointer; }
       .btn-ok{ background:var(--green); color:#fff; }
@@ -181,6 +184,33 @@
         });
 
         var cmPct = 15;
+        var ordersTab = "all";
+        var lastOrders = [];
+        var lastShopNames = { "thinks-kitchen": "Think's Kitchen" };
+        function renderOrdersBox() {
+          var box = $("ordersBox");
+          if (!lastOrders.length) { box.innerHTML = '<div class="empty">Chưa có đơn online nào.</div>'; return; }
+          var keys = [];
+          lastOrders.forEach(function (o) { var k = o.shop || "thinks-kitchen"; if (keys.indexOf(k) === -1) keys.push(k); });
+          keys.sort(function (a, b) { return (a === "thinks-kitchen" ? 0 : 1) - (b === "thinks-kitchen" ? 0 : 1); });
+          if (ordersTab !== "all" && keys.indexOf(ordersTab) === -1) ordersTab = "all";
+          function tabBtn(key, label) {
+            var n = key === "all" ? lastOrders.length : lastOrders.filter(function (o) { return (o.shop || "thinks-kitchen") === key; }).length;
+            return '<button type="button" class="otab' + (ordersTab === key ? " on" : "") + '" data-otab="' + esc(key) + '">' + esc(label) + " (" + n + ")</button>";
+          }
+          var html = '<div class="otabs">' + tabBtn("all", "Tất cả") + keys.map(function (k) { return tabBtn(k, lastShopNames[k] || k); }).join("") + "</div>";
+          var list = lastOrders.filter(function (o) { return ordersTab === "all" || (o.shop || "thinks-kitchen") === ordersTab; }).slice(0, 10);
+          html += list.length ? list.map(function (o) {
+            var left = "<b>" + esc(o.customer_name || "Khách") + "</b> · " + esc(o.weekday_label || "") + " " + esc(o.day || "") + "<br /><span class='meta'>" + (o.method === "delivery" ? "Giao hàng" : "Pick up") + (o.shift ? " · Ca " + esc(o.shift) : "") + " · " + fmtDate(o.created_at) + "</span>";
+            var pill = o.paid === true ? ' <span class="pill ok">Đã thanh toán</span>' : ' <span class="pill no">Chưa thanh toán</span>';
+            return '<div class="order"><div>' + left + pill + '</div><div class="amt">' + money(o.total) + '</div></div>';
+          }).join("") : '<div class="empty">Tiệm này chưa có đơn nào.</div>';
+          box.innerHTML = html;
+          Array.prototype.forEach.call(box.querySelectorAll("[data-otab]"), function (b) {
+            b.addEventListener("click", function () { ordersTab = b.getAttribute("data-otab"); renderOrdersBox(); });
+          });
+        }
+
         function loadAll() {
           var signups = [], orders = [], sales = [];
           api("/rest/v1/app_settings?select=value&key=eq.commission_pct")
@@ -320,16 +350,11 @@
           if (!approved.length) shopsHtml += '<div class="empty">Các tiệm đối tác được duyệt sẽ hiện ở đây với số đơn, doanh thu và commission của họ.</div>';
           $("shopsBox").innerHTML = shopsHtml;
 
-          // recent orders
-          if (!orders.length) {
-            $("ordersBox").innerHTML = '<div class="empty">Chưa có đơn online nào.</div>';
-          } else {
-            $("ordersBox").innerHTML = orders.slice(0, 10).map(function (o) {
-              var left = "<b>" + esc(o.customer_name || "Khách") + "</b> · " + esc(o.weekday_label || "") + " " + esc(o.day || "") + "<br /><span class='meta'>" + (o.method === "delivery" ? "Giao hàng" : "Pick up") + (o.shift ? " · Ca " + esc(o.shift) : "") + " · " + fmtDate(o.created_at) + "</span>";
-              var pill = o.paid === true ? ' <span class="pill ok">Đã thanh toán</span>' : ' <span class="pill no">Chưa thanh toán</span>';
-              return '<div class="order"><div>' + left + pill + '</div><div class="amt">' + money(o.total) + '</div></div>';
-            }).join("");
-          }
+          // recent orders — per-shop tabs (Chris 2026-10-30)
+          lastOrders = orders;
+          lastShopNames = { "thinks-kitchen": "Think's Kitchen" };
+          signups.filter(function (s) { return s.status === "approved"; }).forEach(function (s) { lastShopNames[slugify(s.shop_name)] = s.shop_name; });
+          renderOrdersBox();
         }
         function stat(icon, num, lbl, sub) {
           return '<div class="stat"><div class="lbl">' + icon + " " + esc(lbl) + '</div><div class="num">' + esc(num) + '</div><div class="sub">' + esc(sub) + "</div></div>";
@@ -371,7 +396,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1452";
+window.__BUILD__ = "20261030-1607";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
