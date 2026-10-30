@@ -101,6 +101,15 @@
       /* Nút TRẢ CASH — chỉ hiện khi đơn chưa trả (Chris 2026-10-29) */
       .k-actions.big button[data-cash]{border-color:var(--paid-ink);color:var(--paid-ink)}
       .k-actions.big.has-cash button{font-size:14.5px;padding-left:4px;padding-right:4px}
+      /* Cả 5 nút của thẻ gộp 1 hàng (Chris 2026-10-30): Chỉ đường · ĐÃ NHẬN · ĐÃ GIAO/XONG · TRẢ CASH · IN HOÁ ĐƠN */
+      .k-actions.one{gap:6px;margin-top:10px}
+      .k-actions.one>*{flex:1 1 0;min-height:60px;border:2.5px solid var(--ink);border-radius:13px;background:#fff;color:var(--ink);font-size:11.5px;font-weight:800;line-height:1.25;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 2px;text-align:center;text-decoration:none;cursor:pointer}
+      .k-actions.one .ai{font-size:16px;line-height:1.1}
+      .k-actions.one [data-toggle="recv"]{border-color:var(--accent);color:var(--accent)}
+      .k-actions.one [data-cash]{border-color:var(--paid-ink);color:var(--paid-ink)}
+      .k-actions.one a.act-dir{border-color:#b9ccf5;color:#1e40af;background:#eef4ff}
+      .k-actions.one [data-print]{border-color:var(--line);color:#1e40af;background:#fff7ec}
+      .k-actions.one .on{background:var(--paid-ink);border-color:var(--paid-ink);color:#fff}
       .k-actions button[data-print]{font-weight:800;background:#fff7ec}
       .k-actions button:disabled{opacity:.5}
       .menu-card{display:flex;align-items:center;gap:16px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:22px 18px;margin-bottom:14px;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif}
@@ -415,17 +424,16 @@
             }).join("") + "</div>";
           }
           if (o.note) html += '<div class="note">📝 ' + esc(o.note) + "</div>";
-          if (curTab === "delivery" && o.address) {
-            var dirUrl = "https://www.google.com/maps/dir/?api=1" + (SHOP_ADDR ? "&origin=" + encodeURIComponent(SHOP_ADDR) : "") + "&destination=" + encodeURIComponent(o.address) + "&travelmode=driving";
-            html += '<div class="k-actions"><a class="dirbtn" href="' + dirUrl + '" target="_blank" rel="noopener">🧭 Chỉ đường tới đây</a></div>';
-          }
+          var dirUrl = "";
+          if (curTab === "delivery" && o.address) dirUrl = "https://www.google.com/maps/dir/?api=1" + (SHOP_ADDR ? "&origin=" + encodeURIComponent(SHOP_ADDR) : "") + "&destination=" + encodeURIComponent(o.address) + "&travelmode=driving";
           var doneLabel = curTab === "delivery" ? "ĐÃ GIAO" : "XONG";
-          html += '<div class="k-actions big' + (paid ? "" : " has-cash") + '">' +
-            '<button type="button" data-toggle="recv" data-id="' + o.id + '" class="' + (isRecv ? "on" : "") + '">' + (isRecv ? "✅ BẾP ĐÃ NHẬN" : "☐ BẾP ĐÃ NHẬN") + "</button>" +
-            '<button type="button" data-toggle="done" data-id="' + o.id + '" class="' + (isDone ? "on" : "") + '">' + (isDone ? "✅ " + doneLabel : "☐ " + doneLabel) + "</button>" +
-            (paid ? "" : '<button type="button" data-cash="' + o.id + '">💵 TRẢ CASH</button>') +
-            "</div>";
-          html += '<div class="k-actions"><button type="button" data-print="' + o.id + '">🧾 IN HOÁ ĐƠN</button></div>';
+          html += '<div class="k-actions one">';
+          if (dirUrl) html += '<a class="act-dir" href="' + dirUrl + '" target="_blank" rel="noopener"><span class="ai">🧭</span><span>Chỉ đường</span></a>';
+          html += '<button type="button" data-toggle="recv" data-id="' + o.id + '" class="' + (isRecv ? "on" : "") + '"><span class="ai">' + (isRecv ? "✅" : "☐") + '</span><span>ĐÃ NHẬN</span></button>';
+          html += '<button type="button" data-toggle="done" data-id="' + o.id + '" class="' + (isDone ? "on" : "") + '"><span class="ai">' + (isDone ? "✅" : "☐") + '</span><span>' + doneLabel + '</span></button>';
+          if (!paid) html += '<button type="button" data-cash="' + o.id + '"><span class="ai">💵</span><span>TRẢ CASH</span></button>';
+          html += '<button type="button" data-print="' + o.id + '"><span class="ai">🧾</span><span>IN HOÁ ĐƠN</span></button>';
+          html += "</div>";
           html += "</article>";
           return html;
         }
@@ -829,7 +837,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261029-2359";
+window.__BUILD__ = "20261030-0007";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
