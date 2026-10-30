@@ -1472,6 +1472,15 @@
         font-size: 13px;
       }
       .k-actions .btn-print { min-height: 38px; font-size: 13px; }
+      /* Cả 5 nút thẻ bếp gộp 1 hàng, giống app bếp đối tác (Chris 2026-10-30) */
+      .k-actions.one { gap: 6px; }
+      .k-actions.one > * {
+        flex: 1 1 0; min-height: 60px; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 2px;
+        padding: 6px 2px; font-size: 11.5px; line-height: 1.25; text-align: center;
+      }
+      .k-actions.one .ai { font-size: 16px; line-height: 1.1; }
+      .k-actions.one .btn-print { min-height: 60px; font-size: 11.5px; }
       .btn-received {
         flex: 1;
         min-height: 42px;
@@ -4971,9 +4980,10 @@
           card.classList.toggle("done", isDone);
           card.classList.toggle("received", isRecv && !isDone);
 
-          var actions = el("div", "k-actions");
+          var actions = el("div", "k-actions one");
 
-          var recvBtn = el("button", "btn-received", isRecv ? "✅ BẾP ĐÃ NHẬN" : "☐ BẾP ĐÃ NHẬN");
+          var recvBtn = el("button", "btn-received");
+          recvBtn.innerHTML = '<span class="ai">' + (isRecv ? "✅" : "☐") + '</span><span>ĐÃ NHẬN</span>';
           recvBtn.type = "button";
           recvBtn.classList.toggle("on", isRecv);
           recvBtn.setAttribute("aria-pressed", isRecv ? "true" : "false");
@@ -4983,7 +4993,8 @@
           });
           actions.appendChild(recvBtn);
 
-          var doneBtn = el("button", "btn-done", isDone ? "✅ XONG" : "☐ XONG");
+          var doneBtn = el("button", "btn-done");
+          doneBtn.innerHTML = '<span class="ai">' + (isDone ? "✅" : "☐") + '</span><span>XONG</span>';
           doneBtn.type = "button";
           doneBtn.setAttribute("aria-pressed", isDone ? "true" : "false");
           doneBtn.addEventListener("click", function () {
@@ -4992,7 +5003,8 @@
           });
           actions.appendChild(doneBtn);
 
-          var cashBtn = el("button", "btn-cash", isPaid ? "✅ ĐÃ TRẢ TIỆM" : "💵 TRẢ TIỆM");
+          var cashBtn = el("button", "btn-cash");
+          cashBtn.innerHTML = '<span class="ai">' + (isPaid ? "✅" : "💵") + '</span><span>TRẢ TIỆM</span>';
           cashBtn.type = "button";
           cashBtn.classList.toggle("on", isPaid);
           cashBtn.setAttribute("aria-pressed", isPaid ? "true" : "false");
@@ -5011,7 +5023,8 @@
              synchronously, and the settlement view recomputes from
              stateMap, so the numbers follow the button immediately. */
           var isThinh = effectivePayee(dayStr, order, info.key) === "chris";
-          var payeeBtn = el("button", "btn-payee", isThinh ? "💵 TRẢ THINH ✓" : "💵 TRẢ THINH");
+          var payeeBtn = el("button", "btn-payee");
+          payeeBtn.innerHTML = '<span class="ai">💵</span><span>TRẢ THINH' + (isThinh ? " ✓" : "") + "</span>";
           payeeBtn.type = "button";
           payeeBtn.classList.toggle("on", isThinh);
           payeeBtn.setAttribute("aria-pressed", isThinh ? "true" : "false");
@@ -5024,14 +5037,13 @@
           actions.appendChild(payeeBtn);
           card.appendChild(actions);
 
-          var printRow = el("div", "k-actions");
-          var printBtn = el("button", "btn-print", "🖨 In order");
+          var printBtn = el("button", "btn-print");
           printBtn.type = "button";
+          printBtn.innerHTML = '<span class="ai">🖨</span><span>In order</span>';
           printBtn.addEventListener("click", function () {
             printKitchenOrder(kd, order);
           });
-          printRow.appendChild(printBtn);
-          card.appendChild(printRow);
+          actions.appendChild(printBtn);
 
           var searchText = ((order.label || "") + " " + (order.name || "") + " " + (order.phone || "")).toLowerCase();
           return { card: card, order: order, isDone: isDone, searchText: searchText, headEl: null };
@@ -7173,7 +7185,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-0007";
+window.__BUILD__ = "20261030-0015";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
