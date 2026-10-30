@@ -2382,7 +2382,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1200";
+window.__BUILD__ = "20261030-1209";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -2495,6 +2495,17 @@ window.__BUILD__ = "20261030-1200";
       var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
       var card = document.createElement("div");
       card.id = "teip";
+      if (FORCE) {
+        card.innerHTML = '<button class="teip-x" id="teipX" type="button" aria-label="Close">✕</button>' +
+          "<h3>🍔 Tasty Express</h3><p>" + (EN ? "Are you hungry? Order food now with Tasty Express" : "Bạn có đang đói bụng không? Order đồ ăn ngay với Tasty Express") + "</p>" +
+          '<a class="teip-main" href="../dat-com/" style="text-align:center;text-decoration:none;box-sizing:border-box">' + (EN ? "🍔 Order now" : "🍔 Đặt món ngay") + "</a>" +
+          '<button class="teip-later" id="teipLater" type="button">' + T.later + "</button>";
+        document.body.appendChild(card);
+        var pclose = function () { snooze(); card.remove(); };
+        document.getElementById("teipX").addEventListener("click", pclose);
+        document.getElementById("teipLater").addEventListener("click", pclose);
+        return;
+      }
       var installHtml;
       if (deferred) installHtml = '<button class="teip-main" id="teipInstall" type="button">' + T.install + "</button>";
       else if (isIOS) installHtml = '<div class="teip-steps">' + T.ios + "</div>";
