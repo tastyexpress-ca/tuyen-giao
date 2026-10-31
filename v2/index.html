@@ -5729,6 +5729,18 @@
           });
         }
 
+        /* ---------- 🚚 NHÃN GLS (Chris 2026-10-31): the real carrier
+           label PDF that Pip uploads to the public "labels" storage
+           bucket as label-<order id>.pdf. The kitchen opens it from
+           the ship card, AirPrints it and ships the box themselves. */
+        function openGlsLabel(o) {
+          var url = SUPABASE_URL + "/storage/v1/object/public/labels/label-" + o.id + ".pdf";
+          fetch(url, { method: "HEAD" }).then(function (r) {
+            if (r.ok) { window.open(url, "_blank"); }
+            else { alert("Chưa có nhãn GLS cho đơn này — khi Pip tạo nhãn xong sẽ up lên đây để bếp tự in ạ."); }
+          }).catch(function () { window.open(url, "_blank"); });
+        }
+
         function printShipLabel(o) {
           if (printPdfBusy) return;
           printPdfBusy = true;
@@ -6116,6 +6128,10 @@
             wLabelBtn.type = "button";
             wLabelBtn.addEventListener("click", function () { printShipLabel(o); });
             card.appendChild(wLabelBtn);
+            var wGlsBtn = el("button", "btn-receipt", "🚚 NHÃN GLS");
+            wGlsBtn.type = "button";
+            wGlsBtn.addEventListener("click", function () { openGlsLabel(o); });
+            card.appendChild(wGlsBtn);
           }
           return card;
         }
@@ -7331,7 +7347,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-2030";
+window.__BUILD__ = "20261031-0012";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
