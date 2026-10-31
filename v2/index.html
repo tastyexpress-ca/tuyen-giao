@@ -5634,6 +5634,123 @@
           });
         }
 
+        /* ---------- 🖨 IN LABEL (ship orders, Chris 2026-10-30) ----------
+           A 62mm shipping label for a ship web order: sender line,
+           big recipient block (name / address / phone), the items,
+           Order app #id, the standard thanks footer + 2 QR codes.
+           Same dynamic-height PDF pipeline as the receipt. */
+        function buildShipLabel(o) {
+          var label = el("div", "pl-label");
+          var head = el("div", "pl-head");
+          head.appendChild(el("span", null, "TASTY EXPRESS"));
+          head.appendChild(el("span", null, "SHIP ĐI XA"));
+          label.appendChild(head);
+
+          var bodyBox = el("div", "pl-body");
+          var tagRow = el("div", null);
+          tagRow.appendChild(el("span", "pl-tag", "📦 NGƯỜI NHẬN"));
+          bodyBox.appendChild(tagRow);
+
+          bodyBox.appendChild(el("div", "pl-name", o.customer_name || ""));
+          if (o.address) {
+            bodyBox.appendChild(el("div", "pl-place", o.address));
+          }
+          bodyBox.appendChild(el("div", "pl-phone", "SĐT: " + (o.phone ? o.phone : "chưa có")));
+
+          var items = Array.isArray(o.items) ? o.items : [];
+          if (items.length) {
+            var dishBox = el("div", "pl-dishes");
+            items.forEach(function (it) {
+              dishBox.appendChild(el("div", "pl-dish", "• " + webDishLine(it)));
+            });
+            bodyBox.appendChild(dishBox);
+          }
+
+          bodyBox.appendChild(el("div", "pl-note",
+            "Order app #" + o.id + (o.weekday_label ? " · " + o.weekday_label : "")));
+          bodyBox.appendChild(el("div", "pl-place",
+            "Người gửi: Tasty Express · 14131 Roxanne Dr, Westminster, CA 92683 · 626-283-9994"));
+
+          var foot = el("div", "pl-foot");
+          foot.appendChild(el("div", "pl-foot-1", "CHÚC QUÝ KHÁCH NGON MIỆNG!"));
+          foot.appendChild(el("div", "pl-foot-2", "Order online"));
+          bodyBox.appendChild(foot);
+
+          var qrRow = el("div", "pl-qr");
+          [
+            { src: "/tuyen-giao/assets/qr-app.png", cap: "ĐẶT MÓN QUA APP" },
+            { src: "/tuyen-giao/assets/qr-web.png", cap: "WEBSITE" },
+          ].forEach(function (q) {
+            var cell = el("div", "pl-qr-cell");
+            var img = document.createElement("img");
+            img.src = q.src;
+            img.alt = q.cap;
+            cell.appendChild(img);
+            cell.appendChild(el("div", "pl-qr-cap", q.cap));
+            qrRow.appendChild(cell);
+          });
+          bodyBox.appendChild(qrRow);
+          label.appendChild(bodyBox);
+
+          label.appendChild(el("div", "pl-cut"));
+          return label;
+        }
+
+        function buildShipLabelPdf(o) {
+          var JsPDF = window.jspdf.jsPDF;
+          showToast("Đang tạo label…");
+          printArea.innerHTML = "";
+          var label = buildShipLabel(o);
+          printArea.appendChild(label);
+          printArea.classList.add("capturing");
+          return window.html2canvas(label, {
+            scale: 2,
+            backgroundColor: "#ffffff",
+            logging: false
+          }).then(function (canvas) {
+            printArea.classList.remove("capturing");
+            var img = printFastImage(canvas);
+            var heightMm = canvas.width > 0
+              ? 62 * (canvas.height / canvas.width)
+              : 101.6;
+            if (heightMm < 40) heightMm = 40;
+            if (heightMm > 300) heightMm = 300;
+            var pdf = new JsPDF({
+              unit: "mm",
+              format: [62, heightMm],
+              orientation: "portrait",
+              compress: true
+            });
+            pdf.addImage(img, "PNG", 0, 0, 62, heightMm);
+            return pdf;
+          }, function (err) {
+            try { printArea.classList.remove("capturing"); } catch (e2) {}
+            throw err;
+          });
+        }
+
+        function printShipLabel(o) {
+          if (printPdfBusy) return;
+          printPdfBusy = true;
+          loadPdfLibs().then(function (ok) {
+            if (!ok) {
+              printPdfBusy = false;
+              showToast("⚠️ Tạo PDF cần có mạng — thử lại giúp em");
+              return;
+            }
+            buildShipLabelPdf(o).then(function (pdf) {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              if (!pdf) return;
+              deliverLabelsPdf(pdf.output("blob"), "label-ship-" + o.id + ".pdf");
+            }, function () {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              showToast("⚠️ Không tạo được label — thử lại giúp em");
+            });
+          });
+        }
+
         function printWebReceipt(o) {
           if (printPdfBusy) return;
           printPdfBusy = true;
@@ -5990,6 +6107,16 @@
           wReceiptBtn.type = "button";
           wReceiptBtn.addEventListener("click", function () { printWebReceipt(o); });
           card.appendChild(wReceiptBtn);
+
+          /* 🖨 IN LABEL (Chris 2026-10-30): ship orders get a
+             one-tap 62mm shipping label (recipient block) right on
+             the card — same PDF pipeline as the receipt. */
+          if (shipCategory(o) === "ship") {
+            var wLabelBtn = el("button", "btn-receipt", "🖨 IN LABEL");
+            wLabelBtn.type = "button";
+            wLabelBtn.addEventListener("click", function () { printShipLabel(o); });
+            card.appendChild(wLabelBtn);
+          }
           return card;
         }
 
@@ -7204,7 +7331,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1859";
+window.__BUILD__ = "20261030-1913";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
