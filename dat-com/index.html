@@ -555,6 +555,7 @@
                 <div class="seg" role="radiogroup" aria-label="Hình thức nhận món">
                   <button type="button" id="segPickup" class="active">Pick up</button>
                   <button type="button" id="segDelivery">Giao hàng</button>
+                  <button type="button" id="segShip">Ship đi xa</button>
                 </div>
               </div>
 
@@ -581,6 +582,15 @@
                   </div>
                   <div class="form-alert" id="shiftAlert"></div>
                 </div>
+              </div>
+
+              <div id="shipZone" class="hidden">
+                <div class="field" id="fShipAddress">
+                  <label for="inShipAddress">Địa chỉ nhận hàng <span class="req">*</span></label>
+                  <input type="text" id="inShipAddress" autocomplete="street-address" placeholder="Số nhà, đường, thành phố, bang, ZIP" />
+                  <div class="err">Vui lòng nhập địa chỉ nhận hàng.</div>
+                </div>
+                <div class="fee-note">🚚 Ship toàn CA, NV &amp; AZ — phí ship cố định <b>$18.49/đơn</b>. Đặt trước 2PM hôm nay, nhận hàng trước 5PM ngày mai.</div>
               </div>
 
               <div class="field">
@@ -853,6 +863,7 @@
 
       /* Phí giao hàng — $1/dặm lái xe thật từ tiệm, làm tròn lên (giống web Wix) */
       var SHOP_COORDS = { lat: 33.7513, lon: -117.9930 }; // 14131 Roxanne Dr, Westminster, CA 92683
+      var SHIP_FEE = 18.49; // phí ship cố định mỗi đơn (Chris chốt 2026-10-30)
       var feeStatus = "idle"; // idle | loading | ok | unknown
       var deliveryFee = null; // số tiền phí khi feeStatus === "ok"
       var feeTimer = null, feeSeq = 0;
@@ -1444,7 +1455,7 @@
       function totals() {
         var sub = round2(cartSubtotal());
         /* Phí giao 1 chuyến × số ngày giao — mỗi ngày trong giỏ là 1 chuyến riêng */
-        var fee = (method === "delivery" && feeStatus === "ok" && deliveryFee != null) ? deliveryFee * deliveryDayCount() : 0;
+        var fee = method === "ship" ? SHIP_FEE : ((method === "delivery" && feeStatus === "ok" && deliveryFee != null) ? deliveryFee * deliveryDayCount() : 0);
         var tax = round2((sub + fee) * TAX_RATE);
         return { sub: sub, fee: fee, tax: tax, total: round2(sub + fee + tax) };
       }
@@ -1452,7 +1463,9 @@
       function renderTotals() {
         var t = totals();
         var feeRow = "";
-        if (method === "delivery") {
+        if (method === "ship") {
+          feeRow = '<div class="t-row"><span>Phí ship</span><span>' + money(SHIP_FEE) + '</span></div>';
+        } else if (method === "delivery") {
           if (feeStatus === "loading") {
             feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>Đang tính phí giao…</span></div>';
           } else if (feeStatus === "ok") {
@@ -1479,8 +1492,10 @@
         method = m;
         $("segPickup").classList.toggle("active", m === "pickup");
         $("segDelivery").classList.toggle("active", m === "delivery");
+        $("segShip").classList.toggle("active", m === "ship");
         $("pickupZone").classList.toggle("hidden", m !== "pickup");
         $("deliveryZone").classList.toggle("hidden", m !== "delivery");
+        $("shipZone").classList.toggle("hidden", m !== "ship");
         if (m === "delivery") scheduleFeeCalc();
         else { feeSeq++; renderTotals(); }
         updateShiftCutoff();
@@ -1519,7 +1534,11 @@
         var first = cart.slice().sort(function (a, b) { return a.day < b.day ? -1 : 1; })[0];
         var shift = null, pickupTime = null, address = null;
         var fee = null;
-        if (method === "delivery") {
+        if (method === "ship") {
+          address = $("inShipAddress").value.trim();
+          fee = SHIP_FEE;
+          note = (note ? note + " · " : "") + "Phí ship $" + SHIP_FEE;
+        } else if (method === "delivery") {
           shift = document.querySelector("input[name=shift]:checked").value;
           address = $("inAddress").value.trim();
           if (feeStatus === "ok" && deliveryFee != null) {
@@ -1558,12 +1577,13 @@
         var digits = order.phone.replace(/\D/g, "");
         mark("fPhone", digits.length < 10 || digits.length > 15);
         if (method === "delivery") mark("fAddress", !order.address);
+        if (method === "ship") mark("fShipAddress", !order.address);
         if (cart.length === 0) ok = false;
         var co = cutoffBlockReason();
         if (co) ok = false;
         var alert = $("formAlert");
         if (!ok) {
-          alert.textContent = co ? co : "Bạn kiểm tra lại giúp tiệm: còn thiếu tên, số điện thoại" + (method === "delivery" ? " hoặc địa chỉ giao hàng" : "") + " nhé.";
+          alert.textContent = co ? co : "Bạn kiểm tra lại giúp tiệm: còn thiếu tên, số điện thoại" + (method === "pickup" ? "" : " hoặc địa chỉ nhận hàng") + " nhé.";
           alert.classList.add("show");
         } else {
           alert.classList.remove("show");
@@ -1580,14 +1600,16 @@
         });
         html += '<div class="s-line"><span>Tạm tính</span><span>' + money(order.subtotal) + '</span></div>';
         if (order.delivery_fee != null) {
-          html += '<div class="s-line"><span>Phí giao hàng</span><span>' + money(order.delivery_fee) + '</span></div>';
+          html += '<div class="s-line"><span>' + (order.method === "ship" ? "Phí ship" : "Phí giao hàng") + '</span><span>' + money(order.delivery_fee) + '</span></div>';
         }
         html += '<div class="s-line"><span>Thuế 8.75%</span><span>' + money(order.tax) + '</span></div>';
         html += '<div class="s-total"><span>Tổng cộng</span><span>' + money(order.total) + '</span></div></div>';
         html += '<div class="summary-box"><h4>Thông tin của bạn</h4>';
         html += '<div class="s-meta"><b>' + esc(order.customer_name) + '</b> · ' + esc(order.phone) + '</div>';
         html += '<div class="s-meta">Ngày: <b>' + esc(order.weekday_label) + '</b></div>';
-        if (order.method === "pickup") {
+        if (order.method === "ship") {
+          html += '<div class="s-meta">Ship đi xa: ' + esc(order.address) + '<br />Phí ship: ' + money(SHIP_FEE) + ' (đã gồm trong tổng) · Đặt trước 2PM hôm nay, nhận hàng trước 5PM ngày mai</div>';
+        } else if (order.method === "pickup") {
           html += '<div class="s-meta">Pick up: 14131 Roxanne Dr, Westminster, CA 92683 (8am–8pm)' +
             (order.pickup_time ? '<br />Giờ lấy: ' + esc(order.pickup_time) : "") + '</div>';
         } else {
@@ -1808,7 +1830,7 @@
         });
         var methodLine = order.method === "pickup"
           ? 'Pick up: 14131 Roxanne Dr, Westminster, CA 92683' + (order.pickup_time ? ' · Giờ lấy: ' + esc(order.pickup_time) : "")
-          : 'Giao hàng · Ca ' + esc(order.shift || "") + '<br>' + esc(order.address || "");
+          : (order.method === "ship" ? 'Ship đi xa<br>' + esc(order.address || "") : 'Giao hàng · Ca ' + esc(order.shift || "") + '<br>' + esc(order.address || ""));
         var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hoá đơn — Order app #' + esc(String(orderId || "")) + '</title><style>' +
           'body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#1e1912;margin:0;padding:24px 14px;}' +
           '.inv{max-width:340px;margin:0 auto;}' +
@@ -1827,7 +1849,7 @@
           '<div class="rule"></div>' + rows +
           '<div class="rule"></div>' +
           '<div class="kv"><span>Tạm tính</span><span>' + money(order.subtotal) + '</span></div>' +
-          (order.delivery_fee != null ? '<div class="kv"><span>Phí giao hàng</span><span>' + money(order.delivery_fee) + '</span></div>' : "") +
+          (order.delivery_fee != null ? '<div class="kv"><span>' + (order.method === "ship" ? "Phí ship" : "Phí giao hàng") + '</span><span>' + money(order.delivery_fee) + '</span></div>' : "") +
           '<div class="kv"><span>Thuế 8.75%</span><span>' + money(order.tax) + '</span></div>' +
           '<div class="total"><span>TỔNG CỘNG</span><span>' + money(order.total) + '</span></div>' +
           '<div class="paid">ĐÃ THANH TOÁN</div>' +
@@ -2227,7 +2249,9 @@
         var dayLine = esc(o.weekday_label || "") + (dm ? " · " + dm : "");
         var kitchen = o.status === "in_kitchen";
         var meta;
-        if (o.method === "delivery") {
+        if (o.method === "ship") {
+          meta = "Ship đi xa" + (o.address ? "<br />" + esc(o.address) : "");
+        } else if (o.method === "delivery") {
           meta = "Giao hàng" + (o.shift ? " · Ca " + esc(o.shift) : "") + (o.address ? "<br />" + esc(o.address) : "");
         } else {
           meta = "Pick up: 14131 Roxanne Dr, Westminster" + (o.pickup_time ? " · Giờ lấy: " + esc(o.pickup_time) : "");
@@ -2241,7 +2265,7 @@
         }
         var feeLine = "";
         if (o.delivery_fee != null) {
-          feeLine = '<div class="o-total"><span>Phí giao hàng</span><span>' + money(Number(o.delivery_fee)) + "</span></div>";
+          feeLine = '<div class="o-total"><span>' + (o.method === "ship" ? "Phí ship" : "Phí giao hàng") + '</span><span>' + money(Number(o.delivery_fee)) + "</span></div>";
         }
         return '<div class="order-card"><div class="o-head"><span class="o-day">' + dayLine + '</span>' +
           '<span class="o-badge' + (kitchen ? " kitchen" : "") + '">' + (kitchen ? "Đã vào bếp" : "Mới") + "</span></div>" +
@@ -2290,6 +2314,7 @@
       $("cartOverlay").addEventListener("click", function (e) { if (e.target === $("cartOverlay")) closeCart(); });
       $("segPickup").addEventListener("click", function () { setMethod("pickup"); });
       $("segDelivery").addEventListener("click", function () { setMethod("delivery"); });
+      $("segShip").addEventListener("click", function () { setMethod("ship"); });
       $("submitBtn").addEventListener("click", function () { submitOrder(false); });
       ["inName", "inPhone", "inAddress"].forEach(function (id) {
         $(id).addEventListener("input", function () {
@@ -2382,7 +2407,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261030-1607";
+window.__BUILD__ = "20261030-1859";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
