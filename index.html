@@ -3953,6 +3953,13 @@
           (webOrdersByDay[dayStr] || []).forEach(function (o) {
             if (linked[String(o.id)]) return;
             if (String(o.status || "").toLowerCase() === "cancelled") return;
+            /* UNPAID web orders NEVER settle (Chris's standing rule:
+               unpaid = does not count at all). The dat-com app saves
+               the row BEFORE payment, so abandoned checkouts land here
+               with paid=false — order app #45 (Teresa Pham, 2026-11-02)
+               was counted as 3 phần / $24 until Chris spotted it on
+               2026-11-01. Only money that actually landed settles. */
+            if (!o.paid) return;
             orders.push(webPseudoOrder(o));
           });
           return orders;
@@ -7349,7 +7356,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261101-2215";
+window.__BUILD__ = "20261101-2230";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
