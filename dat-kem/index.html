@@ -15,7 +15,7 @@
     <meta name="theme-color" content="#54301a" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="ACE CREAMERY — Đặt Kem Online" />
-    <meta property="og:description" content="Kem ACE CREAMERY — combo 18 ly $25 · ly lẻ $2. Order: 626-283-9994" />
+    <meta property="og:description" content="Kem ACE CREAMERY — combo 18 ly $29.99 · ly lẻ $2. Order: 626-283-9994" />
     <meta property="og:image" content="https://tastyexpress-ca.github.io/tuyen-giao/assets/logo-og.jpg" />
     <title>ACE CREAMERY — Đặt Kem Online</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -397,7 +397,7 @@
       <div class="wrap">
         <div class="info-strip">
           <span>📍 <b>9772 W Garden Grove Blvd, Garden Grove, CA 92844</b> (QT Golden Market Place)</span>
-          <span>🎉 Khai trương <b>1/11/2026</b> · Pick up: <b>8AM–8PM</b></span>
+          <span>🎉 Khai trương <b>1/11/2026</b> · Pick up: <b>7PM–9PM</b></span>
         </div>
       </div>
       <main class="wrap" id="menuMain"></main>
@@ -413,7 +413,7 @@
           <span class="cb-cta">Đặt hàng</span>
         </button>
       </div>
-      <p class="foot-note wrap">ACE CREAMERY · Trên nền tảng Tasty Express · Pick up: 9772 W Garden Grove Blvd, Garden Grove, CA 92844 (8AM–8PM)</p>
+      <p class="foot-note wrap">ACE CREAMERY · Trên nền tảng Tasty Express · Pick up: 9772 W Garden Grove Blvd, Garden Grove, CA 92844 (7PM–9PM)</p>
     </div>
 
     <!-- Result (success / failure) -->
@@ -456,7 +456,7 @@
               </div>
 
               <div id="pickupZone">
-                <div class="pickup-info">Pick up: <b>9772 W Garden Grove Blvd, Garden Grove, CA 92844</b> (QT Golden Market Place) · 8AM–8PM</div>
+                <div class="pickup-info">Pick up: <b>9772 W Garden Grove Blvd, Garden Grove, CA 92844</b> (QT Golden Market Place) · 7PM–9PM</div>
               </div>
 
               <div id="deliveryZone" class="hidden">
@@ -465,7 +465,7 @@
                   <input type="text" id="inAddress" autocomplete="street-address" placeholder="Số nhà, đường, thành phố" />
                   <div class="err">Vui lòng nhập địa chỉ giao hàng.</div>
                 </div>
-                <div class="fee-note">🚗 Phí giao tính theo quãng đường lái xe từ tiệm: $1/dặm, làm tròn lên (tối thiểu $1). Nếu chưa tính được phí, tiệm sẽ gọi lại xác nhận — bạn vẫn đặt hàng bình thường nhé.</div>
+                <div class="fee-note">🚗 Đơn có <b>Combo 18 ly</b>: <b>FREE giao tận nơi</b> — giao <b>9AM–11AM</b> hằng ngày 🎉 Đơn lẻ: phí giao tính theo quãng đường lái xe từ tiệm: $1/dặm, làm tròn lên (tối thiểu $1). Nếu chưa tính được phí, tiệm sẽ gọi lại xác nhận — bạn vẫn đặt hàng bình thường nhé.</div>
               </div>
 
               <div class="field">
@@ -496,7 +496,7 @@
 
       /* ================= DATA ================= */
       var FLAVORS = ["Coffee", "Chocolate", "Green Tea", "Thai Tea", "Ube", "Mango", "Strawberry", "Cookie", "Vanilla", "Sesame"];
-      var COMBO_PRICE = 25;
+      var COMBO_PRICE = 29.99;
       var COMBO_SIZE = 18;
       var CUP_PRICE = 2;
       var MIX_DETAIL = "Mix sẵn (mỗi vị 2 ly, Vanilla 1, Sesame 1)";
@@ -644,8 +644,8 @@
         var inCartCombo = cart.filter(function (l) { return l.name === "Combo 18 ly"; })
           .reduce(function (s, l) { return s + l.qty; }, 0);
         html += '<section class="menu-section"><div class="sec-head"><h2>COMBO TIẾT KIỆM</h2><div class="rule"></div></div>' +
-          '<div class="card comphan"><div class="cp-top"><h3>🍦 Combo 18 ly</h3><span class="cp-price">$25 <small>/ combo</small></span></div>' +
-          '<p>18 ly kem đủ vị trong một combo — chọn mix sẵn của tiệm hoặc tự chọn vị theo ý bạn.</p>' +
+          '<div class="card comphan"><div class="cp-top"><h3>🍦 Combo 18 ly</h3><span class="cp-price">$29.99 <small>/ combo</small></span></div>' +
+          '<p>18 ly kem đủ vị trong một combo — chọn mix sẵn của tiệm hoặc tự chọn vị theo ý bạn.<br /><b>💰 Tiết kiệm $6</b> so với mua lẻ · <b>🚗 FREE giao tận nơi 9AM–11AM hằng ngày</b></p>' +
           '<div class="combo-modes" role="radiogroup" aria-label="Cách chọn vị cho combo">' +
           '<label class="radio-opt"><input type="radio" name="comboMode" value="mix"' + (comboMode === "mix" ? " checked" : "") + ' /><span>Mix sẵn của tiệm<span class="ro-sub">Mỗi vị 2 ly, riêng Vanilla 1 ly và Sesame 1 ly</span></span></label>' +
           '<label class="radio-opt"><input type="radio" name="comboMode" value="custom"' + (comboMode === "custom" ? " checked" : "") + ' /><span>Tự chọn vị<span class="ro-sub">Bạn tự chia 18 ly cho các vị bên dưới</span></span></label>' +
@@ -787,6 +787,11 @@
 
       function calcDeliveryFee() {
         var seq = ++feeSeq;
+        if (method === "delivery" && cartHasCombo()) {
+          feeStatus = "ok"; deliveryFee = 0;
+          renderTotals(); updateSubmitState();
+          return;
+        }
         var address = $("inAddress").value.trim();
         if (method !== "delivery" || !address) {
           feeStatus = "idle"; deliveryFee = null;
@@ -840,7 +845,7 @@
       function updateSubmitState() {
         var btn = $("submitBtn");
         if (!btn) return;
-        if (method === "delivery" && feeStatus === "loading") {
+        if (method === "delivery" && feeStatus === "loading" && !cartHasCombo()) {
           btn.disabled = true;
           btn.textContent = "Đang tính phí giao…";
         } else if (btn.textContent === "Đang tính phí giao…") {
@@ -891,9 +896,11 @@
         renderTotals();
       }
 
+      function cartHasCombo() { return cart.some(function (l) { return l.unit === "combo"; }); }
       function totals() {
         var sub = round2(cartSubtotal());
-        var fee = (method === "delivery" && feeStatus === "ok" && deliveryFee != null) ? deliveryFee : 0;
+        // Đơn có Combo 18 ly = FREE giao (Chris 2026-11-01), giao 9AM–11AM hằng ngày
+        var fee = (method === "delivery" && !cartHasCombo() && feeStatus === "ok" && deliveryFee != null) ? deliveryFee : 0;
         var tax = round2((sub + fee) * TAX_RATE);
         return { sub: sub, fee: fee, tax: tax, total: round2(sub + fee + tax) };
       }
@@ -901,7 +908,9 @@
       function renderTotals() {
         var feeRow = "";
         if (method === "delivery") {
-          if (feeStatus === "loading") {
+          if (cartHasCombo()) {
+            feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>FREE 🎉 (giao 9AM–11AM)</span></div>';
+          } else if (feeStatus === "loading") {
             feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>Đang tính phí giao…</span></div>';
           } else if (feeStatus === "ok") {
             feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>' + money(deliveryFee) + '</span></div>';
@@ -957,7 +966,10 @@
         var fee = null;
         if (method === "delivery") {
           address = $("inAddress").value.trim();
-          if (feeStatus === "ok" && deliveryFee != null) {
+          if (cartHasCombo()) {
+            fee = 0;
+            note = (note ? note + " · " : "") + "FREE giao hàng (Combo 18 ly) · Giao 9AM–11AM";
+          } else if (feeStatus === "ok" && deliveryFee != null) {
             fee = deliveryFee;
             note = (note ? note + " · " : "") + "Phí giao $" + fee;
           } else {
@@ -1019,7 +1031,7 @@
         html += '<div class="s-meta"><b>' + esc(order.customer_name) + '</b> · ' + esc(order.phone) + '</div>';
         html += '<div class="s-meta">Ngày: <b>' + esc(order.weekday_label) + ' ' + esc(TODAY.dm) + '</b></div>';
         if (order.method === "pickup") {
-          html += '<div class="s-meta">Pick up: ' + SHOP_ADDRESS + ' (QT Golden Market Place) · 8AM–8PM</div>';
+          html += '<div class="s-meta">Pick up: ' + SHOP_ADDRESS + ' (QT Golden Market Place) · 7PM–9PM</div>';
         } else {
           html += '<div class="s-meta">Giao hàng: ' + esc(order.address) + '</div>';
           if (order.delivery_fee != null) {
@@ -1341,7 +1353,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261101-1803";
+window.__BUILD__ = "20261101-1826";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
