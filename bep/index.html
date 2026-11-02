@@ -420,7 +420,17 @@
         function loadOrders() {
           if (!SLUG) return Promise.resolve();
           return api("/rest/v1/web_orders?shop=eq." + encodeURIComponent(SLUG) + "&order=created_at.desc&limit=200")
-            .then(function (rows) { orders = rows || []; render(); })
+            .then(function (rows) {
+              /* UNPAID online orders never enter the system (Chris
+                 2026-11-01): the ordering apps save the row BEFORE
+                 payment, so abandoned checkouts sit here with
+                 paid=false. Show an order only once its money has
+                 actually landed (paid === true); the row stays in
+                 the database, so a completed payment makes it
+                 appear on the next refresh by itself. */
+              orders = (rows || []).filter(function (o) { return o.paid === true; });
+              render();
+            })
             .catch(function () { $("hdrSub").textContent = "Không tải được dữ liệu — thử Làm mới."; });
         }
         function patchStatus(id, next, btn) {
@@ -493,7 +503,13 @@
           var c = 0;
           parseItems(o).forEach(function (it) {
             var q = Number(it.qty) || 0;
-            if (String(it.name || "") === "Combo 18 ly") c += q * 11;
+            /* A combo line's stored name carries its flavor mix
+               ("Combo 18 ly — Trà xanh"), so an exact-name match
+               missed it and cost came out $0 (chị Thủy's Sat 10/31
+               order showed lời $25 instead of $14 until Chris
+               spotted it, 2026-11-01). Match any name containing
+               "combo" instead. */
+            if (String(it.name || "").toLowerCase().indexOf("combo") !== -1) c += q * 11;
             else if (Number(it.price) === 2) c += q * (11 / 18);
           });
           return c;
@@ -941,7 +957,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261101-2230";
+window.__BUILD__ = "20261101-2320";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
