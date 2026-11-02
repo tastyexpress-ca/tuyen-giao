@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>ACE CREAMERY — Kiosk</title>
+<meta name="theme-color" content="#3b2416" />
+<script src="https://js.stripe.com/terminal/v1/"></script>
+<style>
+  :root{
+    --brown:#3b2416; --brown2:#5a3a22; --cream:#fff8ee; --cream2:#fdf3e0;
+    --ink:#2b1a10; --ink-soft:#7a6a5c; --accent:#e8873a; --accent2:#d2691e;
+    --green:#1e9e57; --red:#d64541; --card:#ffffff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{margin:0; font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; background:var(--cream); color:var(--ink); overflow:hidden; user-select:none;}
+  .screen{display:none; height:100%; flex-direction:column;}
+  .screen.on{display:flex;}
+
+  /* ---------- START ---------- */
+  #scrStart{background:linear-gradient(160deg,#4a2c18,#2b1a10); color:var(--cream2); align-items:center; justify-content:center; text-align:center; padding:24px; cursor:pointer;}
+  #scrStart .logo{font-size:64px; line-height:1;}
+  #scrStart h1{font-size:52px; margin:14px 0 2px; letter-spacing:1px;}
+  #scrStart .sub{font-size:21px; opacity:.85; margin:0 0 34px;}
+  #scrStart .tap{display:inline-block; background:var(--accent); color:#fff; font-size:27px; font-weight:800; padding:20px 44px; border-radius:999px; animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+  #scrStart .addr{margin-top:30px; font-size:16px; opacity:.65;}
+  .langrow{position:absolute; top:18px; right:18px; display:flex; gap:8px;}
+  .langbtn{background:rgba(255,250,241,.14); color:var(--cream2); border:1px solid rgba(253,243,224,.5); font-size:16px; font-weight:700; padding:9px 16px; border-radius:999px; cursor:pointer;}
+  .langbtn.on{background:var(--cream2); color:var(--brown);}
+
+  /* ---------- HEADER ---------- */
+  header{background:var(--brown); color:var(--cream2); padding:12px 18px; display:flex; align-items:center; gap:12px;}
+  header .ttl{font-size:23px; font-weight:800; letter-spacing:.4px;}
+  header .sp{flex:1;}
+  header .hbtn{background:rgba(255,250,241,.13); color:var(--cream2); border:1px solid rgba(253,243,224,.4); border-radius:10px; font-size:15px; font-weight:700; padding:9px 14px; cursor:pointer; font-family:inherit;}
+
+  /* ---------- MENU ---------- */
+  #scrMenu main{flex:1; overflow-y:auto; padding:16px 18px 130px;}
+  .secttl{font-size:21px; font-weight:800; margin:8px 0 12px; color:var(--brown);}
+  .secttl small{font-weight:600; color:var(--ink-soft); font-size:16px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(215px,1fr)); gap:13px;}
+  .fcard{background:var(--card); border:2px solid #efdfc9; border-radius:16px; padding:14px 15px; display:flex; flex-direction:column; gap:3px;}
+  .fcard.has{border-color:var(--accent); background:#fff3e2;}
+  .fcard .fn{font-size:20px; font-weight:800;}
+  .fcard .fv{font-size:14.5px; color:var(--ink-soft);}
+  .fcard .row{display:flex; align-items:center; justify-content:space-between; margin-top:9px;}
+  .fcard .pr{font-size:17px; font-weight:800; color:var(--accent2);}
+  .stepper{display:flex; align-items:center; gap:11px;}
+  .stepper button{width:47px; height:47px; border-radius:50%; border:none; font-size:25px; font-weight:800; cursor:pointer; font-family:inherit;}
+  .stepper .minus{background:#f0e4d2; color:var(--brown);}
+  .stepper .plus{background:var(--accent); color:#fff;}
+  .stepper .qn{font-size:22px; font-weight:800; min-width:30px; text-align:center;}
+  .boxpanel{background:#fff; border:2px solid #efdfc9; border-radius:16px; padding:15px; margin-top:6px;}
+  .boxpanel .prog{font-size:17px; font-weight:800; color:var(--brown);}
+  .boxpanel .bar{height:13px; background:#f0e4d2; border-radius:99px; overflow:hidden; margin:8px 0 13px;}
+  .boxpanel .bar i{display:block; height:100%; background:var(--accent); width:0%; transition:width .2s;}
+  .bigbtn{display:block; width:100%; border:none; border-radius:14px; padding:17px; font-size:20px; font-weight:800; cursor:pointer; font-family:inherit;}
+  .bigbtn.orange{background:var(--accent); color:#fff;}
+  .bigbtn.ghost{background:#f0e4d2; color:var(--brown);}
+  .bigbtn:disabled{opacity:.45; cursor:default;}
+  #cartBar{position:fixed; left:0; right:0; bottom:0; background:var(--brown); color:var(--cream2); padding:14px 18px; display:none; align-items:center; gap:15px; box-shadow:0 -4px 18px rgba(0,0,0,.25);}
+  #cartBar.on{display:flex;}
+  #cartBar .ci{font-size:16.5px; line-height:1.35;}
+  #cartBar .ct{font-size:24px; font-weight:800; white-space:nowrap;}
+  #cartBar button{background:var(--green); color:#fff; border:none; border-radius:13px; font-size:21px; font-weight:800; padding:16px 26px; cursor:pointer; font-family:inherit; white-space:nowrap;}
+
+  /* ---------- PAY / DONE ---------- */
+  .center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:26px; gap:13px;}
+  .center .big{font-size:34px; font-weight:800; color:var(--brown);}
+  .center .amt{font-size:56px; font-weight:900; color:var(--accent2);}
+  .center .hint{font-size:19px; color:var(--ink-soft); max-width:560px; line-height:1.45;}
+  .tapAnim{font-size:84px; animation:pulse 1.4s infinite;}
+  .orderno{font-size:96px; font-weight:900; color:var(--green); line-height:1;}
+  .rowbtns{display:flex; gap:13px; flex-wrap:wrap; justify-content:center; margin-top:8px;}
+  .rowbtns .bigbtn{width:auto; padding:16px 30px;}
+  .statusline{font-size:15.5px; color:var(--ink-soft);}
+  .err{color:var(--red); font-weight:700;}
+  #gear{position:fixed; right:10px; bottom:10px; z-index:50; background:transparent; border:none; font-size:21px; opacity:.35; cursor:pointer; padding:10px;}
+</style>
+</head>
+<body>
+
+<!-- START -->
+<section class="screen on" id="scrStart">
+  <div class="langrow">
+    <button class="langbtn on" id="langVi">VI</button>
+    <button class="langbtn" id="langEn">EN</button>
+  </div>
+  <div class="logo">🍦</div>
+  <h1>ACE CREAMERY</h1>
+  <p class="sub" data-i="startSub">Kem ngon mỗi ngày — 10 vị</p>
+  <span class="tap" data-i="tapStart">CHẠM ĐỂ ĐẶT MÓN</span>
+  <p class="addr">9772 W Garden Grove Blvd, Garden Grove, CA 92844</p>
+</section>
+
+<!-- MENU -->
+<section class="screen" id="scrMenu">
+  <header>
+    <span class="ttl">🍦 ACE CREAMERY</span>
+    <span class="sp"></span>
+    <button class="hbtn" id="btnLang2">EN</button>
+    <button class="hbtn" id="btnCancelOrder" data-i="cancel">Huỷ đơn</button>
+  </header>
+  <main>
+    <div class="secttl"><span data-i="cupTitle">Kem ly</span> <small data-i="cupSub">· $3.50 / ly — chạm + để thêm ly vị đó</small></div>
+    <div class="grid" id="cupGrid"></div>
+
+    <div class="secttl" style="margin-top:26px;"><span data-i="boxTitle">Family Box — 18 ly</span> <small>· $25</small></div>
+    <div class="boxpanel">
+      <div class="prog"><span data-i="boxProg">Đã chọn</span>: <span id="boxCount">0</span>/18</div>
+      <div class="bar"><i id="boxBar"></i></div>
+      <div class="grid" id="boxGrid"></div>
+      <div class="rowbtns" style="justify-content:stretch;">
+        <button class="bigbtn ghost" id="btnMix" data-i="mixBtn" style="flex:1;">Mix sẵn của tiệm (mỗi vị 2 ly)</button>
+        <button class="bigbtn orange" id="btnAddBox" data-i="addBox" style="flex:1;" disabled>Thêm Family Box — $25</button>
+      </div>
+    </div>
+  </main>
+  <div id="cartBar">
+    <div class="ci" id="cartInfo"></div>
+    <span class="sp" style="flex:1"></span>
+    <div class="ct" id="cartTotal"></div>
+    <button id="btnPay" data-i="payBtn">THANH TOÁN →</button>
+  </div>
+</section>
+
+<!-- PAY -->
+<section class="screen" id="scrPay">
+  <header><span class="ttl">🍦 ACE CREAMERY</span></header>
+  <div class="center">
+    <div class="big" data-i="payTitle">Thanh toán bằng thẻ</div>
+    <div class="amt" id="payAmt"></div>
+    <div class="tapAnim" id="tapAnim">💳</div>
+    <div class="hint" id="payHint"></div>
+    <div class="statusline" id="readerStatus"></div>
+    <div class="rowbtns">
+      <button class="bigbtn orange" id="btnConnectPay" data-i="connectPay">Kết nối đầu đọc &amp; trả</button>
+      <button class="bigbtn ghost" id="btnBackMenu" data-i="backMenu">← Quay lại menu</button>
+    </div>
+  </div>
+</section>
+
+<!-- DONE -->
+<section class="screen" id="scrDone">
+  <header><span class="ttl">🍦 ACE CREAMERY</span></header>
+  <div class="center">
+    <div style="font-size:70px;">✅</div>
+    <div class="big" data-i="doneTitle">Cảm ơn bạn! Số thứ tự của bạn:</div>
+    <div class="orderno" id="doneNo"></div>
+    <div class="hint" data-i="doneHint">Bếp đang làm kem cho bạn — nghe gọi số và tới quầy lấy nhé!</div>
+    <div class="statusline"><span data-i="autoBack">Tự quay về màn hình chính sau</span> <span id="doneCount">20</span>s</div>
+  </div>
+</section>
+
+<!-- HELP -->
+<section class="screen" id="scrHelp">
+  <header><span class="ttl">🍦 ACE CREAMERY</span></header>
+  <div class="center">
+    <div style="font-size:70px;">🙋</div>
+    <div class="big" data-i="helpTitle">Vui lòng gọi nhân viên giúp nhé!</div>
+    <div class="hint err" id="helpMsg"></div>
+    <div class="hint" id="helpCode"></div>
+    <div class="rowbtns">
+      <button class="bigbtn orange" id="btnHelpHome" data-i="homeBtn">Về màn hình chính</button>
+    </div>
+  </div>
+</section>
+
+<button id="gear" title="Nhân viên">⚙️</button>
+
+<script>
+window.__BUILD__ = "20261102-1250";
+(function () {
+  var KEY = "build-reloaded-for";
+  function check() {
+    fetch("/tuyen-giao/version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.build) return;
+        if (j.build === window.__BUILD__) { try { sessionStorage.removeItem(KEY); } catch (e) {} return; }
+        try { if (sessionStorage.getItem(KEY) === j.build) return; sessionStorage.setItem(KEY, j.build); } catch (e) {}
+        location.reload();
+      })
+      .catch(function () {});
+  }
+  check(); setInterval(check, 60000);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  /* ================= CONFIG ================= */
+  var CUP_PRICE = 3.50;          // in-store price per cup
+  var BOX_PRICE = 25.00;         // in-store Family Box (18 cups)
+  var TAX_RATE = 0.0875;         // Garden Grove sales tax
+  var FUNC_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/functions/v1/terminal-payment";
+  var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+  var FLAVORS = [
+    { en: "Vanilla", vi: "Vani" }, { en: "Chocolate", vi: "Sô-cô-la" },
+    { en: "Green Tea", vi: "Trà xanh" }, { en: "Thai Tea", vi: "Trà Thái" },
+    { en: "Ube", vi: "Khoai môn" }, { en: "Mango", vi: "Xoài" },
+    { en: "Strawberry", vi: "Dâu" }, { en: "Cookie", vi: "Cookies & Cream" },
+    { en: "Coffee", vi: "Cà phê" }, { en: "Sesame", vi: "Mè đen" }
+  ];
+  var MIX = { Coffee: 2, Chocolate: 2, "Green Tea": 2, "Thai Tea": 2, Ube: 2, Mango: 2, Strawberry: 2, Cookie: 2, Vanilla: 1, Sesame: 1 };
+
+  var I18N = {
+    vi: { startSub: "Kem ngon mỗi ngày — 10 vị", tapStart: "CHẠM ĐỂ ĐẶT MÓN", cancel: "Huỷ đơn",
+      cupTitle: "Kem ly", cupSub: "· $3.50 / ly — chạm + để thêm ly vị đó", boxTitle: "Family Box — 18 ly",
+      boxProg: "Đã chọn", mixBtn: "Mix sẵn của tiệm (mỗi vị 2 ly)", addBox: "Thêm Family Box — $25",
+      payBtn: "THANH TOÁN →", payTitle: "Thanh toán bằng thẻ", connectPay: "Kết nối đầu đọc & trả",
+      backMenu: "← Quay lại menu", doneTitle: "Cảm ơn bạn! Số thứ tự của bạn:",
+      doneHint: "Bếp đang làm kem cho bạn — nghe gọi số và tới quầy lấy nhé!", autoBack: "Tự quay về màn hình chính sau",
+      helpTitle: "Vui lòng gọi nhân viên giúp nhé!", homeBtn: "Về màn hình chính",
+      cups: "ly", items: "món", tapCard: "Chạm / cắm thẻ vào đầu đọc thẻ bên cạnh…",
+      connecting: "Đang kết nối đầu đọc…", noReader: "Chưa thấy đầu đọc thẻ. Kiểm tra đầu đọc đã bật + cùng mạng WiFi với kiosk, rồi thử lại.",
+      processing: "Đang xử lý thanh toán…", saving: "Đã trả xong — đang gửi đơn vào bếp…",
+      payFail: "Thanh toán chưa xong. Mình thử lại nhé.", orderFail: "Đã trừ tiền nhưng gửi đơn chưa được — báo nhân viên ngay giúp em, mã thanh toán:",
+      readerOk: "Đầu đọc sẵn sàng ✓", totalLbl: "Tổng" },
+    en: { startSub: "Fresh ice cream every day — 10 flavors", tapStart: "TAP TO ORDER", cancel: "Cancel order",
+      cupTitle: "Ice cream cups", cupSub: "· $3.50 / cup — tap + to add a cup of that flavor", boxTitle: "Family Box — 18 cups",
+      boxProg: "Selected", mixBtn: "House mix (2 cups per flavor)", addBox: "Add Family Box — $25",
+      payBtn: "CHECKOUT →", payTitle: "Pay by card", connectPay: "Connect reader & pay",
+      backMenu: "← Back to menu", doneTitle: "Thank you! Your number is:",
+      doneHint: "The kitchen is making your ice cream — listen for your number and pick up at the counter!", autoBack: "Back to start in",
+      helpTitle: "Please ask our staff for help!", homeBtn: "Back to start",
+      cups: "cups", items: "items", tapCard: "Tap / insert your card on the card reader…",
+      connecting: "Connecting to the card reader…", noReader: "No card reader found. Check it is on and on the same WiFi as this kiosk, then retry.",
+      processing: "Processing payment…", saving: "Paid — sending your order to the kitchen…",
+      payFail: "Payment did not complete. Let's try again.", orderFail: "You were charged but the order did not go through — please tell staff right away. Payment code:",
+      readerOk: "Reader ready ✓", totalLbl: "Total" }
+  };
+  var lang = "vi";
+  function t(k) { return I18N[lang][k] || k; }
+  function money(n) { return "$" + n.toFixed(2); }
+  function $(id) { return document.getElementById(id); }
+
+  /* ================= STATE ================= */
+  var cups = {};   // flavorEn -> qty
+  var boxMix = {}; // flavorEn -> qty (builder)
+  var boxes = [];  // [{mix:{...}}]
+  FLAVORS.forEach(function (f) { cups[f.en] = 0; boxMix[f.en] = 0; });
+  var paying = false, idleTimer = null, doneTimer = null;
+
+  /* ================= SCREENS ================= */
+  function show(id) {
+    ["scrStart", "scrMenu", "scrPay", "scrDone", "scrHelp"].forEach(function (s) {
+      $(s).classList.toggle("on", s === id);
+    });
+    armIdle(id === "scrMenu" || id === "scrPay");
+  }
+  function armIdle(on) {
+    clearTimeout(idleTimer);
+    if (!on) return;
+    idleTimer = setTimeout(function () { if (!paying) resetAll(); }, 90000);
+  }
+  ["touchstart", "click"].forEach(function (ev) {
+    document.addEventListener(ev, function () {
+      if ($("scrMenu").classList.contains("on") || $("scrPay").classList.contains("on")) armIdle(true);
+    }, { passive: true });
+  });
+  function resetAll() {
+    FLAVORS.forEach(function (f) { cups[f.en] = 0; boxMix[f.en] = 0; });
+    boxes = []; paying = false;
+    renderAll(); show("scrStart");
+  }
+
+  /* ================= MENU RENDER ================= */
+  function flavorName(f) { return lang === "vi" ? f.vi : f.en; }
+  function stepperHTML(kind, en, qty) {
+    return '<div class="stepper">' +
+      '<button class="minus" data-k="' + kind + '" data-f="' + en + '" data-d="-1">−</button>' +
+      '<span class="qn">' + qty + "</span>" +
+      '<button class="plus" data-k="' + kind + '" data-f="' + en + '" data-d="1">+</button></div>';
+  }
+  function renderCups() {
+    $("cupGrid").innerHTML = FLAVORS.map(function (f) {
+      var q = cups[f.en];
+      return '<div class="fcard' + (q > 0 ? " has" : "") + '"><div class="fn">' + f.en + '</div><div class="fv">' +
+        f.vi + '</div><div class="row"><span class="pr">' + money(CUP_PRICE) + "</span>" + stepperHTML("cup", f.en, q) + "</div></div>";
+    }).join("");
+  }
+  function boxTotal() { return FLAVORS.reduce(function (s, f) { return s + boxMix[f.en]; }, 0); }
+  function renderBox() {
+    var bt = boxTotal();
+    $("boxCount").textContent = bt;
+    $("boxBar").style.width = Math.min(100, bt / 18 * 100) + "%";
+    $("btnAddBox").disabled = bt !== 18;
+    $("boxGrid").innerHTML = FLAVORS.map(function (f) {
+      var q = boxMix[f.en];
+      return '<div class="fcard' + (q > 0 ? " has" : "") + '"><div class="fn">' + f.en + '</div><div class="fv">' +
+        f.vi + '</div><div class="row"><span></span>' + stepperHTML("box", f.en, q) + "</div></div>";
+    }).join("");
+  }
+  function cartCalc() {
+    var cupCount = FLAVORS.reduce(function (s, f) { return s + cups[f.en]; }, 0);
+    var subtotal = cupCount * CUP_PRICE + boxes.length * BOX_PRICE;
+    var tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+    return { cupCount: cupCount, subtotal: subtotal, tax: tax, total: Math.round((subtotal + tax) * 100) / 100 };
+  }
+  function renderCart() {
+    var c = cartCalc();
+    var has = c.cupCount > 0 || boxes.length > 0;
+    $("cartBar").classList.toggle("on", has);
+    if (has) {
+      var parts = [];
+      if (c.cupCount) parts.push(c.cupCount + " " + t("cups"));
+      if (boxes.length) parts.push(boxes.length + " Family Box");
+      $("cartInfo").innerHTML = parts.join(" · ") + "<br>Tax " + money(c.tax);
+      $("cartTotal").textContent = t("totalLbl") + ": " + money(c.total);
+    }
+  }
+  function renderAll() { renderCups(); renderBox(); renderCart(); }
+
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest(".stepper button") : null;
+    if (!b) return;
+    var kind = b.getAttribute("data-k"), f = b.getAttribute("data-f"), d = Number(b.getAttribute("data-d"));
+    if (kind === "cup") cups[f] = Math.max(0, cups[f] + d);
+    else { var nt = boxTotal() + d; if (d > 0 && nt > 18) return; boxMix[f] = Math.max(0, boxMix[f] + d); }
+    renderAll();
+  });
+  $("btnMix").addEventListener("click", function () {
+    FLAVORS.forEach(function (f) { boxMix[f.en] = MIX[f.en] || 0; });
+    renderBox();
+  });
+  $("btnAddBox").addEventListener("click", function () {
+    if (boxTotal() !== 18) return;
+    var m = {}; FLAVORS.forEach(function (f) { if (boxMix[f.en]) m[f.en] = boxMix[f.en]; });
+    boxes.push({ mix: m });
+    FLAVORS.forEach(function (f) { boxMix[f.en] = 0; });
+    renderAll();
+  });
+  $("btnCancelOrder").addEventListener("click", resetAll);
+  $("scrStart").addEventListener("click", function (e) {
+    if (e.target.closest(".langrow")) return;
+    show("scrMenu");
+    try { if (navigator.wakeLock) navigator.wakeLock.request("screen"); } catch (err) {}
+  });
+
+  /* ================= LANGUAGE ================= */
+  function setLang(l) {
+    lang = l;
+    document.querySelectorAll("[data-i]").forEach(function (el) { el.textContent = t(el.getAttribute("data-i")); });
+    $("langVi").classList.toggle("on", l === "vi");
+    $("langEn").classList.toggle("on", l === "en");
+    $("btnLang2").textContent = l === "vi" ? "EN" : "VI";
+    renderAll();
+  }
+  $("langVi").addEventListener("click", function (e) { e.stopPropagation(); setLang("vi"); });
+  $("langEn").addEventListener("click", function (e) { e.stopPropagation(); setLang("en"); });
+  $("btnLang2").addEventListener("click", function () { setLang(lang === "vi" ? "en" : "vi"); });
+
+  /* ================= TERMINAL ================= */
+  var terminal = null, reader = null, locationId = null;
+  function callFunc(payload) {
+    return fetch(FUNC_URL, {
+      method: "POST",
+      headers: { "apikey": ANON, "Authorization": "Bearer " + ANON, "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || ("HTTP " + r.status)); return j; }); });
+  }
+  function fetchConnectionToken() {
+    return callFunc({ action: "connection_token" }).then(function (j) {
+      if (j.location_id) locationId = j.location_id;
+      return j.secret;
+    });
+  }
+  function setPayHint(msg, isErr) {
+    var h = $("payHint"); h.textContent = msg || ""; h.className = isErr ? "hint err" : "hint";
+  }
+  function initTerminal() {
+    if (terminal) return terminal;
+    terminal = StripeTerminal.create({
+      fetchConnectionToken: fetchConnectionToken,
+      onUnexpectedReaderDisconnect: function () { reader = null; $("readerStatus").textContent = ""; }
+    });
+    return terminal;
+  }
+  function connectReader() {
+    initTerminal();
+    if (reader) return Promise.resolve(reader);
+    setPayHint(t("connecting"));
+    return fetchConnectionToken().then(function () {
+      return terminal.discoverReaders({ simulated: false, location: locationId });
+    }).then(function (res) {
+      if (res.error) throw new Error(res.error.message);
+      var list = res.discoveredReaders || [];
+      if (!list.length) throw new Error(t("noReader"));
+      var saved = null;
+      try { saved = localStorage.getItem("kiosk-reader-serial"); } catch (e) {}
+      var pick = list.filter(function (r) { return r.serial_number === saved; })[0] || list[0];
+      return terminal.connectReader(pick).then(function (cres) {
+        if (cres.error) throw new Error(cres.error.message);
+        reader = cres.reader;
+        try { localStorage.setItem("kiosk-reader-serial", reader.serial_number || ""); } catch (e) {}
+        $("readerStatus").textContent = t("readerOk") + " · " + (reader.label || reader.serial_number || "");
+        return reader;
+      });
+    });
+  }
+
+  function laDay() {
+    return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  }
+  function laWeekdayLabel() {
+    var wd = new Date().toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", weekday: "short" });
+    return { Sun: "Chủ Nhật", Mon: "Thứ Hai", Tue: "Thứ Ba", Wed: "Thứ Tư", Thu: "Thứ Năm", Fri: "Thứ Sáu", Sat: "Thứ Bảy" }[wd] || "";
+  }
+  function buildItems() {
+    var items = [];
+    FLAVORS.forEach(function (f) {
+      if (cups[f.en] > 0) items.push({ name: "Kem ly — " + f.en, qty: cups[f.en], price: CUP_PRICE, detail: "" });
+    });
+    boxes.forEach(function (b) {
+      var det = Object.keys(b.mix).map(function (k) { return k + " x" + b.mix[k]; }).join(", ");
+      items.push({ name: "Combo 18 ly (Family Box)", qty: 1, price: BOX_PRICE, detail: det });
+    });
+    return items;
+  }
+
+  function startPayment() {
+    if (paying) return;
+    var c = cartCalc();
+    paying = true; armIdle(false);
+    $("btnConnectPay").disabled = true;
+    setPayHint("");
+    connectReader().then(function () {
+      setPayHint(t("processing"));
+      return callFunc({ action: "create_payment_intent", amount_cents: Math.round(c.total * 100) });
+    }).then(function (pi) {
+      setPayHint(t("tapCard"));
+      return terminal.collectPaymentMethod(pi.client_secret).then(function (res) {
+        if (res.error) throw new Error(res.error.message);
+        setPayHint(t("processing"));
+        return terminal.processPayment(res.paymentIntent);
+      }).then(function (res2) {
+        if (res2.error) throw new Error(res2.error.message);
+        if (!res2.paymentIntent || res2.paymentIntent.status !== "succeeded") throw new Error(t("payFail"));
+        return res2.paymentIntent;
+      }).then(function (paidPi) {
+        setPayHint(t("saving"));
+        return callFunc({
+          action: "create_order", payment_intent_id: paidPi.id,
+          order: { day: laDay(), weekday_label: laWeekdayLabel(), items: buildItems(), subtotal: c.subtotal, tax: c.tax, total: c.total }
+        }).then(function (j) { return j.order_id; }).catch(function (e) {
+          show("scrHelp");
+          $("helpMsg").textContent = t("orderFail");
+          $("helpCode").textContent = paidPi.id;
+          throw e;
+        });
+      });
+    }).then(function (orderId) {
+      paying = false; $("btnConnectPay").disabled = false;
+      $("doneNo").textContent = "#" + orderId;
+      show("scrDone");
+      var left = 20; $("doneCount").textContent = left;
+      clearInterval(doneTimer);
+      doneTimer = setInterval(function () {
+        left--; $("doneCount").textContent = left;
+        if (left <= 0) { clearInterval(doneTimer); resetAll(); }
+      }, 1000);
+      // clear the cart behind the done screen
+      FLAVORS.forEach(function (f) { cups[f.en] = 0; boxMix[f.en] = 0; }); boxes = []; renderAll();
+    }).catch(function (e) {
+      paying = false; $("btnConnectPay").disabled = false;
+      if ($("scrHelp").classList.contains("on")) return; // order-fail already shown
+      setPayHint((e && e.message) || t("payFail"), true);
+    });
+  }
+  $("btnPay").addEventListener("click", function () {
+    var c = cartCalc();
+    $("payAmt").textContent = money(c.total);
+    setPayHint(""); $("readerStatus").textContent = reader ? t("readerOk") : "";
+    $("btnConnectPay").textContent = t("connectPay");
+    show("scrPay");
+  });
+  $("btnConnectPay").addEventListener("click", startPayment);
+  $("btnBackMenu").addEventListener("click", function () { if (!paying) show("scrMenu"); });
+  $("btnHelpHome").addEventListener("click", resetAll);
+  $("gear").addEventListener("click", function () {
+    var st = reader ? (t("readerOk") + " · " + (reader.label || reader.serial_number || "")) : t("noReader");
+    alert("ACE Kiosk · build " + window.__BUILD__ + "\n" + st + "\nBếp ACE: https://tastyexpress-ca.github.io/tuyen-giao/bep/");
+  });
+
+  setLang("vi");
+  renderAll();
+})();
+</script>
+</body>
+</html>
