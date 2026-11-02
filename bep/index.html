@@ -511,6 +511,9 @@
                "combo" instead. */
             if (String(it.name || "").toLowerCase().indexOf("combo") !== -1) c += q * 11;
             else if (Number(it.price) === 2) c += q * (11 / 18);
+            /* Kiosk cups are $3.50 (in-store price) — same $11/18 cost
+               per cup, otherwise kiosk profit is overstated (2026-11-02). */
+            else if (Number(it.price) === 3.5) c += q * (11 / 18);
           });
           return c;
         }
@@ -957,7 +960,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261101-2320";
+window.__BUILD__ = "20261102-1250";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
