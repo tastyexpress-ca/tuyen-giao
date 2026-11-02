@@ -121,6 +121,7 @@
       .menu-card .tt b .n{display:inline-block;min-width:22px;text-align:center;padding:1px 7px;border-radius:999px;background:var(--green);color:#fff;font-size:12.5px;font-weight:800;margin-left:6px;vertical-align:3px}
       .day-card{display:block;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:19px;margin-bottom:13px;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif}
       .day-card.latest{background:#e9f9ee;border-color:#57b06b}
+      .day-card.done{opacity:.55}
       .day-card .dc-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
       .day-card .dc-title{font-size:23px;font-weight:800;color:var(--ink)}
       .day-card .dc-pill{font:800 11px "Be Vietnam Pro",sans-serif;letter-spacing:.5px;background:#fff;color:var(--green);border:1.5px solid #9cc7a8;padding:5px 10px;border-radius:999px;white-space:nowrap}
@@ -474,9 +475,15 @@
             byDay[d].push(o);
           });
           dayList.sort();
-          // Visible days for this category (past days only while unfinished)
-          var visible = dayList.filter(function (d) {
-            return d >= today || byDay[d].some(function (o) { return status(o) !== "done"; });
+          // Visible days for this category: days whose orders are all done
+          // stay visible too — dimmed, sunk to the bottom of the list
+          // (Chris 2026-11-01: "cho nó mờ và chạy xuống dưới", never vanish).
+          var visible = dayList.slice();
+          visible.sort(function (a, b) {
+            var ao = byDay[a].some(function (o) { return status(o) !== "done"; }) ? 0 : 1;
+            var bo = byDay[b].some(function (o) { return status(o) !== "done"; }) ? 0 : 1;
+            if (ao !== bo) return ao - bo;
+            return a < b ? 1 : a > b ? -1 : 0;
           });
           if (openDay && visible.indexOf(openDay) === -1) openDay = null;
           var catTitle = curTab === "delivery" ? "Đơn Giao" : curTab === "ship" ? "Ship" : "Pick Up";
@@ -491,7 +498,7 @@
             var recv = list.filter(function (o) { return status(o) === "in_kitchen" || status(o) === "done"; }).length;
             var done = list.filter(function (o) { return status(o) === "done"; }).length;
             var label = (list[0].weekday_label || "") + " · " + fmtDM(d);
-            listHtml += '<button type="button" class="day-card' + (idx === 0 ? " latest" : "") + '" data-day="' + esc(d) + '">' +
+            listHtml += '<button type="button" class="day-card' + (idx === 0 ? " latest" : "") + (open.length ? "" : " done") + '" data-day="' + esc(d) + '">' +
               '<span class="dc-top"><span class="dc-title">' + esc(label) + "</span>" + (idx === 0 ? '<span class="dc-pill">GẦN NHẤT</span>' : "") + "</span>" +
               '<span class="dc-meta">🍦 ' + list.length + " đơn · " + open.length + " chưa xong</span>" +
               '<span class="dc-prog">Đã nhận ' + recv + "/" + list.length + " · Đã xong " + done + "/" + list.length + "</span>" +
@@ -837,7 +844,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261101-1124";
+window.__BUILD__ = "20261101-1752";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
