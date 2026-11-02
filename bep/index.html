@@ -98,7 +98,7 @@
       .k-actions.big button{min-height:58px;font-size:16px;font-weight:900;border-width:2.5px;letter-spacing:.02em}
       .k-actions.big button[data-toggle="recv"]:not(.on){border-color:var(--accent);color:var(--accent)}
       .k-actions.big button[data-toggle="done"]:not(.on){border-color:var(--ink);color:var(--ink)}
-      /* Nút TRẢ CASH — chỉ hiện khi đơn chưa trả (Chris 2026-10-29) */
+      /* Nút TRẢ CASH — nút gạt: chưa trả hiện TRẢ CASH, đã trả cash ở lại hiện ĐÃ TRẢ CASH, bấm lại để hoàn tác (Chris 2026-11-01) */
       .k-actions.big button[data-cash]{border-color:var(--paid-ink);color:var(--paid-ink)}
       .k-actions.big.has-cash button{font-size:14.5px;padding-left:4px;padding-right:4px}
       /* Cả 5 nút của thẻ gộp 1 hàng (Chris 2026-10-30): Chỉ đường · ĐÃ NHẬN · ĐÃ GIAO/XONG · TRẢ CASH · IN HOÁ ĐƠN */
@@ -389,8 +389,14 @@
             .catch(function () { if (btn) btn.disabled = false; alert("Cập nhật chưa được — thử lại nhé."); });
         }
         function patchPaid(id, btn) {
+          // Nút TRẢ CASH là nút gạt (Chris 2026-11-01): bấm lần 1 = đã trả cash,
+          // nút Ở LẠI hiện "ĐÃ TRẢ CASH"; bấm lại = hoàn tác về chưa trả.
           if (btn) btn.disabled = true;
-          api("/rest/v1/web_orders?id=eq." + id, { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify({ paid: true, payment_method: "cash" }) })
+          var o = null;
+          orders.forEach(function (x) { if (String(x.id) === String(id)) o = x; });
+          var isCashPaid = o && o.paid === true && String(o.payment_method || "").toLowerCase() === "cash";
+          var body = isCashPaid ? { paid: false, payment_method: null } : { paid: true, payment_method: "cash" };
+          api("/rest/v1/web_orders?id=eq." + id, { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify(body) })
             .then(function () { loadOrders(); })
             .catch(function () { if (btn) btn.disabled = false; alert("Cập nhật chưa được — thử lại nhé."); });
         }
@@ -433,6 +439,7 @@
           html += '<button type="button" data-toggle="recv" data-id="' + o.id + '" class="' + (isRecv ? "on" : "") + '"><span class="ai">' + (isRecv ? "✅" : "☐") + '</span><span>ĐÃ NHẬN</span></button>';
           html += '<button type="button" data-toggle="done" data-id="' + o.id + '" class="' + (isDone ? "on" : "") + '"><span class="ai">' + (isDone ? "✅" : "☐") + '</span><span>' + doneLabel + '</span></button>';
           if (!paid) html += '<button type="button" data-cash="' + o.id + '"><span class="ai">💵</span><span>TRẢ CASH</span></button>';
+          else if (String(o.payment_method || "").toLowerCase() === "cash") html += '<button type="button" data-cash="' + o.id + '" class="on"><span class="ai">✅</span><span>ĐÃ TRẢ CASH</span></button>';
           html += '<button type="button" data-print="' + o.id + '"><span class="ai">🧾</span><span>IN HOÁ ĐƠN</span></button>';
           html += "</div>";
           html += "</article>";
@@ -844,7 +851,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261101-1752";
+window.__BUILD__ = "20261101-1803";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
