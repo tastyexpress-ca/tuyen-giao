@@ -2929,6 +2929,15 @@
             webOrdersByDay = {};
             if (Array.isArray(res[5])) {
               res[5].forEach(function (o) {
+                /* UNPAID online orders never enter the system (Chris
+                   2026-11-01, repeated three times that night): the
+                   ordering app saves the row BEFORE payment, so an
+                   abandoned checkout sits in web_orders with
+                   paid=false. It must not appear ANYWHERE — not in
+                   Đơn online, not in Shipping, not in any total. The
+                   row stays in the database so a completed payment
+                   flips it visible automatically. */
+                if (o.paid !== true) return;
                 if (!webOrdersByDay[o.day]) webOrdersByDay[o.day] = [];
                 webOrdersByDay[o.day].push(o);
               });
@@ -7356,7 +7365,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261101-2230";
+window.__BUILD__ = "20261101-2320";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
