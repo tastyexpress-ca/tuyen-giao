@@ -123,6 +123,11 @@
       .profit-card .pf-t{font-size:13px;font-weight:800;letter-spacing:.08em;color:#f3d9a4}
       .profit-card .pf-v{font-size:34px;font-weight:800;color:#fff;margin:4px 0 2px}
       .profit-card .pf-s{font-size:13px;color:#e8cdb2;font-weight:500}
+      .pf-row{background:#fff;border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px 16px;margin-bottom:11px}
+      .pf-row-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+      .pf-row-top b{font-size:17px;color:var(--ink)}
+      .pf-row-v{font-size:20px;font-weight:800;color:var(--green)}
+      .pf-row-s{font-size:13px;color:var(--muted);font-weight:500;margin-top:3px}
       .day-card{display:block;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:19px;margin-bottom:13px;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif}
       .day-card.latest{background:#e9f9ee;border-color:#57b06b}
       .day-card.done{opacity:.55}
@@ -195,6 +200,11 @@
           <div class="pf-v" id="profitVal">$0.00</div>
           <div class="pf-s" id="profitSub"></div>
         </div>
+        <button class="menu-card" id="profitDaysBtn" type="button" hidden>
+          <span class="ic">📅</span>
+          <span class="tt"><b>Xem lời theo ngày</b><span>Tổng lời từng ngày</span></span>
+          <span class="arrow">➜</span>
+        </button>
         <button class="menu-card" id="cardDelivery" type="button">
           <span class="ic">🚗</span>
           <span class="tt"><b>Đơn Giao<span class="n" id="homeDeliveryN" hidden>0</span></b><span>Tuyến giao theo ngày</span></span>
@@ -238,6 +248,24 @@
           <div id="days"></div>
         </div>
         <div class="foot">Đơn trên trang này là đơn đặt qua app/web của tiệm bạn.</div>
+      </main>
+    </div>
+
+    <!-- PROFIT BY DAY (ACE only, Chris 2026-11-01) -->
+    <div id="profitView" hidden>
+      <header>
+        <div class="row">
+          <h1><small id="hdrShopProfit">NHÀ BẾP · ĐỐI TÁC</small>Lời theo ngày</h1>
+        </div>
+        <div class="btnrow">
+          <button class="hbtn" id="profitHomeBtn" type="button">← Trang chủ</button>
+          <button class="hbtn" id="profitRefreshBtn" type="button">🔄 Làm mới</button>
+        </div>
+        <div class="sub" id="profitTotalLine">Đang tải…</div>
+      </header>
+      <main>
+        <div id="profitDays"></div>
+        <div class="foot">Chỉ tính đơn đã thanh toán. Lời = doanh thu − vốn (combo 18 ly vốn $11/thùng, ly lẻ vốn $11/18 ly).</div>
       </main>
     </div>
 
@@ -322,6 +350,7 @@
           $("boardView").hidden = which !== "board";
           $("noticeView").hidden = which !== "notice";
           $("homeView").hidden = which !== "home";
+          $("profitView").hidden = which !== "profit";
         }
         function openBoard(tab) {
           curTab = tab;
@@ -383,6 +412,9 @@
         $("cardPickup").addEventListener("click", function () { openBoard("pickup"); });
         $("cardShip").addEventListener("click", function () { openBoard("ship"); });
         $("cardShare").addEventListener("click", shareApp);
+        $("profitDaysBtn").addEventListener("click", function () { renderProfitDays(); show("profit"); window.scrollTo(0, 0); });
+        $("profitHomeBtn").addEventListener("click", function () { show("home"); });
+        $("profitRefreshBtn").addEventListener("click", function () { loadOrders().then(function () { renderProfitDays(); }); });
 
         /* ---------- board ---------- */
         function loadOrders() {
@@ -454,27 +486,53 @@
           html += "</article>";
           return html;
         }
-        // Tổng lời hôm nay (Chris 2026-11-01): chỉ ACE CREAMERY — vốn 1 thùng
+        // Tổng lời (Chris 2026-11-01): chỉ ACE CREAMERY — vốn 1 thùng
         // Combo 18 ly = $11, ly lẻ vốn $11/18 ly. Lời = doanh thu (subtotal,
-        // chưa gồm thuế + phí giao) của đơn HÔM NAY đã thanh toán − vốn.
+        // chưa gồm thuế + phí giao) của đơn đã thanh toán − vốn.
+        function orderCost(o) {
+          var c = 0;
+          parseItems(o).forEach(function (it) {
+            var q = Number(it.qty) || 0;
+            if (String(it.name || "") === "Combo 18 ly") c += q * 11;
+            else if (Number(it.price) === 2) c += q * (11 / 18);
+          });
+          return c;
+        }
         function renderProfit() {
           var card = $("profitCard");
           if (!card) return;
-          if (SLUG !== "ace-creamery") { card.hidden = true; return; }
+          if (SLUG !== "ace-creamery") { card.hidden = true; $("profitDaysBtn").hidden = true; return; }
           var today = todayStr(), rev = 0, cost = 0, n = 0;
           orders.forEach(function (o) {
             if (o.day !== today || o.paid !== true || status(o) === "cancelled") return;
-            var c = 0;
-            parseItems(o).forEach(function (it) {
-              var q = Number(it.qty) || 0;
-              if (String(it.name || "") === "Combo 18 ly") c += q * 11;
-              else if (Number(it.price) === 2) c += q * (11 / 18);
-            });
-            rev += Number(o.subtotal) || 0; cost += c; n++;
+            rev += Number(o.subtotal) || 0; cost += orderCost(o); n++;
           });
           card.hidden = false;
+          $("profitDaysBtn").hidden = false;
           $("profitVal").textContent = money(rev - cost);
           $("profitSub").textContent = "Doanh thu " + money(rev) + " · Vốn " + money(cost) + " · " + n + " đơn đã trả hôm nay";
+        }
+        // Nút "Xem lời theo ngày" (Chris 2026-11-01): tổng lời từng ngày,
+        // ngày mới nhất trên cùng, kèm tổng cộng ở đầu trang.
+        function renderProfitDays() {
+          var byDay = {}, days = [];
+          orders.forEach(function (o) {
+            if (o.paid !== true || status(o) === "cancelled" || !o.day) return;
+            if (!byDay[o.day]) { byDay[o.day] = { rev: 0, cost: 0, n: 0 }; days.push(o.day); }
+            byDay[o.day].rev += Number(o.subtotal) || 0;
+            byDay[o.day].cost += orderCost(o);
+            byDay[o.day].n++;
+          });
+          days.sort(); days.reverse();
+          var totP = 0;
+          var html = days.map(function (d) {
+            var a = byDay[d], p = a.rev - a.cost; totP += p;
+            var wd = ["Chủ Nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"][new Date(d + "T12:00:00").getDay()];
+            return '<div class="pf-row"><div class="pf-row-top"><b>' + esc(wd + " · " + fmtDM(d)) + '</b><span class="pf-row-v">' + money(p) + '</span></div><div class="pf-row-s">Doanh thu ' + money(a.rev) + " · Vốn " + money(a.cost) + " · " + a.n + " đơn đã trả</div></div>";
+          }).join("");
+          $("profitDays").innerHTML = html || '<div class="empty">Chưa có đơn đã thanh toán nào.</div>';
+          $("profitTotalLine").textContent = "Tổng lời tất cả các ngày: " + money(totP);
+          if (SHOP_NAME) $("hdrShopProfit").textContent = SHOP_NAME.toUpperCase();
         }
         function rank(o) { var s = status(o); return s === "new" ? 0 : s === "in_kitchen" ? 1 : s === "done" ? 3 : 2; }
         // Icon badge (Chris 2026-10-28): the home-screen icon shows the
@@ -883,7 +941,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261101-1938";
+window.__BUILD__ = "20261101-2145";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
