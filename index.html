@@ -3471,8 +3471,10 @@
         /* Full-route directions URL for one day's stops (already in seq
            order from the Supabase fetch): origin is the shop, destination
            is the LAST stop, and every earlier stop becomes a waypoint.
-           With 1–2 stops there are no waypoints — the destination alone
-           carries the route. Addresses are URL-encoded Google-Maps style
+           With 1 stop there are no waypoints; with 2+ stops every stop
+           before the last MUST be a waypoint, or Maps drops it (bug
+           found by Chris 2026-11-01: a 2-stop day showed only 1 stop).
+           Addresses are URL-encoded Google-Maps style
            (spaces as "+", commas kept readable). */
         var ROUTE_ORIGIN = "14131 Roxanne Dr, Westminster, CA 92683";
         function mapsEncode(s) {
@@ -3484,7 +3486,7 @@
           if (!addrs.length) return null;
           var url = "https://www.google.com/maps/dir/?api=1&origin=" + mapsEncode(ROUTE_ORIGIN);
           url += "&destination=" + mapsEncode(addrs[addrs.length - 1]);
-          if (addrs.length > 2) {
+          if (addrs.length > 1) {
             url += "&waypoints=" + addrs.slice(0, addrs.length - 1).map(mapsEncode).join("|");
           }
           url += "&travelmode=driving";
@@ -7347,7 +7349,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261101-2145";
+window.__BUILD__ = "20261101-2215";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
