@@ -119,6 +119,10 @@
       .menu-card .tt span{display:block;font-size:14.5px;color:var(--muted);margin-top:3px;font-weight:500}
       .menu-card .arrow{font-size:22px;color:var(--accent);font-weight:800}
       .menu-card .tt b .n{display:inline-block;min-width:22px;text-align:center;padding:1px 7px;border-radius:999px;background:var(--green);color:#fff;font-size:12.5px;font-weight:800;margin-left:6px;vertical-align:3px}
+      .profit-card{background:#54301a;border-radius:22px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px;text-align:center}
+      .profit-card .pf-t{font-size:13px;font-weight:800;letter-spacing:.08em;color:#f3d9a4}
+      .profit-card .pf-v{font-size:34px;font-weight:800;color:#fff;margin:4px 0 2px}
+      .profit-card .pf-s{font-size:13px;color:#e8cdb2;font-weight:500}
       .day-card{display:block;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:19px;margin-bottom:13px;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif}
       .day-card.latest{background:#e9f9ee;border-color:#57b06b}
       .day-card.done{opacity:.55}
@@ -186,6 +190,11 @@
         <div class="sub">Chọn mục cần xem bên dưới</div>
       </header>
       <main>
+        <div class="profit-card" id="profitCard" hidden>
+          <div class="pf-t">💰 TỔNG LỜI HÔM NAY</div>
+          <div class="pf-v" id="profitVal">$0.00</div>
+          <div class="pf-s" id="profitSub"></div>
+        </div>
         <button class="menu-card" id="cardDelivery" type="button">
           <span class="ic">🚗</span>
           <span class="tt"><b>Đơn Giao<span class="n" id="homeDeliveryN" hidden>0</span></b><span>Tuyến giao theo ngày</span></span>
@@ -445,6 +454,28 @@
           html += "</article>";
           return html;
         }
+        // Tổng lời hôm nay (Chris 2026-11-01): chỉ ACE CREAMERY — vốn 1 thùng
+        // Combo 18 ly = $11, ly lẻ vốn $11/18 ly. Lời = doanh thu (subtotal,
+        // chưa gồm thuế + phí giao) của đơn HÔM NAY đã thanh toán − vốn.
+        function renderProfit() {
+          var card = $("profitCard");
+          if (!card) return;
+          if (SLUG !== "ace-creamery") { card.hidden = true; return; }
+          var today = todayStr(), rev = 0, cost = 0, n = 0;
+          orders.forEach(function (o) {
+            if (o.day !== today || o.paid !== true || status(o) === "cancelled") return;
+            var c = 0;
+            parseItems(o).forEach(function (it) {
+              var q = Number(it.qty) || 0;
+              if (String(it.name || "") === "Combo 18 ly") c += q * 11;
+              else if (Number(it.price) === 2) c += q * (11 / 18);
+            });
+            rev += Number(o.subtotal) || 0; cost += c; n++;
+          });
+          card.hidden = false;
+          $("profitVal").textContent = money(rev - cost);
+          $("profitSub").textContent = "Doanh thu " + money(rev) + " · Vốn " + money(cost) + " · " + n + " đơn đã trả hôm nay";
+        }
         function rank(o) { var s = status(o); return s === "new" ? 0 : s === "in_kitchen" ? 1 : s === "done" ? 3 : 2; }
         // Icon badge (Chris 2026-10-28): the home-screen icon shows the
         // number of unfinished orders, like native apps. Needs the app
@@ -472,6 +503,7 @@
           $("homePickupN").hidden = !counts.pickup;
           $("homeShipN").textContent = counts.ship;
           $("homeShipN").hidden = !counts.ship;
+          renderProfit();
           var byDay = {}, dayList = [];
           orders.forEach(function (o) {
             if (status(o) === "cancelled") return;
@@ -851,7 +883,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261101-1826";
+window.__BUILD__ = "20261101-1938";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
