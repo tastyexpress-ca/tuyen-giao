@@ -3865,11 +3865,15 @@
         /* $12-class dish for per-portion profit: the dish name
            (lowercased, parenthetical already stripped by
            kitchenDishName) mentioning one of these earns $4 profit
-           per portion instead of the flat $2. */
+           per portion instead of the flat $2. "giò heo" covers nui
+           giò heo ($12 — it matched NO keyword before, so Sharan's
+           2026-11-03 order counted it $2 short; Chris's formula:
+           nui giò heo sells $12 like bánh canh / riêu / hải sản). */
         function isPremiumDish(name) {
           var n = String(name || "").toLowerCase();
           return n.indexOf("bánh canh") !== -1 || n.indexOf("riêu") !== -1 ||
-            n.indexOf("bún bò") !== -1 || n.indexOf("hải sản") !== -1;
+            n.indexOf("bún bò") !== -1 || n.indexOf("hải sản") !== -1 ||
+            n.indexOf("giò heo") !== -1;
         }
         /* Who the customer paid, from the order note (case-insensitive):
            "trả tiệm" → the SHOP; "zelle" / "venmo" / "cho anh" /
@@ -4223,7 +4227,8 @@
              driver stop's money line (which carries the order TOTAL)
              minus the food subtotal at selling prices is the fee
              (a web-paid stop total — money text mentions "wix" or
-             "web" — is unwound ÷ 1.0875 tax first;
+             "web", or "qua app" for app-paid stops — is unwound
+             ÷ 1.0875 tax first;
              see chrisDriverFee) — shown on the line as "+ ship $F".
              BẾP GIAO fees belong to the shop and are NEVER counted
              here; PICK UP orders have no shipping.
@@ -4284,7 +4289,10 @@
            web-paid stop the total includes tax, so it is unwound
            first (÷ 1.0875); a stop counts as web-paid when its
            money text mentions "wix" OR "web" (the live data says
-           "Đã trả qua Wix $…"). Clamped at ≥ 0, rounded to cents;
+           "Đã trả qua Wix $…"), and an app-paid stop ("Đã trả qua
+           app $…") unwinds the same way — its total is likewise
+           tax-inclusive (Amy Le #48, 2026-11-03: without the
+           unwind her $3 fee read as $6.33). Clamped at ≥ 0, rounded to cents;
            no matching stop or no parseable total → 0. */
         function chrisDriverFee(dayStr, order, sell) {
           var want = chrisNormLabel(order.label || order.name || "");
@@ -4296,7 +4304,8 @@
             if (!total) return 0;
             var base = total;
             var moneyLc = String(stops[i].money || "").toLowerCase();
-            if (moneyLc.indexOf("wix") !== -1 || moneyLc.indexOf("web") !== -1) {
+            if (moneyLc.indexOf("wix") !== -1 || moneyLc.indexOf("web") !== -1 ||
+                moneyLc.indexOf("qua app") !== -1) {
               base = total / 1.0875;
             }
             var fee = Math.round((base - sell) * 100) / 100;
@@ -7386,7 +7395,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261103-1301";
+window.__BUILD__ = "20261103-1555";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
