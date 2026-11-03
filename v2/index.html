@@ -3836,7 +3836,14 @@
             var unitPrice = parseFloat(priceM[1].replace(",", "."));
             return { type: "monle", money: qty * unitPrice, unit: unitPrice };
           }
-          if (name.toLowerCase().indexOf("kem") !== -1) {
+          /* Kem lines are excluded from every money view. Besides
+             the word "kem", a line naming a "combo" is also kem:
+             kem orders Chris directs onto this kitchen are written
+             as "Combo … ly" lines with no "kem" in them, and those
+             were parsed as food portions (Diệp Ngọc, Chris
+             2026-11-03: "Em bỏ diep ngoc ra"). */
+          var nameLc = name.toLowerCase();
+          if (nameLc.indexOf("kem") !== -1 || nameLc.indexOf("combo") !== -1) {
             return { type: "kem" };
           }
           return { type: "food", qty: qty, name: kitchenDishName(name) };
@@ -7365,7 +7372,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261103-1145";
+window.__BUILD__ = "20261103-1158";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
