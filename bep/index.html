@@ -195,11 +195,6 @@
         <div class="sub">Chọn mục cần xem bên dưới</div>
       </header>
       <main>
-        <div class="profit-card" id="profitCard" hidden>
-          <div class="pf-t">💰 TỔNG LỜI HÔM NAY</div>
-          <div class="pf-v" id="profitVal">$0.00</div>
-          <div class="pf-s" id="profitSub"></div>
-        </div>
         <button class="menu-card" id="profitDaysBtn" type="button" hidden>
           <span class="ic">📅</span>
           <span class="tt"><b>Xem lời theo ngày</b><span>Tổng lời từng ngày</span></span>
@@ -518,18 +513,10 @@
           return c;
         }
         function renderProfit() {
-          var card = $("profitCard");
-          if (!card) return;
-          if (SLUG !== "ace-creamery") { card.hidden = true; $("profitDaysBtn").hidden = true; return; }
-          var today = todayStr(), rev = 0, cost = 0, n = 0;
-          orders.forEach(function (o) {
-            if (o.day !== today || o.paid !== true || status(o) === "cancelled") return;
-            rev += Number(o.subtotal) || 0; cost += orderCost(o); n++;
-          });
-          card.hidden = false;
+          // Thẻ "TỔNG LỜI HÔM NAY" đã bỏ theo yêu cầu của Chris (2026-11-03);
+          // ở đây chỉ còn lo nút "Xem lời theo ngày" cho ACE.
+          if (SLUG !== "ace-creamery") { $("profitDaysBtn").hidden = true; return; }
           $("profitDaysBtn").hidden = false;
-          $("profitVal").textContent = money(rev - cost);
-          $("profitSub").textContent = "Doanh thu " + money(rev) + " · Vốn " + money(cost) + " · " + n + " đơn đã trả hôm nay";
         }
         // Nút "Xem lời theo ngày" (Chris 2026-11-01): tổng lời từng ngày,
         // ngày mới nhất trên cùng, kèm tổng cộng ở đầu trang.
@@ -960,7 +947,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261102-1250";
+window.__BUILD__ = "20261103-1145";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
