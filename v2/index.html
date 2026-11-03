@@ -260,6 +260,20 @@
         margin-bottom: 5px;
       }
       .back-btn:active { background: rgba(255, 247, 236, 0.28); }
+      /* Back button sitting in the LIGHT content area (e.g. the
+         kitchen group-open view): the header styling above is
+         cream-on-translucent and disappears on the cream
+         background — Chris could not see it (2026-11-03). Solid
+         dark pill instead, big enough to tap. */
+      .back-btn.on-light {
+        background: #54301a;
+        color: #fff7ec;
+        border-color: #54301a;
+        padding: 10px 18px;
+        font-size: 15px;
+        border-radius: 12px;
+        margin: 2px 0 10px;
+      }
 
       /* ---------- Login ---------- */
       .login-wrap { padding: 22px 14px 30px; }
@@ -5946,7 +5960,7 @@
             });
             kitchenGroups.appendChild(navList);
           } else {
-            var grpBackBtn = el("button", "back-btn", "← Tất cả nhóm");
+            var grpBackBtn = el("button", "back-btn on-light", "← Quay lại");
             grpBackBtn.type = "button";
             grpBackBtn.addEventListener("click", function () {
               currentKitchenGroup = null;
@@ -7372,7 +7386,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261103-1158";
+window.__BUILD__ = "20261103-1301";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
