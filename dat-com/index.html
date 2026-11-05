@@ -597,7 +597,7 @@
                   <input type="text" id="inShipAddress" autocomplete="street-address" placeholder="Số nhà, đường, thành phố, bang, ZIP" />
                   <div class="err">Vui lòng nhập địa chỉ nhận hàng.</div>
                 </div>
-                <div class="fee-note">🚚 Ship toàn CA, NV &amp; AZ — phí ship chỉ <b>$14.99/package</b> — 1 package lên đến 12 phần! Hôm nay order trước 8PM — ngày mai bếp chuẩn bị — ngày mốt nhận hàng trước 5PM.</div>
+                <div class="fee-note" id="shipFeeNote">🍳 Đơn này bếp chuẩn bị vào ngày mai — bạn sẽ nhận được vào ngày mốt trước 5PM</div>
               </div>
 
               <div class="field">
@@ -1304,6 +1304,8 @@
         var box = $("shipMain");
         if (!box) return;
         var day = shipDay();
+        var sfn = $("shipFeeNote");
+        if (sfn) sfn.innerHTML = "🍳 Đơn này bếp chuẩn bị vào <b>" + day.wd + " " + day.dm + "</b> — bạn sẽ nhận được vào <b>" + plusDayLabel(day.date, 1) + "</b> trước 5PM";
         var n = cartCount();
         var html = '<section class="menu-section"><div class="sec-head"><h2>📦 MENU SHIP ĐI XA</h2><div class="rule"></div></div>' +
           '<p class="sec-sub">🍳 Đơn này bếp chuẩn bị vào <b>' + day.wd + ' ' + day.dm + '</b> — bạn sẽ nhận được vào <b>' + plusDayLabel(day.date, 1) + '</b> trước 5PM</p>' +
@@ -2569,7 +2571,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261104-2212";
+window.__BUILD__ = "20261104-2200";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
