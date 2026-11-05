@@ -922,6 +922,13 @@
         var ms = String(t.getUTCMonth() + 1).padStart(2, "0"), ds = String(t.getUTCDate()).padStart(2, "0");
         return { date: t.getUTCFullYear() + "-" + ms + "-" + ds, wd: wdNames[t.getUTCDay()], dm: t.getUTCDate() + "/" + (t.getUTCMonth() + 1) };
       }
+      /* Nhãn ngày cộng thêm N ngày, dạng "Thứ 5 6/11" — dùng báo ngày nhận hàng cho đơn ship */
+      function plusDayLabel(dateStr, addDays) {
+        var p = dayParts(dateStr);
+        var t = new Date(Date.UTC(p.y, p.mo - 1, p.d + addDays));
+        var wdNames = ["Chủ Nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+        return wdNames[t.getUTCDay()] + " " + t.getUTCDate() + "/" + (t.getUTCMonth() + 1);
+      }
       var feeStatus = "idle"; // idle | loading | ok | unknown
       var deliveryFee = null; // số tiền phí khi feeStatus === "ok"
       var feeTimer = null, feeSeq = 0;
@@ -1741,7 +1748,7 @@
         html += '<div class="s-meta"><b>' + esc(order.customer_name) + '</b> · ' + esc(order.phone) + '</div>';
         html += '<div class="s-meta">Ngày: <b>' + esc(order.weekday_label) + '</b></div>';
         if (order.method === "ship") {
-          html += '<div class="s-meta">Ship đi xa: ' + esc(order.address) + '<br />Phí ship: ' + money(SHIP_FEE) + ' (đã gồm trong tổng) · Order trước 8PM hôm nay — bếp chuẩn bị ngày mai — nhận hàng ngày mốt trước 5PM</div>';
+          html += '<div class="s-meta">Ship đi xa: ' + esc(order.address) + '<br />Phí ship: ' + money(SHIP_FEE) + ' (đã gồm trong tổng)<br />📦 Bếp chuẩn bị: ' + plusDayLabel(order.day, 0) + ' · <b>Bạn nhận hàng: ' + plusDayLabel(order.day, 1) + ' — trước 5PM</b></div>';
         } else if (order.method === "pickup") {
           html += '<div class="s-meta">Pick up: 14131 Roxanne Dr, Westminster, CA 92683 (8am–8pm)' +
             (order.pickup_time ? '<br />Giờ lấy: ' + esc(order.pickup_time) : "") + '</div>';
@@ -2541,7 +2548,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261104-2012";
+window.__BUILD__ = "20261104-2022";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
