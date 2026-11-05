@@ -233,6 +233,7 @@
       .ship-size > span { font-size: .82rem; font-weight: 700; white-space: nowrap; }
       .ship-count { display: inline-block; padding: 6px 12px; border-radius: 999px; background: #f6ead9; border: 1px solid #d8c3a5; font-weight: 800; font-size: .9rem; }
       .ship-count.full { background: #fdf3e7; border-color: #b3541e; color: #7a3a12; }
+      body.ship-only #segPickup, body.ship-only #segDelivery { display: none; }
       .add-btn {
         border: 1.5px solid var(--brown); background: var(--surface);
         color: var(--brown-dark); font-weight: 700; font-size: 13px;
@@ -561,7 +562,7 @@
                 <div class="seg" role="radiogroup" aria-label="Hình thức nhận món">
                   <button type="button" id="segPickup" class="active">Pick up</button>
                   <button type="button" id="segDelivery">Giao hàng</button>
-                  <button type="button" id="segShip">Ship đi xa</button>
+                  <button type="button" id="segShip">Ship</button>
                 </div>
               </div>
 
@@ -889,6 +890,25 @@
       function shipSinglePrice(name) {
         for (var i = 0; i < SHIP_SINGLES.length; i++) if (SHIP_SINGLES[i].name === name) return SHIP_SINGLES[i].price;
         return null;
+      }
+      /* Ảnh minh họa cho món ship (tên món ship khác tên menu tuần nên map riêng;
+         món nào trùng tên thì dùng chung DISH_IMG) */
+      var SHIP_IMG = {
+        "Thịt ba rọi kho quẹt": "kho-quet-rau-luoc",
+        "Thịt ba rọi mắm ruốc": "thit-ba-roi-kho-mam-ruoc",
+        "Cá kho tộ (cá ba sa)": "ca-kho-to",
+        "Tôm rim ba rọi": "tom-rim-thit-ba-roi",
+        "Cánh gà chiên sốt mắm tỏi": "ga-chien-nuoc-mam",
+        "Đùi gà chiên sốt mắm tỏi": "ga-chien-nuoc-mam",
+        "Đùi gà chiên nước mắm": "ga-chien-nuoc-mam",
+        "Canh chua": "canh-chua-tom",
+        "Canh gà nấu lá giang": "canh-ga-la-giang",
+        "Cơm chiên dương châu": "com-chien-duong-chau"
+      };
+      function shipImg(name, cls) {
+        var f = SHIP_IMG[name] || DISH_IMG[name];
+        if (!f) return "";
+        return '<img class="' + cls + '" src="assets/img/' + f + '.jpg?v=4" alt="' + esc(name) + '" loading="lazy" />';
       }
       var feeStatus = "idle"; // idle | loading | ok | unknown
       var deliveryFee = null; // số tiền phí khi feeStatus === "ok"
@@ -1253,7 +1273,7 @@
       function shipRow(day, dishName, tagLabel) {
         var smallKey = keyOf(day.date, dishName, "Nhỏ · Ship");
         var bigKey = keyOf(day.date, dishName, "Lớn · Ship");
-        return '<div class="dish">' + dishImg(dishName, "d-img") + '<div class="d-info"><div class="d-name">' + esc(dishName) +
+        return '<div class="dish">' + shipImg(dishName, "d-img") + '<div class="d-info"><div class="d-name">' + esc(dishName) +
           '<span class="tag">' + tagLabel + '</span></div></div>' +
           '<div class="ship-sizes">' +
           '<div class="ship-size"><span>Nhỏ $5.5</span>' + stepperHTML(smallKey) + '</div>' +
@@ -1279,7 +1299,7 @@
         html += '<div class="sec-head"><h2>CƠM CHIÊN · NUI · MÌ</h2><div class="rule"></div></div><div class="dish-list">';
         SHIP_SINGLES.forEach(function (it) {
           var key = keyOf(day.date, it.name, "Ship");
-          html += '<div class="dish">' + dishImg(it.name, "d-img") + '<div class="d-info"><div class="d-name">' + esc(it.name) + '</div></div>' +
+          html += '<div class="dish">' + shipImg(it.name, "d-img") + '<div class="d-info"><div class="d-name">' + esc(it.name) + '</div></div>' +
             '<span class="d-price">' + money(it.price) + '</span>' + stepperHTML(key) + '</div>';
         });
         html += '</div></section>';
@@ -2478,7 +2498,7 @@
       renderDayChips();
       renderMenu();
       refreshCartUI();
-      if (/[?&]ship=1(&|$)/.test(window.location.search)) setMethod("ship");
+      if (/[?&]ship=1(&|$)/.test(window.location.search)) { document.body.classList.add("ship-only"); setMethod("ship"); }
       loadExtraProducts();
       handlePaidReturn();
     </script>
@@ -2508,7 +2528,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261104-1925";
+window.__BUILD__ = "20261104-1935";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
