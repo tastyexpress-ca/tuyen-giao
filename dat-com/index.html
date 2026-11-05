@@ -228,6 +228,11 @@
       .stepper .qv.zero { color: var(--ink-soft); font-weight: 600; }
 
       .add-pair { display: flex; gap: 6px; flex: none; }
+      .ship-sizes { display: flex; flex-direction: column; gap: 6px; flex: none; }
+      .ship-size { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .ship-size > span { font-size: .82rem; font-weight: 700; white-space: nowrap; }
+      .ship-count { display: inline-block; padding: 6px 12px; border-radius: 999px; background: #f6ead9; border: 1px solid #d8c3a5; font-weight: 800; font-size: .9rem; }
+      .ship-count.full { background: #fdf3e7; border-color: #b3541e; color: #7a3a12; }
       .add-btn {
         border: 1.5px solid var(--brown); background: var(--surface);
         color: var(--brown-dark); font-weight: 700; font-size: 13px;
@@ -480,6 +485,7 @@
         </div>
       </div>
       <main class="wrap" id="menuMain"></main>
+      <main class="wrap" id="shipMain" hidden></main>
       <p class="foot-note wrap">Tasty Express · Pick up: 14131 Roxanne Dr, Westminster, CA 92683 (8am–8pm) · Giao hàng 2 ca: Sáng 9–11am · Tối 7–9pm</p>
     </div>
 
@@ -590,7 +596,7 @@
                   <input type="text" id="inShipAddress" autocomplete="street-address" placeholder="Số nhà, đường, thành phố, bang, ZIP" />
                   <div class="err">Vui lòng nhập địa chỉ nhận hàng.</div>
                 </div>
-                <div class="fee-note">🚚 Ship toàn CA, NV &amp; AZ — phí ship cố định <b>$18.49/đơn</b>. Đặt trước 2PM hôm nay, nhận hàng trước 5PM ngày mai.</div>
+                <div class="fee-note">🚚 Ship toàn CA, NV &amp; AZ — phí ship <b>$14.99/package</b> (1 package chứa tối đa 12 phần). Hôm nay order trước 8PM — ngày mai bếp chuẩn bị — ngày mốt nhận hàng trước 5PM.</div>
               </div>
 
               <div class="field">
@@ -863,7 +869,27 @@
 
       /* Phí giao hàng — $1/dặm lái xe thật từ tiệm, làm tròn lên (giống web Wix) */
       var SHOP_COORDS = { lat: 33.7513, lon: -117.9930 }; // 14131 Roxanne Dr, Westminster, CA 92683
-      var SHIP_FEE = 18.49; // phí ship cố định mỗi đơn (Chris chốt 2026-10-30)
+      var SHIP_FEE = 14.99; // phí ship mỗi package — tối đa 12 phần/package (Chris chốt 2026-11-04, thay mức $18.49/đơn 2026-10-30)
+      /* Menu ship đi xa (Chris 2026-11-04): mặn/canh/xào 2 cỡ Nhỏ $5.5 · Lớn $10.5;
+         cơm chiên/nui/mì giá đơn. 1 package chứa tối đa 12 phần. */
+      var SHIP_MAX = 12;
+      var SHIP_SIZED = [
+        ["MÓN MẶN", ["Thịt ba rọi kho quẹt", "Thịt ba rọi mắm ruốc", "Thịt kho trứng", "Cá kho tộ (cá ba sa)", "Cá nục kho thơm", "Tôm rim ba rọi", "Gà kho gừng", "Gà kho sả", "Cánh gà chiên sốt mắm tỏi", "Đùi gà chiên sốt mắm tỏi", "Cánh gà chiên nước mắm", "Đùi gà chiên nước mắm", "Mắm chưng"]],
+        ["CANH", ["Canh chua", "Canh khổ qua dồi thịt", "Canh gà nấu lá giang", "Canh cải chua sườn non", "Canh cải bẹ xanh"]],
+        ["XÀO", ["Su su xào", "Mực xào chua ngọt"]]
+      ];
+      var SHIP_SINGLES = [
+        { name: "Cơm chiên hải sản", price: 12.5 },
+        { name: "Cơm chiên dương châu", price: 12.5 },
+        { name: "Nui xào bò", price: 10.5 },
+        { name: "Nui xào hải sản", price: 12.5 },
+        { name: "Mì xào bò", price: 10.5 },
+        { name: "Mì xào hải sản", price: 12.5 }
+      ];
+      function shipSinglePrice(name) {
+        for (var i = 0; i < SHIP_SINGLES.length; i++) if (SHIP_SINGLES[i].name === name) return SHIP_SINGLES[i].price;
+        return null;
+      }
       var feeStatus = "idle"; // idle | loading | ok | unknown
       var deliveryFee = null; // số tiền phí khi feeStatus === "ok"
       var feeTimer = null, feeSeq = 0;
@@ -1042,6 +1068,7 @@
       }
 
       function addToCart(day, name, detail, price, delta) {
+        if (method === "ship" && delta > 0 && cartCount() >= SHIP_MAX) { flashShipCount(); return; }
         var key = keyOf(day.date, name, detail);
         var line = findLine(key);
         if (!line) {
@@ -1056,6 +1083,7 @@
       function setQty(key, qty) {
         var line = findLine(key);
         if (!line) return;
+        if (method === "ship" && qty > line.qty && (cartCount() - line.qty + qty) > SHIP_MAX) { flashShipCount(); return; }
         line.qty = qty;
         if (line.qty <= 0) cart.splice(cart.indexOf(line), 1);
         refreshCartUI();
@@ -1065,7 +1093,7 @@
       function renderDayChips() {
         var html = "";
         DAYS.forEach(function (d, i) {
-          var locked = dayLocked(d.date);
+          var locked = method !== "ship" && dayLocked(d.date);
           html += '<button type="button" role="tab" class="day-chip' + (i === dayIdx ? " active" : "") + (locked ? " locked" : "") +
             '" data-day="' + i + '" aria-selected="' + (i === dayIdx) + '"' + (locked ? " disabled" : "") + '>' +
             '<span class="dow">' + d.wd + '</span><span class="dmy">' + d.dm + (locked ? " · Đã chốt" : "") + '</span></button>';
@@ -1077,6 +1105,7 @@
             dayIdx = parseInt(chip.getAttribute("data-day"), 10);
             renderDayChips();
             renderMenu();
+            if (method === "ship") renderShipMenu();
           });
         });
       }
@@ -1200,6 +1229,9 @@
       }
 
       function priceFor(day, name, detail) {
+        if (detail === "Ship") { var sp = shipSinglePrice(name); if (sp != null) return sp; }
+        if (detail === "Nhỏ · Ship") return 5.5;
+        if (detail === "Lớn · Ship") return 10.5;
         var i, pool = day.tray ? day.trays : STANDING.concat(day.specials || []);
         for (i = 0; i < pool.length; i++) if (pool[i].name === name) return pool[i].price;
         for (i = 0; i < EXTRA_PRODUCTS.length; i++) if (EXTRA_PRODUCTS[i].name === name) return EXTRA_PRODUCTS[i].price;
@@ -1207,6 +1239,67 @@
         if (detail === "Phần lớn") return 10;
         if (name === "Cơm phần") return 10;
         return null;
+      }
+
+      /* ================= MENU SHIP ĐI XA (Chris 2026-11-04) =================
+         Bảng menu riêng khi khách chọn Ship đi xa: tối đa 12 phần = 1 package. */
+      function flashShipCount() {
+        var elc = $("shipCount");
+        if (!elc) return;
+        elc.classList.add("full");
+        elc.textContent = "Đã đủ " + SHIP_MAX + " phần — đầy 1 package 📦";
+      }
+
+      function shipRow(day, dishName, tagLabel) {
+        var smallKey = keyOf(day.date, dishName, "Nhỏ · Ship");
+        var bigKey = keyOf(day.date, dishName, "Lớn · Ship");
+        return '<div class="dish">' + dishImg(dishName, "d-img") + '<div class="d-info"><div class="d-name">' + esc(dishName) +
+          '<span class="tag">' + tagLabel + '</span></div></div>' +
+          '<div class="ship-sizes">' +
+          '<div class="ship-size"><span>Nhỏ $5.5</span>' + stepperHTML(smallKey) + '</div>' +
+          '<div class="ship-size"><span>Lớn $10.5</span>' + stepperHTML(bigKey) + '</div>' +
+          '</div></div>';
+      }
+
+      function renderShipMenu() {
+        var box = $("shipMain");
+        if (!box) return;
+        var day = DAYS[dayIdx];
+        var n = cartCount();
+        var html = '<section class="menu-section"><div class="sec-head"><h2>📦 MENU SHIP ĐI XA</h2><div class="rule"></div></div>' +
+          '<p class="sec-sub">Món ship đi xa cho ngày ' + day.wd + ' ' + day.dm + ' — chọn tối đa <b>12 phần</b> cho 1 package · Phí ship $14.99/package · Giao OVERNIGHT cho CA, AZ &amp; NV.</p>' +
+          '<p><span class="ship-count' + (n >= SHIP_MAX ? " full" : "") + '" id="shipCount">' +
+          (n >= SHIP_MAX ? "Đã đủ 12 phần — đầy 1 package 📦" : "Đã chọn: " + n + "/12 phần") + '</span></p>';
+        SHIP_SIZED.forEach(function (g) {
+          html += '<div class="sec-head"><h2>' + g[0] + '</h2><div class="rule"></div></div>' +
+            '<p class="sec-sub">Phần nhỏ $5.5 · phần lớn $10.5.</p><div class="dish-list">';
+          g[1].forEach(function (dishName) { html += shipRow(day, dishName, g[0]); });
+          html += '</div>';
+        });
+        html += '<div class="sec-head"><h2>CƠM CHIÊN · NUI · MÌ</h2><div class="rule"></div></div><div class="dish-list">';
+        SHIP_SINGLES.forEach(function (it) {
+          var key = keyOf(day.date, it.name, "Ship");
+          html += '<div class="dish">' + dishImg(it.name, "d-img") + '<div class="d-info"><div class="d-name">' + esc(it.name) + '</div></div>' +
+            '<span class="d-price">' + money(it.price) + '</span>' + stepperHTML(key) + '</div>';
+        });
+        html += '</div></section>';
+        box.innerHTML = html;
+        bindShipSteppers(day);
+      }
+
+      function bindShipSteppers(day) {
+        $("shipMain").querySelectorAll("[data-step]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var key = btn.getAttribute("data-key");
+            var delta = parseInt(btn.getAttribute("data-step"), 10);
+            var line = findLine(key);
+            if (line) { setQty(key, line.qty + delta); renderShipMenu(); return; }
+            var parts = key.split("|");
+            var name = parts[1], detail = parts.slice(2).join("|");
+            var price = priceFor(day, name, detail);
+            if (price != null) { addToCart(day, name, detail, price, delta); renderShipMenu(); }
+          });
+        });
       }
 
       /* ================= MÓN THÊM CỦA TIỆM (tự đăng qua shop_products) ================= */
@@ -1330,6 +1423,7 @@
         $("cartCount").textContent = n + (n === 1 ? " món" : " món");
         $("cartTotal").textContent = money(sub);
         if ($("cartOverlay").classList.contains("open")) renderCart();
+        if (method === "ship") renderShipMenu();
       }
 
       function renderCart() {
@@ -1496,6 +1590,10 @@
         $("pickupZone").classList.toggle("hidden", m !== "pickup");
         $("deliveryZone").classList.toggle("hidden", m !== "delivery");
         $("shipZone").classList.toggle("hidden", m !== "ship");
+        if (m === "ship") { $("menuMain").setAttribute("hidden", ""); $("shipMain").removeAttribute("hidden"); }
+        else { $("menuMain").removeAttribute("hidden"); $("shipMain").setAttribute("hidden", ""); }
+        renderDayChips();
+        if (m === "ship") renderShipMenu();
         if (m === "delivery") scheduleFeeCalc();
         else { feeSeq++; renderTotals(); }
         updateShiftCutoff();
@@ -1581,9 +1679,11 @@
         if (cart.length === 0) ok = false;
         var co = cutoffBlockReason();
         if (co) ok = false;
+        var shipOver = method === "ship" && cartCount() > SHIP_MAX;
+        if (shipOver) ok = false;
         var alert = $("formAlert");
         if (!ok) {
-          alert.textContent = co ? co : "Bạn kiểm tra lại giúp tiệm: còn thiếu tên, số điện thoại" + (method === "pickup" ? "" : " hoặc địa chỉ nhận hàng") + " nhé.";
+          alert.textContent = co ? co : (shipOver ? "Ship 1 package chứa tối đa 12 phần — bạn giảm bớt món trong giỏ giúp tiệm nhé." : "Bạn kiểm tra lại giúp tiệm: còn thiếu tên, số điện thoại" + (method === "pickup" ? "" : " hoặc địa chỉ nhận hàng") + " nhé.");
           alert.classList.add("show");
         } else {
           alert.classList.remove("show");
@@ -1608,7 +1708,7 @@
         html += '<div class="s-meta"><b>' + esc(order.customer_name) + '</b> · ' + esc(order.phone) + '</div>';
         html += '<div class="s-meta">Ngày: <b>' + esc(order.weekday_label) + '</b></div>';
         if (order.method === "ship") {
-          html += '<div class="s-meta">Ship đi xa: ' + esc(order.address) + '<br />Phí ship: ' + money(SHIP_FEE) + ' (đã gồm trong tổng) · Đặt trước 2PM hôm nay, nhận hàng trước 5PM ngày mai</div>';
+          html += '<div class="s-meta">Ship đi xa: ' + esc(order.address) + '<br />Phí ship: ' + money(SHIP_FEE) + ' (đã gồm trong tổng) · Order trước 8PM hôm nay — bếp chuẩn bị ngày mai — nhận hàng ngày mốt trước 5PM</div>';
         } else if (order.method === "pickup") {
           html += '<div class="s-meta">Pick up: 14131 Roxanne Dr, Westminster, CA 92683 (8am–8pm)' +
             (order.pickup_time ? '<br />Giờ lấy: ' + esc(order.pickup_time) : "") + '</div>';
@@ -2378,6 +2478,7 @@
       renderDayChips();
       renderMenu();
       refreshCartUI();
+      if (/[?&]ship=1(&|$)/.test(window.location.search)) setMethod("ship");
       loadExtraProducts();
       handlePaidReturn();
     </script>
@@ -2407,7 +2508,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261104-1908";
+window.__BUILD__ = "20261104-1925";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
