@@ -1459,7 +1459,7 @@
       function refreshCartUI() {
         var n = cartCount(), sub = cartSubtotal();
         $("cartBar").classList.toggle("hidden", n === 0 || $("cartOverlay").classList.contains("open"));
-        $("cartCount").textContent = n + (n === 1 ? " món" : " món");
+        $("cartCount").textContent = method === "ship" ? n + "/" + SHIP_MAX + " phần" : n + " món";
         $("cartTotal").textContent = money(sub);
         if ($("cartOverlay").classList.contains("open")) renderCart();
         if (method === "ship") renderShipMenu();
@@ -2548,7 +2548,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261104-2118";
+window.__BUILD__ = "20261104-2126";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
