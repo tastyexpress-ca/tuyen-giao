@@ -597,7 +597,7 @@
                   <input type="text" id="inShipAddress" autocomplete="street-address" placeholder="Số nhà, đường, thành phố, bang, ZIP" />
                   <div class="err">Vui lòng nhập địa chỉ nhận hàng.</div>
                 </div>
-                <div class="fee-note">🚚 Ship toàn CA, NV &amp; AZ — phí ship chỉ <b>$14.99/package</b> — 1 package lên đến 12 phần, chọn 1 phần hay đủ 12 phần giá ship vẫn vậy! Hôm nay order trước 8PM — ngày mai bếp chuẩn bị — ngày mốt nhận hàng trước 5PM.</div>
+                <div class="fee-note">🚚 Ship toàn CA, NV &amp; AZ — phí ship chỉ <b>$14.99/package</b> — 1 package lên đến 12 phần! Hôm nay order trước 8PM — ngày mai bếp chuẩn bị — ngày mốt nhận hàng trước 5PM.</div>
               </div>
 
               <div class="field">
@@ -1708,6 +1708,20 @@
         };
       }
 
+      /* Ship chi nhan CA, AZ, NV: kiem tra bang viet trong dia chi (ten day du / ma 2 chu), khong co thi doi chieu ZIP */
+      function shipStateCheck(address) {
+        var a = " " + String(address || "").toUpperCase().replace(/[^A-Z0-9]+/g, " ") + " ";
+        if (/ (CALIFORNIA|ARIZONA|NEVADA) /.test(a)) return "ok";
+        var m = a.match(/ (AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC) /);
+        if (m) return (m[1] === "CA" || m[1] === "AZ" || m[1] === "NV") ? "ok" : "bad";
+        var z = String(address || "").match(/\b(\d{5})(?:-\d{4})?\b/);
+        if (z) {
+          var p = parseInt(z[1].slice(0, 3), 10);
+          return ((p >= 900 && p <= 961) || (p >= 850 && p <= 865) || (p >= 889 && p <= 898)) ? "ok" : "bad";
+        }
+        return "unknown";
+      }
+
       function validate(order) {
         var ok = true;
         function mark(id, bad) { $(id).classList.toggle("invalid", bad); if (bad) ok = false; }
@@ -1715,15 +1729,22 @@
         var digits = order.phone.replace(/\D/g, "");
         mark("fPhone", digits.length < 10 || digits.length > 15);
         if (method === "delivery") mark("fAddress", !order.address);
-        if (method === "ship") mark("fShipAddress", !order.address);
+        var shipState = method === "ship" && order.address ? shipStateCheck(order.address) : null;
+        if (method === "ship") mark("fShipAddress", !order.address || shipState !== "ok");
         if (cart.length === 0) ok = false;
         var co = cutoffBlockReason();
         if (co) ok = false;
         var shipOver = method === "ship" && cartCount() > SHIP_MAX;
         if (shipOver) ok = false;
+        var shipMsg = null;
+        if (method === "ship" && order.address && shipState !== "ok") {
+          shipMsg = shipState === "bad"
+            ? "Xin lỗi bạn 🙏 Hiện tại tiệm chỉ nhận ship đi CA, AZ & NV thôi ạ."
+            : "Bạn ghi thêm tiểu bang vào địa chỉ giúp tiệm nhé — hiện tiệm chỉ nhận ship đi CA, AZ & NV ạ.";
+        }
         var alert = $("formAlert");
         if (!ok) {
-          alert.textContent = co ? co : (shipOver ? "Ship 1 package chứa tối đa 12 phần — bạn giảm bớt món trong giỏ giúp tiệm nhé." : "Bạn kiểm tra lại giúp tiệm: còn thiếu tên, số điện thoại" + (method === "pickup" ? "" : " hoặc địa chỉ nhận hàng") + " nhé.");
+          alert.textContent = co ? co : (shipMsg ? shipMsg : (shipOver ? "Ship 1 package chứa tối đa 12 phần — bạn giảm bớt món trong giỏ giúp tiệm nhé." : "Bạn kiểm tra lại giúp tiệm: còn thiếu tên, số điện thoại" + (method === "pickup" ? "" : " hoặc địa chỉ nhận hàng") + " nhé."));
           alert.classList.add("show");
         } else {
           alert.classList.remove("show");
@@ -2548,7 +2569,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261104-2155";
+window.__BUILD__ = "20261104-2212";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
