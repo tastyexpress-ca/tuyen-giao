@@ -871,7 +871,7 @@
       /* Phí giao hàng — $1/dặm lái xe thật từ tiệm, làm tròn lên (giống web Wix) */
       var SHOP_COORDS = { lat: 33.7513, lon: -117.9930 }; // 14131 Roxanne Dr, Westminster, CA 92683
       var SHIP_FEE = 14.99; // phí ship mỗi package — tối đa 12 phần/package (Chris chốt 2026-11-04, thay mức $18.49/đơn 2026-10-30)
-      /* Menu ship đi xa (Chris 2026-11-04): mặn/canh/xào 2 cỡ Nhỏ $5.5 · Lớn $10.5;
+      /* Menu ship đi xa (Chris 2026-11-04): mặn/canh/xào 2 cỡ Nhỏ $5.99 · Lớn $10.5;
          cơm chiên/nui/mì giá đơn. 1 package chứa tối đa 12 phần. */
       var SHIP_MAX = 12;
       var SHIP_SIZED = [
@@ -1269,7 +1269,7 @@
 
       function priceFor(day, name, detail) {
         if (detail === "Ship") { var sp = shipSinglePrice(name); if (sp != null) return sp; }
-        if (detail === "Nhỏ · Ship") return 5.5;
+        if (detail === "Nhỏ · Ship") return 5.99;
         if (detail === "Lớn · Ship") return 10.5;
         var i, pool = day.tray ? day.trays : STANDING.concat(day.specials || []);
         for (i = 0; i < pool.length; i++) if (pool[i].name === name) return pool[i].price;
@@ -1295,7 +1295,7 @@
         return '<div class="dish">' + shipImg(dishName, "d-img") + '<div class="d-info"><div class="d-name">' + esc(dishName) +
           '<span class="tag">' + tagLabel + '</span></div></div>' +
           '<div class="ship-sizes">' +
-          '<div class="ship-size"><span>Nhỏ $5.5</span>' + stepperHTML(smallKey) + '</div>' +
+          '<div class="ship-size"><span>Nhỏ $5.99</span>' + stepperHTML(smallKey) + '</div>' +
           '<div class="ship-size"><span>Lớn $10.5</span>' + stepperHTML(bigKey) + '</div>' +
           '</div></div>';
       }
@@ -1311,7 +1311,7 @@
           (n >= SHIP_MAX ? "Đã đủ 12 phần — đầy 1 package 📦" : "Đã chọn: " + n + "/12 phần") + '</span></p>';
         SHIP_SIZED.forEach(function (g) {
           html += '<div class="sec-head"><h2>' + g[0] + '</h2><div class="rule"></div></div>' +
-            '<p class="sec-sub">Phần nhỏ $5.5 · phần lớn $10.5.</p><div class="dish-list">';
+            '<p class="sec-sub">Phần nhỏ $5.99 · phần lớn $10.5.</p><div class="dish-list">';
           g[1].forEach(function (dishName) { html += shipRow(day, dishName, g[0]); });
           html += '</div>';
         });
@@ -2548,7 +2548,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261104-2022";
+window.__BUILD__ = "20261104-2118";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
