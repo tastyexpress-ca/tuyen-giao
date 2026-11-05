@@ -597,7 +597,7 @@
                   <input type="text" id="inShipAddress" autocomplete="street-address" placeholder="Số nhà, đường, thành phố, bang, ZIP" />
                   <div class="err">Vui lòng nhập địa chỉ nhận hàng.</div>
                 </div>
-                <div class="fee-note">🚚 Ship toàn CA, NV &amp; AZ — phí ship chỉ <b>$14.99/package</b> — bạn chọn 1 phần hay đủ 12 phần, giá ship vẫn vậy! Hôm nay order trước 8PM — ngày mai bếp chuẩn bị — ngày mốt nhận hàng trước 5PM.</div>
+                <div class="fee-note">🚚 Ship toàn CA, NV &amp; AZ — phí ship chỉ <b>$14.99/package</b> — 1 package lên đến 12 phần, chọn 1 phần hay đủ 12 phần giá ship vẫn vậy! Hôm nay order trước 8PM — ngày mai bếp chuẩn bị — ngày mốt nhận hàng trước 5PM.</div>
               </div>
 
               <div class="field">
@@ -1306,7 +1306,7 @@
         var day = shipDay();
         var n = cartCount();
         var html = '<section class="menu-section"><div class="sec-head"><h2>📦 MENU SHIP ĐI XA</h2><div class="rule"></div></div>' +
-          '<p class="sec-sub">Ship từ Thứ 2 đến Thứ 5 · Chốt đơn 8PM mỗi ngày — đơn này bếp chuẩn bị vào <b>' + day.wd + ' ' + day.dm + '</b> · Chọn tối đa <b>12 phần</b> cho 1 package · Phí ship $14.99/package · Giao OVERNIGHT cho CA, AZ &amp; NV.</p>' +
+          '<p class="sec-sub">🍳 Đơn này bếp chuẩn bị vào <b>' + day.wd + ' ' + day.dm + '</b> — bạn sẽ nhận được vào <b>' + plusDayLabel(day.date, 1) + '</b> trước 5PM</p>' +
           '<p><span class="ship-count' + (n >= SHIP_MAX ? " full" : "") + '" id="shipCount">' +
           (n >= SHIP_MAX ? "Đã đủ 12 phần — đầy 1 package 📦" : "Đã chọn: " + n + "/12 phần") + '</span></p>';
         SHIP_SIZED.forEach(function (g) {
@@ -2548,7 +2548,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261104-2126";
+window.__BUILD__ = "20261104-2155";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
