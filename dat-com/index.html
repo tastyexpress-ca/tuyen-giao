@@ -479,7 +479,7 @@
     </header>
 
     <div id="menuView">
-      <div class="daybar">
+      <div class="daybar" id="daybar">
         <div class="wrap">
           <p class="label">Chọn ngày đặt cơm</p>
           <div class="days" id="dayChips" role="tablist" aria-label="Chọn ngày"></div>
@@ -910,6 +910,18 @@
         if (!f) return "";
         return '<img class="' + cls + '" src="assets/img/' + f + '.jpg?v=4" alt="' + esc(name) + '" loading="lazy" />';
       }
+      /* Ngày bếp chuẩn bị cho đơn ship (Chris 2026-11-04): menu ship mọi ngày như nhau,
+         KHÔNG chọn ngày — ship chỉ Thứ 2–Thứ 5, chốt đơn 8PM (giờ LA):
+         trước 8PM → chuẩn bị ngày mai; sau 8PM → lùi thêm 1 ngày; ngày chuẩn bị phải rơi vào Thứ 2–Thứ 5. */
+      function shipDay() {
+        var p = laNowParts();
+        var add = p.h >= 20 ? 2 : 1;
+        var t = new Date(Date.UTC(p.y, p.mo - 1, p.d + add));
+        while ([0, 5, 6].indexOf(t.getUTCDay()) >= 0) t = new Date(t.getTime() + 86400000);
+        var wdNames = ["Chủ Nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+        var ms = String(t.getUTCMonth() + 1).padStart(2, "0"), ds = String(t.getUTCDate()).padStart(2, "0");
+        return { date: t.getUTCFullYear() + "-" + ms + "-" + ds, wd: wdNames[t.getUTCDay()], dm: t.getUTCDate() + "/" + (t.getUTCMonth() + 1) };
+      }
       var feeStatus = "idle"; // idle | loading | ok | unknown
       var deliveryFee = null; // số tiền phí khi feeStatus === "ok"
       var feeTimer = null, feeSeq = 0;
@@ -1284,10 +1296,10 @@
       function renderShipMenu() {
         var box = $("shipMain");
         if (!box) return;
-        var day = DAYS[dayIdx];
+        var day = shipDay();
         var n = cartCount();
         var html = '<section class="menu-section"><div class="sec-head"><h2>📦 MENU SHIP ĐI XA</h2><div class="rule"></div></div>' +
-          '<p class="sec-sub">Món ship đi xa cho ngày ' + day.wd + ' ' + day.dm + ' — chọn tối đa <b>12 phần</b> cho 1 package · Phí ship $14.99/package · Giao OVERNIGHT cho CA, AZ &amp; NV.</p>' +
+          '<p class="sec-sub">Ship từ Thứ 2 đến Thứ 5 · Chốt đơn 8PM mỗi ngày — đơn này bếp chuẩn bị vào <b>' + day.wd + ' ' + day.dm + '</b> · Chọn tối đa <b>12 phần</b> cho 1 package · Phí ship $14.99/package · Giao OVERNIGHT cho CA, AZ &amp; NV.</p>' +
           '<p><span class="ship-count' + (n >= SHIP_MAX ? " full" : "") + '" id="shipCount">' +
           (n >= SHIP_MAX ? "Đã đủ 12 phần — đầy 1 package 📦" : "Đã chọn: " + n + "/12 phần") + '</span></p>';
         SHIP_SIZED.forEach(function (g) {
@@ -1612,6 +1624,7 @@
         $("shipZone").classList.toggle("hidden", m !== "ship");
         if (m === "ship") { $("menuMain").setAttribute("hidden", ""); $("shipMain").removeAttribute("hidden"); }
         else { $("menuMain").removeAttribute("hidden"); $("shipMain").setAttribute("hidden", ""); }
+        $("daybar").classList.toggle("hidden", m === "ship");
         renderDayChips();
         if (m === "ship") renderShipMenu();
         if (m === "delivery") scheduleFeeCalc();
@@ -2528,7 +2541,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261104-1955";
+window.__BUILD__ = "20261104-2012";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
