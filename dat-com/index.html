@@ -388,6 +388,14 @@
       .totals .t-row span:last-child { font-weight: 700; }
       .totals .t-row.grand span:last-child { font-weight: 900; }
 
+      .tip-zone { padding: 12px 16px; margin-top: 12px; }
+      .tip-zone .tip-label { font-size: 14.5px; font-weight: 700; margin-bottom: 8px; }
+      .tip-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+      .tip-chip { border: 1.5px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+      .tip-chip.active { background: var(--brown-dark); color: #fff; border-color: var(--brown-dark); }
+      .tip-custom { margin-top: 10px; }
+      .tip-custom input { width: 150px; padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 14.5px; font-family: inherit; }
+
       .pay-opts .radio-opt { align-items: flex-start; }
       .pay-opts .radio-opt input { margin-top: 2px; }
       .pay-opts .ro-sub { display: block; font-size: 12px; font-weight: 500; color: var(--ink-soft); margin-top: 1px; }
@@ -613,6 +621,18 @@
             </div>
 
             <div class="card totals" id="totalsBox"></div>
+
+            <div class="card tip-zone" id="tipZone">
+              <div class="tip-label">Tiền tip cho tiệm (không bắt buộc)</div>
+              <div class="tip-chips" id="tipChips">
+                <button type="button" class="tip-chip active" data-tip="0">Không tip</button>
+                <button type="button" class="tip-chip" data-tip="10">10%</button>
+                <button type="button" class="tip-chip" data-tip="15">15%</button>
+                <button type="button" class="tip-chip" data-tip="20">20%</button>
+                <button type="button" class="tip-chip" data-tip="custom">Khác</button>
+              </div>
+              <div class="tip-custom hidden" id="tipCustomZone"><input type="number" id="tipCustomInput" min="0" step="0.5" placeholder="Nhập tiền tip ($)" inputmode="decimal" /></div>
+            </div>
 
             <div class="submit-zone">
               <button class="btn accent" type="button" id="submitBtn">💳 Thanh toán &amp; Đặt hàng</button>
@@ -930,6 +950,8 @@
       }
       var feeStatus = "idle"; // idle | loading | ok | unknown
       var deliveryFee = null; // số tiền phí khi feeStatus === "ok"
+      var tipMode = "0"; // "0" | "10" | "15" | "20" | "custom"
+      var tipCustom = 0;
       var feeTimer = null, feeSeq = 0;
 
       function geocodeAddress(address) {
@@ -1586,12 +1608,19 @@
         updateSubmitState();
       }
 
+      function tipAmount(sub) {
+        if (tipMode === "custom") return round2(Math.max(0, tipCustom || 0));
+        var p = parseInt(tipMode, 10) || 0;
+        return p > 0 ? round2(sub * p / 100) : 0;
+      }
+
       function totals() {
         var sub = round2(cartSubtotal());
         /* Phí giao 1 chuyến × số ngày giao — mỗi ngày trong giỏ là 1 chuyến riêng */
         var fee = method === "ship" ? SHIP_FEE : ((method === "delivery" && feeStatus === "ok" && deliveryFee != null) ? deliveryFee * deliveryDayCount() : 0);
         var tax = round2((sub + fee) * TAX_RATE);
-        return { sub: sub, fee: fee, tax: tax, total: round2(sub + fee + tax) };
+        var tip = tipAmount(sub);
+        return { sub: sub, fee: fee, tax: tax, tip: tip, total: round2(sub + fee + tax + tip) };
       }
 
       function renderTotals() {
@@ -1619,8 +1648,24 @@
           '<div class="t-row"><span>Tạm tính</span><span>' + money(t.sub) + '</span></div>' +
           feeRow +
           '<div class="t-row"><span>Thuế 8.75%</span><span>' + money(t.tax) + '</span></div>' +
+          (t.tip > 0 ? '<div class="t-row"><span>Tiền tip</span><span>' + money(t.tip) + '</span></div>' : '') +
           '<div class="t-row grand"><span>Tổng cộng</span><span>' + money(t.total) + '</span></div>';
       }
+
+      $("tipChips").addEventListener("click", function (e) {
+        var b = e.target.closest ? e.target.closest(".tip-chip") : null;
+        if (!b) return;
+        tipMode = b.getAttribute("data-tip");
+        var chips = $("tipChips").querySelectorAll(".tip-chip");
+        for (var i = 0; i < chips.length; i++) chips[i].classList.toggle("active", chips[i] === b);
+        $("tipCustomZone").classList.toggle("hidden", tipMode !== "custom");
+        if (tipMode === "custom") $("tipCustomInput").focus();
+        renderTotals();
+      });
+      $("tipCustomInput").addEventListener("input", function () {
+        tipCustom = parseFloat(this.value) || 0;
+        renderTotals();
+      });
 
       function setMethod(m) {
         method = m;
@@ -1703,6 +1748,7 @@
           subtotal: t.sub,
           delivery_fee: fee,
           tax: t.tax,
+          tip: t.tip,
           total: t.total,
           payment_method: pay,
           note: note || null
@@ -1765,6 +1811,9 @@
           html += '<div class="s-line"><span>' + (order.method === "ship" ? "Phí ship" : "Phí giao hàng") + '</span><span>' + money(order.delivery_fee) + '</span></div>';
         }
         html += '<div class="s-line"><span>Thuế 8.75%</span><span>' + money(order.tax) + '</span></div>';
+        if (order.tip) {
+          html += '<div class="s-line"><span>Tiền tip</span><span>' + money(order.tip) + '</span></div>';
+        }
         html += '<div class="s-total"><span>Tổng cộng</span><span>' + money(order.total) + '</span></div></div>';
         html += '<div class="summary-box"><h4>Thông tin của bạn</h4>';
         html += '<div class="s-meta"><b>' + esc(order.customer_name) + '</b> · ' + esc(order.phone) + '</div>';
@@ -1832,6 +1881,11 @@
         var again = $("againBtn");
         if (again) again.addEventListener("click", function () {
           cart = [];
+          tipMode = "0"; tipCustom = 0;
+          $("tipCustomInput").value = "";
+          $("tipCustomZone").classList.add("hidden");
+          var tchips = $("tipChips").querySelectorAll(".tip-chip");
+          for (var ti = 0; ti < tchips.length; ti++) tchips[ti].classList.toggle("active", tchips[ti].getAttribute("data-tip") === "0");
           v.classList.remove("show");
           v.innerHTML = "";
           $("menuView").classList.remove("hidden");
@@ -2570,7 +2624,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261105-1835";
+window.__BUILD__ = "20261105-2348";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
