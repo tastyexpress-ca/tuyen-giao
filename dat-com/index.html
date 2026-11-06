@@ -234,6 +234,9 @@
       .ship-count { display: inline-block; padding: 6px 12px; border-radius: 999px; background: #f6ead9; border: 1px solid #d8c3a5; font-weight: 800; font-size: .9rem; }
       .ship-count.full { background: #fdf3e7; border-color: #b3541e; color: #7a3a12; }
       body.ship-only #segPickup, body.ship-only #segDelivery { display: none; }
+      /* Ship chỉ có trong Think's Kitchen Shipping (vào bằng ?ship=1) — trang đặt cơm thường chỉ Pick up + Giao hàng (Chris 2026-11-06) */
+      #segShip { display: none; }
+      body.ship-only #segShip { display: block; }
       .add-btn {
         border: 1.5px solid var(--brown); background: var(--surface);
         color: var(--brown-dark); font-weight: 700; font-size: 13px;
@@ -2624,7 +2627,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261105-2348";
+window.__BUILD__ = "20261106-0847";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
