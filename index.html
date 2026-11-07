@@ -4281,6 +4281,13 @@
            isPremiumDish classification as the settlement:
            - Lời món (food profit): $12-class portion → $4, other
              portion → $2; món lẻ → (price ÷ 5) × $1 (20% of money).
+             A kitchen row linked to a web/app order takes its item
+             prices, delivery fee and charged total from the
+             web_orders row itself (the kitchen card's lines can be
+             unpriced — app #65's trays read as $2 portions and a
+             card fee on a $45 base until fixed, 2026-11-07).
+             SATURDAY delivery fees are handed back to the kitchen,
+             so they never count as the owner's shipping income.
            - Shipping of Chris's: GIAO SÁNG orders ADD their delivery
              fee, derived from the DRIVER side — the kitchen note
              normally never carries the morning fee, so the matching
@@ -4389,7 +4396,24 @@
             var margin = 0;
             var sell = 0;
             var hasFood = false;
-            (Array.isArray(o.dishes) ? o.dishes : []).forEach(function (d) {
+            /* A kitchen row linked to a web/app order ("Đơn online
+               #<id>" in the note, or an "Order app #<id>" label)
+               settles its MONEY from the web order itself: the
+               kitchen card's dish lines can lack prices (Saturday
+               tray lines are written unpriced, so they read as $2
+               portions), while the web order carries the real item
+               prices, the real delivery fee and the real charged
+               total (app #65, Chris 2026-11-07). */
+            var web = null;
+            var lm = /Đơn online #(\d+)/i.exec(String(o.note || "")) ||
+              /^Order app #(\d+)/i.exec(String(o.label || ""));
+            if (lm) {
+              (webOrdersByDay[dayStr] || []).forEach(function (w) {
+                if (String(w.id) === lm[1] && w.paid) web = w;
+              });
+            }
+            var dishLines = web ? webPseudoOrder(web).dishes : (Array.isArray(o.dishes) ? o.dishes : []);
+            dishLines.forEach(function (d) {
               var p = parseKitchenDish(d);
               if (p.type === "monle") {
                 hasFood = true;
@@ -4416,8 +4440,13 @@
                groups keep the note-based fee the charged total has
                always used; only GIAO SÁNG fees are Chris's shipping,
                bếp giao fees belong to the shop, pick up has none. */
-            var fee = gkey === "sang" ? chrisDriverFee(dayStr, o, sell) : parseShipFee(o.note);
-            var ship = gkey === "sang" ? fee : 0;
+            var fee = web ? (Number(web.delivery_fee) || 0)
+              : gkey === "sang" ? chrisDriverFee(dayStr, o, sell) : parseShipFee(o.note);
+            /* SATURDAY: every delivery fee is handed back to the
+               kitchen (Chris 2026-11-07), so a Saturday fee is
+               never the owner's shipping income. */
+            var isSat = new Date(dayStr + "T12:00:00").getDay() === 6;
+            var ship = (gkey === "sang" && !isSat) ? fee : 0;
             var wixFee = 0;
             var feeKind = "";
             if (isWebPaidOrder(o)) {
@@ -4429,7 +4458,11 @@
               feeKind = "Stripe";
             }
             if (feeKind) {
-              var charged = Math.round((sell + fee) * 1.0875 * 100) / 100;
+              /* A linked web order's card fee is computed on its
+                 REAL charged total (tip included — that is the
+                 amount Stripe actually took 2.9% + $0.30 from). */
+              var charged = web ? (Number(web.total) || 0)
+                : Math.round((sell + fee) * 1.0875 * 100) / 100;
               wixFee = Math.round((charged * 0.029 + 0.30) * 100) / 100;
             }
             var marginNet = Math.max(0, Math.round((margin - wixFee) * 100) / 100);
@@ -7462,7 +7495,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261107-1120";
+window.__BUILD__ = "20261107-1140";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
