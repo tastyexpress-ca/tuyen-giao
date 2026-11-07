@@ -4103,6 +4103,24 @@
                bếp giao fee. */
             var isSat = new Date(dayStr + "T12:00:00").getDay() === 6;
             var fee = (gkey === "bep" || (isSat && gkey === "sang")) ? parseShipFee(o.note) : 0;
+            /* Display fee for the settlement table's Phí giao
+               column (Chris 2026-11-07: "Ghi thêm dòng phí giao
+               giúp anh — mỗi ngày luôn"): EVERY delivery order
+               shows its delivery fee every day, not only when the
+               fee is handed back to the shop. Exact sources only —
+               a linked web/app order's stored delivery_fee, else
+               the fee written in the note; never a derived guess. */
+            var feeDisp = fee;
+            if (gkey === "sang") {
+              feeDisp = parseShipFee(o.note);
+              var lm2 = /Đơn online #(\d+)/i.exec(String(o.note || "")) ||
+                /^Order app #(\d+)/i.exec(String(o.label || ""));
+              if (lm2) {
+                (webOrdersByDay[dayStr] || []).forEach(function (w) {
+                  if (String(w.id) === lm2[1] && w.paid && Number(w.delivery_fee)) feeDisp = Number(w.delivery_fee);
+                });
+              }
+            }
             var anhTra = 0;
             var tiemNo = 0;
             if (gkey === "sang") {
@@ -4143,7 +4161,7 @@
             g.rows.push({
               label: o.label || o.name || "",
               portions: portionsDisp, monLe: monLe, payee: payee,
-              fee: fee, anhTra: anhTra, tiemNo: tiemNo
+              fee: fee, feeDisp: feeDisp, anhTra: anhTra, tiemNo: tiemNo
             });
             g.portions += portionsDisp;
             g.monLe += monLe;
@@ -4162,8 +4180,11 @@
         /* One settlement table (title + that group's portions
            breakdown + per-order rows + footer totals). The món lẻ
            column appears only when the group has món lẻ money; the
-           phí giao column only when a bếp giao note carries a fee.
-           An empty group still renders, with "Không có order". */
+           phí giao column appears on BOTH delivery tables (giao
+           hàng + bếp giao) whenever an order carries a fee — every
+           day, not only when the fee is handed back (Chris
+           2026-11-07). An empty group still renders, with
+           "Không có order". */
         function buildSettleTable(title, g, kind) {
           var block = el("div", "kt-block");
           block.appendChild(el("div", "totals-label", title));
@@ -4173,7 +4194,7 @@
             return block;
           }
           var showML = g.monLe > 0;
-          var showFee = kind === "bep" && g.rows.some(function (r) { return r.fee > 0; });
+          var showFee = kind !== "pickup" && g.rows.some(function (r) { return (kind === "bep" ? r.fee : r.feeDisp) > 0; });
           var table = el("table", "kt-table");
           var thead = el("thead");
           var htr = el("tr");
@@ -4199,7 +4220,11 @@
             if (showML) tr.appendChild(el("td", "num", r.monLe > 0 ? fmtMoney(r.monLe) : "—"));
             if (showFee) {
               var feeTxt = "—";
-              if (r.fee > 0) feeTxt = fmtMoney(r.fee) + (r.payee === "shop" ? " (tiệm giữ)" : "");
+              if (kind === "bep") {
+                if (r.fee > 0) feeTxt = fmtMoney(r.fee) + (r.payee === "shop" ? " (tiệm giữ)" : "");
+              } else if (r.feeDisp > 0) {
+                feeTxt = fmtMoney(r.feeDisp);
+              }
               tr.appendChild(el("td", "num kt-fee", feeTxt));
             }
             if (kind !== "sang") {
@@ -4217,7 +4242,11 @@
           ftr.appendChild(el("td", "kt-name", "Tổng · " + g.rows.length + " order"));
           ftr.appendChild(el("td", "num", String(g.portions)));
           if (showML) ftr.appendChild(el("td", "num", kind === "sang" ? fmtMoney(g.monLe) : "—"));
-          if (showFee) ftr.appendChild(el("td", "num", "—"));
+          if (showFee) {
+            var feeSum = 0;
+            g.rows.forEach(function (r) { feeSum += (kind === "bep" ? r.fee : r.feeDisp) || 0; });
+            ftr.appendChild(el("td", "num", feeSum > 0 ? fmtMoney(feeSum) : "—"));
+          }
           if (kind !== "sang") {
             ftr.appendChild(el("td", "", ""));
             ftr.appendChild(el("td", "num", fmtMoney(g.anhTra)));
@@ -7495,7 +7524,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261107-1400";
+window.__BUILD__ = "20261107-1415";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
