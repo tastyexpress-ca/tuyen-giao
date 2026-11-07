@@ -3800,6 +3800,15 @@
              MÓN LẺ line: it never counts as a food portion; its money
              is qty × price; the shop's share is 80% ($4 of $5) and
              the owner's profit share is 20%.
+           - a line naming a TRAY (priced or not) settles BY TRAY
+             (Chris 2026-11-07): the shop gets $20 per tray ($25 for
+             a bò kho tray) and the rest of the tray price is the
+             owner's profit — never the món lẻ 80% split and never
+             price ÷ 10 × $8. An unpriced tray line still counts as
+             a portion on display (phần giữ nguyên); only its money
+             moves to the tray rate. On Saturdays every delivery fee
+             written in an order note is handed back to the shop
+             (the kitchen delivers everything).
            - a line mentioning "kem" (ice cream) is excluded entirely.
            - every other line counts qty food portions at $8 each to
              the shop.
@@ -3931,6 +3940,18 @@
             /\$\s*([\d]+(?:[.,]\d+)?)[^$\d]{0,24}(?:phí|ship)/.exec(n);
           return m ? (parseFloat(m[1].replace(",", ".")) || 0) : 0;
         }
+        /* Tray detection on a raw kitchen dish line: đặc tiệc trays
+           are written three ways — "1x Tray … ($29)", "… (tray $27)"
+           and "… — 1 tray · 4–5 người" — all carry the word "tray". */
+        function isTrayLine(line) {
+          return String(line == null ? "" : line).toLowerCase().indexOf("tray") !== -1;
+        }
+        /* What Chris pays the shop per tray (Chris 2026-11-07):
+           $20 flat, bò kho tray $25; the rest of the tray price is
+           his profit. */
+        function trayShopRate(line) {
+          return String(line == null ? "" : line).toLowerCase().indexOf("bò kho") !== -1 ? 25 : 20;
+        }
         /* A web order (web_orders) as a pseudo kitchen order for
            the money views: dishes rebuilt from its items — món lẻ
            (detail "Phần nhỏ"/"Phần lớn") and tray-class items
@@ -3948,10 +3969,11 @@
             var qty = it.qty || 1;
             var detail = String(it.detail || "");
             var price = Number(it.price) || 0;
+            var trayTag = /tray/i.test(detail) ? " (tray)" : "";
             if (detail === "Phần nhỏ" || detail === "Phần lớn" || price >= 20) {
-              lines.push(qty + "x " + name + " $" + price);
+              lines.push(qty + "x " + name + trayTag + " $" + price);
             } else {
-              lines.push(qty + "x " + name);
+              lines.push(qty + "x " + name + trayTag);
             }
           });
           return {
@@ -4008,7 +4030,7 @@
           var orders = settlementOrders(dayStr);
           var groups = {};
           ["sang", "pickup", "bep"].forEach(function (k) {
-            groups[k] = { rows: [], portions: 0, monLe: 0, anhTra: 0, tiemNo: 0, feesReturned: 0, anhEq: 0, shopEq: 0, nameOrder: [], nameTotals: {}, breakdown: "" };
+            groups[k] = { rows: [], portions: 0, monLe: 0, anhTra: 0, tiemNo: 0, feesReturned: 0, anhEq: 0, shopEq: 0, trays: 0, trayDue: 0, nameOrder: [], nameTotals: {}, breakdown: "" };
           });
           orders.forEach(function (o) {
             var gkey = grpInfo(o.grp).key;
@@ -4017,8 +4039,13 @@
             var portionsDisp = 0;
             var monLe = 0;
             var profit = 0;
+            var trays = 0;
+            var trayDue = 0;
+            var trayMoney = 0;
+            var unpricedTrays = 0;
             (Array.isArray(o.dishes) ? o.dishes : []).forEach(function (d) {
               var p = parseKitchenDish(d);
+              var tray = isTrayLine(d);
               if (p.type === "monle") {
                 if (p.unit <= 10) {
                   /* Món lẻ is NOT listed separately — it folds into
@@ -4032,9 +4059,19 @@
                   portions += eq;
                   portionsDisp += eq;
                   profit += eq * 2;
+                } else if (tray) {
+                  /* Priced TRAY line (unit > $10, line carries
+                     "tray"): settles BY TRAY (Chris 2026-11-07) —
+                     the shop gets $20 per tray ($25 bò kho) and the
+                     rest of the price is Chris's profit; never the
+                     món lẻ 80% split. */
+                  var tq = Math.max(1, Math.round(p.money / p.unit));
+                  trays += tq;
+                  trayDue += tq * trayShopRate(d);
+                  trayMoney += p.money;
                 } else {
-                  /* Tray-class priced lines (unit > $10) stay on the
-                     money track — trays settle by tray, not by phần. */
+                  /* Priced non-tray lines (unit > $10) stay on the
+                     money track at the món lẻ 80% split. */
                   monLe += p.money;
                 }
               } else if (p.type === "food") {
@@ -4047,41 +4084,62 @@
                   g.nameOrder.push(key);
                 }
                 g.nameTotals[key].qty += p.qty;
+                if (tray) {
+                  /* Unpriced tray line ("… — 1 tray · 4–5 người"):
+                     the line still counts as a portion on display
+                     (Chris 2026-11-07: phần giữ nguyên), but its
+                     money settles by tray below, not at $8/phần. */
+                  trays += p.qty;
+                  trayDue += p.qty * trayShopRate(d);
+                  unpricedTrays += p.qty;
+                }
               }
             });
             var payee = effectivePayee(dayStr, o, gkey);
-            var fee = gkey === "bep" ? parseShipFee(o.note) : 0;
+            /* SATURDAY (Chris 2026-11-07: "Toàn bộ tiền giao là anh
+               trả lại cho bếp"): the kitchen delivers everything on
+               Saturdays, so a fee written in a Saturday GIAO SÁNG
+               note is handed back to the shop too, exactly like a
+               bếp giao fee. */
+            var isSat = new Date(dayStr + "T12:00:00").getDay() === 6;
+            var fee = (gkey === "bep" || (isSat && gkey === "sang")) ? parseShipFee(o.note) : 0;
             var anhTra = 0;
             var tiemNo = 0;
             if (gkey === "sang") {
               /* Giao hàng: the owner collected everything himself —
-                 he owes the shop portions × $8 + 80% of món lẻ. */
-              anhTra = portions * 8 + monLe * 0.8;
+                 he owes the shop portions × $8 + 80% of món lẻ +
+                 $20 per tray; a Saturday note fee goes back too. */
+              anhTra = (portions - unpricedTrays) * 8 + monLe * 0.8 + trayDue + fee;
+              if (fee > 0) g.feesReturned += fee;
             } else if (payee === "chris") {
-              anhTra = portions * 8 + monLe * 0.8 + fee;
+              anhTra = (portions - unpricedTrays) * 8 + monLe * 0.8 + trayDue + fee;
               g.feesReturned += fee;
             } else if (gkey === "bep") {
               /* Bếp giao paid to the shop: the shop already holds the
                  $8/portion food money (and any fee); it owes back the
                  per-portion profit by price class + 20% of món lẻ. */
-              tiemNo = profit + monLe * 0.2;
+              tiemNo = profit + monLe * 0.2 + (trayMoney - trayDue);
             } else {
               /* Pick up paid to the shop: flat $2/portion profit back. */
-              tiemNo = portions * 2 + monLe * 0.2;
+              tiemNo = portions * 2 + monLe * 0.2 + (trayMoney - trayDue);
             }
             /* Portion-equivalents behind each money total, for the
                day summary's formula lines (Chris 2026-10-27: "Tổng
                anh trả tiệm = số phần × $8", "Tổng tiệm nợ anh = số
-               phần × $2"): every $10 of tray-class money counts as
-               1 phần here too, so anhEq × $8 (+ bếp giao fees) is
-               exactly anhTra and shopEq × $2 is exactly tiemNo —
-               the bếp giao shop branch runs on profit, so its
-               equivalent is profit ÷ 2 ($4 premium = 2 phần). */
+               phần × $2"): anhEq × $8 + trayDue (+ fees) is exactly
+               anhTra and shopEq × $2 is exactly tiemNo — trays are
+               NOT folded into the phần equivalents; they print as
+               their own "+ N tray ($D)" term in the day summary.
+               The bếp giao shop branch runs on profit, so its
+               equivalent is profit ÷ 2 ($4 premium = 2 phần), and a
+               priced tray's profit-back counts at profit ÷ 2 too. */
             if (gkey === "sang" || payee === "chris") {
-              g.anhEq += portions + monLe / 10;
+              g.anhEq += (portions - unpricedTrays) + monLe / 10;
             } else {
-              g.shopEq += (gkey === "bep" ? profit / 2 : portions) + monLe / 10;
+              g.shopEq += (gkey === "bep" ? profit / 2 : portions) + monLe / 10 + (trayMoney - trayDue) / 2;
             }
+            g.trays += trays;
+            g.trayDue += trayDue;
             g.rows.push({
               label: o.label || o.name || "",
               portions: portionsDisp, monLe: monLe, payee: payee,
@@ -4190,9 +4248,11 @@
           var aEq = groups.sang.anhEq + groups.pickup.anhEq + groups.bep.anhEq;
           var bEq = groups.pickup.shopEq + groups.bep.shopEq;
           var feesTotal = groups.sang.feesReturned + groups.pickup.feesReturned + groups.bep.feesReturned;
+          var traysTotal = groups.sang.trays + groups.pickup.trays + groups.bep.trays;
+          var trayDueTotal = groups.sang.trayDue + groups.pickup.trayDue + groups.bep.trayDue;
           var net = el("div", "kt-net");
           net.appendChild(el("div", "totals-label", "Tổng kết ngày"));
-          net.appendChild(el("div", "totals-big", "Tổng anh trả tiệm: " + fmtPhan(aEq) + " phần × $8" + (feesTotal > 0 ? " + phí giao " + fmtMoney(feesTotal) : "") + " = " + fmtMoney(a)));
+          net.appendChild(el("div", "totals-big", "Tổng anh trả tiệm: " + fmtPhan(aEq) + " phần × $8" + (traysTotal > 0 ? " + " + traysTotal + " tray (" + fmtMoney(trayDueTotal) + ")" : "") + (feesTotal > 0 ? " + phí giao " + fmtMoney(feesTotal) : "") + " = " + fmtMoney(a)));
           net.appendChild(el("div", "totals-big", "Tổng tiệm nợ anh: " + fmtPhan(bEq) + " phần × $2 = " + fmtMoney(b)));
           var aC = Math.round(a * 100);
           var bC = Math.round(b * 100);
@@ -4333,7 +4393,14 @@
               var p = parseKitchenDish(d);
               if (p.type === "monle") {
                 hasFood = true;
-                margin += p.money * 0.2;
+                if (p.unit > 10 && isTrayLine(d)) {
+                  /* Priced tray: Chris keeps the tray price minus
+                     the $20/tray he pays the shop ($25 bò kho) —
+                     Chris 2026-11-07 tray formula. */
+                  margin += p.money - Math.max(1, Math.round(p.money / p.unit)) * trayShopRate(d);
+                } else {
+                  margin += p.money * 0.2;
+                }
                 sell += p.money;
               } else if (p.type === "food") {
                 hasFood = true;
@@ -7395,7 +7462,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261106-1350";
+window.__BUILD__ = "20261107-1120";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
