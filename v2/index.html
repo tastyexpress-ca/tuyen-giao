@@ -4161,6 +4161,7 @@
             g.rows.push({
               label: o.label || o.name || "",
               portions: portionsDisp, monLe: monLe, payee: payee,
+              trays: trays,
               fee: fee, feeDisp: feeDisp, anhTra: anhTra, tiemNo: tiemNo
             });
             g.portions += portionsDisp;
@@ -4194,6 +4195,7 @@
             return block;
           }
           var showML = g.monLe > 0;
+          var showTray = g.trays > 0;
           var showFee = kind !== "pickup" && g.rows.some(function (r) { return (kind === "bep" ? r.fee : r.feeDisp) > 0; });
           var table = el("table", "kt-table");
           var thead = el("thead");
@@ -4201,6 +4203,7 @@
           function head(text, num) { htr.appendChild(el("th", num ? "num" : "", text)); }
           head("Order", false);
           head("Phần", true);
+          if (showTray) head("Tray", true);
           if (showML) head("Món lẻ", true);
           if (showFee) head("Phí giao", true);
           if (kind !== "sang") {
@@ -4217,6 +4220,7 @@
             var tr = el("tr");
             tr.appendChild(el("td", "kt-name", r.label));
             tr.appendChild(el("td", "num", r.portions > 0 ? String(r.portions) : "—"));
+            if (showTray) tr.appendChild(el("td", "num", r.trays > 0 ? String(r.trays) : "—"));
             if (showML) tr.appendChild(el("td", "num", r.monLe > 0 ? fmtMoney(r.monLe) : "—"));
             if (showFee) {
               var feeTxt = "—";
@@ -4241,6 +4245,7 @@
           var ftr = el("tr");
           ftr.appendChild(el("td", "kt-name", "Tổng · " + g.rows.length + " order"));
           ftr.appendChild(el("td", "num", String(g.portions)));
+          if (showTray) ftr.appendChild(el("td", "num", String(g.trays)));
           if (showML) ftr.appendChild(el("td", "num", kind === "sang" ? fmtMoney(g.monLe) : "—"));
           if (showFee) {
             var feeSum = 0;
@@ -7524,7 +7529,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261107-1415";
+window.__BUILD__ = "20261107-1425";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
