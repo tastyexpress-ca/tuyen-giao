@@ -457,14 +457,23 @@
           // tên/SĐT/địa chỉ, hộp món, hàng nút to, nút in riêng một hàng.
           var html = '<article class="k-card tint-' + ((Number(idx) || 0) % 6) + (isDone ? " done" : "") + (isRecv && !isDone ? " received" : "") + '" data-search="' + esc(((o.customer_name || "") + " " + (o.phone || "")).toLowerCase()) + '">';
           html += '<div class="k-top"><span class="tag' + (isDelivery ? " del" : "") + (cat === "ship" ? " ship" : "") + '">' + esc(when) + "</span>";
-          html += o.paid === true ? '<span class="pill ok">ĐÃ TRẢ</span>' : '<span class="pill no">CHƯA TRẢ</span>';
+          var isCod = o.paid === true && String(o.payment_method || "").toLowerCase() === "cod";
+          html += (o.paid === true && !isCod) ? '<span class="pill ok">ĐÃ TRẢ</span>' : '<span class="pill no">CHƯA TRẢ</span>';
           if (s === "new") html += '<span class="pill new">MỚI</span>';
           html += "</div>";
           var paid = o.paid === true;
-          var banner = paid
+          /* Manual orders taken by phone/Messenger must be VISIBLE
+             in the kitchen before the money lands, but this list
+             only shows paid rows — so they carry paid=true with
+             payment_method "cod" and must read as collect-on-
+             delivery, never "Đã trả" (Diệp Ngọc's $50 card showed
+             "Đã trả cash · Không thu tiền" while she had not paid;
+             Chris flagged it 2026-11-07). The TRẢ CASH button
+             flips a cod row to real cash-paid when collected. */
+          var banner = (paid && !isCod)
             ? (String(o.payment_method || "").toLowerCase() === "cash" ? "Đã trả cash " : (curTab === "delivery" ? "Đã trả qua app " : "Đã trả ")) + money(o.total) + " · Không thu tiền"
             : "THU " + money(o.total) + (cat === "pickup" ? " khi lấy" : " khi giao") + " (chưa trả)";
-          html += '<div class="note-line' + (paid ? "" : " collect") + '">' + esc(banner) + "</div>";
+          html += '<div class="note-line' + ((paid && !isCod) ? "" : " collect") + '">' + esc(banner) + "</div>";
           html += '<div class="customer">' + (badge ? '<span class="badge">' + badge + "</span>" : "") + esc(o.customer_name || "Khách") + "</div>";
           if (o.phone) html += '<div class="sdt">' + esc(o.phone) + "</div>";
           if ((isDelivery || cat === "ship") && o.address) html += '<div class="place">📍 ' + esc(o.address) + "</div>";
@@ -484,7 +493,7 @@
           if (dirUrl) html += '<a class="act-dir" href="' + dirUrl + '" target="_blank" rel="noopener"><span class="ai">🧭</span><span>Chỉ đường</span></a>';
           html += '<button type="button" data-toggle="recv" data-id="' + o.id + '" class="' + (isRecv ? "on" : "") + '"><span class="ai">' + (isRecv ? "✅" : "☐") + '</span><span>ĐÃ NHẬN</span></button>';
           html += '<button type="button" data-toggle="done" data-id="' + o.id + '" class="' + (isDone ? "on" : "") + '"><span class="ai">' + (isDone ? "✅" : "☐") + '</span><span>' + doneLabel + '</span></button>';
-          if (!paid) html += '<button type="button" data-cash="' + o.id + '"><span class="ai">💵</span><span>TRẢ CASH</span></button>';
+          if (!paid || isCod) html += '<button type="button" data-cash="' + o.id + '"><span class="ai">💵</span><span>TRẢ CASH</span></button>';
           else if (String(o.payment_method || "").toLowerCase() === "cash") html += '<button type="button" data-cash="' + o.id + '" class="on"><span class="ai">✅</span><span>ĐÃ TRẢ CASH</span></button>';
           html += '<button type="button" data-print="' + o.id + '"><span class="ai">🧾</span><span>IN HOÁ ĐƠN</span></button>';
           html += "</div>";
@@ -714,7 +723,7 @@
           if (Number(o.delivery_fee)) h += '<div class="row"><span>Phí giao</span><span>' + money(o.delivery_fee) + "</span></div>";
           if (o.tax != null) h += '<div class="row"><span>Thuế</span><span>' + money(o.tax) + "</span></div>";
           h += '<div class="row tot"><span>TỔNG</span><span>' + money(o.total) + "</span></div>";
-          h += "<div>" + (o.paid ? "Đã thanh toán qua app ✅" : "Chưa thanh toán") + "</div>";
+          h += "<div>" + ((o.paid && String(o.payment_method || "").toLowerCase() !== "cod") ? "Đã thanh toán qua app ✅" : "Chưa thanh toán") + "</div>";
           if (o.note) h += "<div>Ghi chú: " + esc(o.note) + "</div>";
           h += '<hr><div class="c">Cảm ơn quý khách! 🙏</div>';
           return h + "</div>";
@@ -947,7 +956,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261107-1140";
+window.__BUILD__ = "20261107-1400";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
