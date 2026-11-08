@@ -75,13 +75,36 @@
         body>*{display:none !important}
         body>#printArea{display:block !important}
       }
-      .receipt{max-width:62mm;margin:0 auto 10px;font-family:ui-monospace,Menlo,monospace;color:#000;font-size:12px;line-height:1.45;page-break-after:always}
-      .receipt:last-child{page-break-after:auto}
-      .receipt h2{text-align:center;font-size:16px;margin:0 0 2px;font-family:ui-monospace,Menlo,monospace}
-      .receipt .c{text-align:center}
-      .receipt hr{border:none;border-top:1px dashed #000;margin:7px 0}
-      .receipt .row{display:flex;justify-content:space-between;gap:8px}
-      .receipt .tot{font-weight:800;font-size:14px}
+      /* Hoá đơn PDF giống app Think's Kitchen (Chris 2026-11-07):
+         receipt element 2.4in được html2canvas chụp thành PDF khổ
+         62mm × chiều cao tự nhiên — xem buildPrintReceipt bên dưới. */
+      #printArea.capturing{display:block;position:absolute;left:-10000px;top:0;width:2.4in;background:#fff}
+      #printArea .pl-label{display:flex;flex-direction:column;box-sizing:border-box;width:2.4in;height:auto;padding:0 4px;background:#fff;color:#000;font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif}
+      #printArea .pl-head{display:flex;justify-content:space-between;align-items:baseline;gap:6px;background:#000;color:#fff;padding:0.05in 0.1in;font-size:10.5pt;font-weight:800;letter-spacing:0.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      #printArea .pl-body{flex:1;display:flex;flex-direction:column;padding:0.05in 0.1in 0}
+      #printArea .pl-name{margin-top:0.05in;font-size:17pt;font-weight:800;line-height:1.15}
+      #printArea .pl-place{margin-top:0.03in;font-size:10.5pt;font-weight:600;line-height:1.22;overflow-wrap:anywhere}
+      #printArea .pl-phone{margin-top:0.03in;font-size:11.5pt;font-weight:700}
+      #printArea .pl-dishes{margin-top:0.05in}
+      #printArea .pl-note{padding-top:0.05in;text-align:center;font-size:11pt;font-weight:800;line-height:1.22}
+      #printArea .pl-foot{padding-top:0.05in;text-align:center}
+      #printArea .pl-foot-1{font-size:11pt;font-weight:800}
+      #printArea .pl-foot-2{margin-top:0.02in;font-size:8.5pt;font-weight:600}
+      #printArea .pl-qr{display:flex;justify-content:center;gap:0.18in;padding-top:0.06in}
+      #printArea .pl-qr-cell{text-align:center}
+      #printArea .pl-qr-cell img{display:block;width:0.7in;height:0.7in}
+      #printArea .pl-qr-cap{margin-top:0.03in;font-size:8pt;font-weight:800;letter-spacing:0.02em;white-space:nowrap}
+      #printArea .pl-cut{margin:0.05in 0.1in 0.06in;border-top:2px dashed #000}
+      #printArea .rc-meta{margin-top:0.05in;font-size:10.5pt;font-weight:700;line-height:1.3}
+      #printArea .rc-name{margin-top:0.06in;font-size:15pt;font-weight:800;line-height:1.2}
+      #printArea .rc-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:0.02in;font-size:10.5pt;line-height:1.22}
+      #printArea .rc-item{flex:1;overflow-wrap:anywhere}
+      #printArea .rc-price{font-weight:700;white-space:nowrap}
+      #printArea .rc-hr{margin:0.06in 0 0.02in;border-top:2px solid #000}
+      #printArea .rc-grand{font-size:13pt;font-weight:900}
+      #printArea .rc-paid{margin-top:0.07in;text-align:center;font-size:11.5pt;font-weight:900;letter-spacing:0.02em}
+      #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#26221a;color:#fff7ec;font:700 14px "Be Vietnam Pro",sans-serif;padding:11px 18px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:99;max-width:88vw;text-align:center}
+      #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
       .customer{font-size:19px;font-weight:800;line-height:1.25}
       .sdt{font-size:14.5px;color:var(--muted);font-weight:600;margin-top:1px}
       .place{font-size:14px;margin-top:3px}
@@ -701,37 +724,253 @@
           applyFilter();
         }
         // ----- Receipts (🧾 per order + 🖨 print all) -----
-        function receiptHtml(o) {
-          var cat = category(o);
-          var methodLine = cat === "delivery" ? "Giao hàng" + (o.shift ? " · Ca " + o.shift : "") : cat === "ship" ? "Ship" : "Pick up" + (o.pickup_time ? " · " + o.pickup_time : "");
-          var items = parseItems(o);
-          var h = '<div class="receipt">';
-          h += "<h2>" + esc(SHOP_NAME || "Tiệm") + "</h2>";
-          h += '<div class="c">HOÁ ĐƠN · Order app #' + o.id + "</div>";
-          h += '<div class="c">' + esc(((o.weekday_label || "") + " " + (o.day || "")).replace(/^\s+|\s+$/g, "")) + "</div><hr>";
-          h += "<div>Khách: " + esc(o.customer_name || "") + "</div>";
-          if (o.phone) h += "<div>SĐT: " + esc(o.phone) + "</div>";
-          h += "<div>" + esc(methodLine) + "</div>";
-          if (o.address) h += "<div>Địa chỉ: " + esc(o.address) + "</div>";
-          h += "<hr>";
-          items.forEach(function (it) {
-            h += '<div class="row"><span>' + (Number(it.qty) || 1) + "x " + esc(it.name || "Món") + "</span><span>" + (it.price != null && it.price !== "" ? money(it.price) : "") + "</span></div>";
-            if (it.detail) h += "<div>" + esc(it.detail) + "</div>";
+        /* Hoá đơn PDF GIỐNG app Think's Kitchen (Chris 2026-11-07,
+           sau khi bản in ACE cũ ra trang giấy to, chữ nhỏ xíu ở giữa):
+           dựng receipt element khổ 2.4in, html2canvas chụp lại rồi
+           nhúng vào PDF khổ 62mm × chiều cao tự nhiên của hoá đơn,
+           giao qua share/mở tab như bên app bếp chính. */
+        function el(tag, cls, txt) {
+          var n = document.createElement(tag);
+          if (cls) n.className = cls;
+          if (txt != null) n.textContent = txt;
+          return n;
+        }
+        var toastTimer = null;
+        function bepToast(msg) {
+          var t = $("toast");
+          if (!t) return;
+          t.textContent = msg;
+          t.classList.add("show");
+          if (toastTimer) window.clearTimeout(toastTimer);
+          toastTimer = window.setTimeout(function () { t.classList.remove("show"); }, 2600);
+        }
+        var PDF_LIB_URLS = [
+          "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+          "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+        ];
+        var pdfLibsPromise = null;
+        var printPdfBusy = false;
+        function loadScriptOnce(src) {
+          return new Promise(function (resolve, reject) {
+            var s = document.createElement("script");
+            s.src = src;
+            s.async = true;
+            s.onload = function () { resolve(); };
+            s.onerror = function () { reject(new Error("load failed: " + src)); };
+            document.head.appendChild(s);
           });
-          h += "<hr>";
-          if (o.subtotal != null) h += '<div class="row"><span>Tạm tính</span><span>' + money(o.subtotal) + "</span></div>";
-          if (Number(o.delivery_fee)) h += '<div class="row"><span>Phí giao</span><span>' + money(o.delivery_fee) + "</span></div>";
-          if (o.tax != null) h += '<div class="row"><span>Thuế</span><span>' + money(o.tax) + "</span></div>";
-          h += '<div class="row tot"><span>TỔNG</span><span>' + money(o.total) + "</span></div>";
-          h += "<div>" + ((o.paid && String(o.payment_method || "").toLowerCase() !== "cod") ? "Đã thanh toán qua app ✅" : "Chưa thanh toán") + "</div>";
-          if (o.note) h += "<div>Ghi chú: " + esc(o.note) + "</div>";
-          h += '<hr><div class="c">Cảm ơn quý khách! 🙏</div>';
-          return h + "</div>";
+        }
+        function pdfLibsReady() { return !!(window.html2canvas && window.jspdf && window.jspdf.jsPDF); }
+        function loadPdfLibs() {
+          if (pdfLibsReady()) return Promise.resolve(true);
+          if (!pdfLibsPromise) {
+            var timeout = new Promise(function (resolve) { setTimeout(function () { resolve(false); }, 20000); });
+            var loading = Promise.all(PDF_LIB_URLS.map(loadScriptOnce)).then(
+              function () { return pdfLibsReady(); },
+              function () { return false; }
+            );
+            pdfLibsPromise = Promise.race([loading, timeout]).then(function (ok) {
+              if (!ok) pdfLibsPromise = null;
+              return ok;
+            });
+          }
+          return pdfLibsPromise;
+        }
+        /* Ảnh in nhanh cho máy nhiệt 1-bit: threshold đen/trắng
+           thuần, PNG nhẹ — giống app bếp chính. */
+        function printFastImage(canvas) {
+          try {
+            var c2 = document.createElement("canvas");
+            c2.width = canvas.width;
+            c2.height = canvas.height;
+            var ctx = c2.getContext("2d");
+            ctx.drawImage(canvas, 0, 0);
+            var id = ctx.getImageData(0, 0, c2.width, c2.height);
+            var d = id.data;
+            for (var i = 0; i < d.length; i += 4) {
+              var g = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000;
+              var v = g < 170 ? 0 : 255;
+              d[i] = v; d[i + 1] = v; d[i + 2] = v; d[i + 3] = 255;
+            }
+            ctx.putImageData(id, 0, 0);
+            return c2.toDataURL("image/png");
+          } catch (e) {
+            return canvas.toDataURL("image/jpeg", 0.92);
+          }
+        }
+        function openPdfBlobUrl(blob, fileName) {
+          var url = URL.createObjectURL(blob);
+          var w = null;
+          try { w = window.open(url, "_blank"); } catch (e) { w = null; }
+          if (!w) {
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+          setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 60000);
+        }
+        function deliverLabelsPdf(blob, fileName) {
+          var file = null;
+          try { file = new File([blob], fileName, { type: "application/pdf" }); } catch (e) { file = null; }
+          if (file && navigator.share && navigator.canShare) {
+            var can = false;
+            try { can = navigator.canShare({ files: [file] }); } catch (e) { can = false; }
+            if (can) {
+              navigator.share({ files: [file], title: fileName }).then(function () {}, function (err) {
+                if (err && err.name === "AbortError") return;
+                openPdfBlobUrl(blob, fileName);
+              });
+              return;
+            }
+          }
+          openPdfBlobUrl(blob, fileName);
+        }
+        function dishLine(it) {
+          var line = "";
+          if (it.qty) line += it.qty + "x ";
+          line += it.name || "";
+          if (it.detail) line += " — " + it.detail;
+          return line;
+        }
+        function buildPrintReceipt(o) {
+          var label = el("div", "pl-label");
+          var head = el("div", "pl-head");
+          head.appendChild(el("span", null, SHOP_NAME || "Tiệm"));
+          head.appendChild(el("span", null, "HOÁ ĐƠN"));
+          label.appendChild(head);
+
+          var bodyBox = el("div", "pl-body");
+          var dstr = "";
+          if (o.day) {
+            var dp = String(o.day).split("-");
+            if (dp.length === 3) dstr = parseInt(dp[2], 10) + "/" + parseInt(dp[1], 10);
+          }
+          bodyBox.appendChild(el("div", "rc-meta",
+            "Order app #" + o.id + (o.weekday_label ? " · " + o.weekday_label : "") + (dstr ? " " + dstr : "")));
+          bodyBox.appendChild(el("div", "rc-name", o.customer_name || ""));
+          if (o.phone) bodyBox.appendChild(el("div", "pl-phone", "SĐT: " + o.phone));
+          var cat = category(o);
+          bodyBox.appendChild(el("div", "rc-meta", cat === "delivery"
+            ? "🚗 Giao hàng" + (o.shift ? " · Ca " + o.shift : "")
+            : cat === "ship" ? "📦 Ship"
+            : "🏠 Pick up" + (o.pickup_time ? " · Giờ lấy: " + o.pickup_time : "")));
+          if (cat !== "pickup" && o.address) bodyBox.appendChild(el("div", "pl-place", o.address));
+
+          var items = parseItems(o);
+          if (items.length) {
+            var dishBox = el("div", "pl-dishes");
+            items.forEach(function (it) {
+              var row = el("div", "rc-row");
+              row.appendChild(el("span", "rc-item", "• " + dishLine(it)));
+              var price = Number(it.price) || 0;
+              var qty = Number(it.qty) || 1;
+              if (price > 0) row.appendChild(el("span", "rc-price", money(price * qty)));
+              dishBox.appendChild(row);
+            });
+            bodyBox.appendChild(dishBox);
+          }
+
+          if (o.note) bodyBox.appendChild(el("div", "pl-note", "📝 " + o.note));
+
+          bodyBox.appendChild(el("div", "rc-hr"));
+          function trow(text, val, cls) {
+            var r = el("div", "rc-row" + (cls ? " " + cls : ""));
+            r.appendChild(el("span", null, text));
+            r.appendChild(el("span", "rc-price", money(val)));
+            bodyBox.appendChild(r);
+          }
+          trow("Tạm tính", o.subtotal);
+          if (Number(o.delivery_fee) > 0) trow("Phí giao", o.delivery_fee);
+          trow("Thuế", o.tax);
+          trow("TỔNG CỘNG", o.total, "rc-grand");
+
+          var isPaid = o.paid === true && String(o.payment_method || "").toLowerCase() !== "cod";
+          bodyBox.appendChild(el("div", "rc-paid", isPaid ? "✓ ĐÃ THANH TOÁN" : "⚠️ CHƯA THANH TOÁN"));
+
+          var foot = el("div", "pl-foot");
+          foot.appendChild(el("div", "pl-foot-1", "CẢM ƠN QUÝ KHÁCH!"));
+          foot.appendChild(el("div", "pl-foot-2", "Order: 626-283-9994"));
+          bodyBox.appendChild(foot);
+
+          var qrRow = el("div", "pl-qr");
+          [
+            { src: "/tuyen-giao/assets/qr-app.png", cap: "ĐẶT MÓN QUA APP" },
+            { src: "/tuyen-giao/assets/qr-web.png", cap: "WEBSITE" }
+          ].forEach(function (q) {
+            var cell = el("div", "pl-qr-cell");
+            var img = document.createElement("img");
+            img.src = q.src;
+            img.alt = q.cap;
+            cell.appendChild(img);
+            cell.appendChild(el("div", "pl-qr-cap", q.cap));
+            qrRow.appendChild(cell);
+          });
+          bodyBox.appendChild(qrRow);
+          label.appendChild(bodyBox);
+
+          label.appendChild(el("div", "pl-cut"));
+          return label;
+        }
+        function buildReceiptsPdf(list) {
+          var JsPDF = window.jspdf.jsPDF;
+          var pdf = null;
+          var chain = Promise.resolve();
+          list.forEach(function (o, idx) {
+            chain = chain.then(function () {
+              bepToast("Đang tạo PDF… " + (idx + 1) + "/" + list.length);
+              var pa = $("printArea");
+              pa.innerHTML = "";
+              var label = buildPrintReceipt(o);
+              pa.appendChild(label);
+              pa.classList.add("capturing");
+              return window.html2canvas(label, {
+                scale: 2,
+                backgroundColor: "#ffffff",
+                logging: false
+              }).then(function (canvas) {
+                pa.classList.remove("capturing");
+                var img = printFastImage(canvas);
+                var heightMm = canvas.width > 0 ? 62 * (canvas.height / canvas.width) : 101.6;
+                if (heightMm < 40) heightMm = 40;
+                if (heightMm > 300) heightMm = 300;
+                if (!pdf) {
+                  pdf = new JsPDF({ unit: "mm", format: [62, heightMm], orientation: "portrait", compress: true });
+                } else {
+                  pdf.addPage([62, heightMm], "portrait");
+                }
+                pdf.addImage(img, "PNG", 0, 0, 62, heightMm);
+              }, function (err) {
+                try { pa.classList.remove("capturing"); } catch (e2) {}
+                throw err;
+              });
+            });
+          });
+          return chain.then(function () { return pdf; });
         }
         function printReceipts(list) {
-          if (!list || !list.length) return;
-          $("printArea").innerHTML = list.map(receiptHtml).join("");
-          setTimeout(function () { window.print(); }, 80);
+          if (!list || !list.length || printPdfBusy) return;
+          printPdfBusy = true;
+          loadPdfLibs().then(function (ok) {
+            if (!ok) {
+              printPdfBusy = false;
+              bepToast("⚠️ Tạo PDF cần có mạng — thử lại giúp em");
+              return;
+            }
+            buildReceiptsPdf(list).then(function (pdf) {
+              printPdfBusy = false;
+              $("printArea").innerHTML = "";
+              if (!pdf) return;
+              var fname = list.length === 1 ? "hoa-don-app-" + list[0].id + ".pdf" : "hoa-don-" + (list[0].day || "all") + ".pdf";
+              deliverLabelsPdf(pdf.output("blob"), fname);
+            }, function () {
+              printPdfBusy = false;
+              $("printArea").innerHTML = "";
+              bepToast("⚠️ Không tạo được hoá đơn — thử lại giúp em");
+            });
+          });
         }
         // ----- Route total (Nominatim geocode + OSRM, like the fee quote) -----
         function geocode(addr) {
@@ -956,7 +1195,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261107-1425";
+window.__BUILD__ = "20261107-1500";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -984,5 +1223,6 @@ window.__BUILD__ = "20261107-1425";
 })();
     </script>
     <div id="printArea"></div>
+    <div id="toast"></div>
   </body>
 </html>
