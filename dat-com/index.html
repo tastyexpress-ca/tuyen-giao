@@ -577,10 +577,17 @@
               </div>
 
               <div id="pickupZone">
-                <div class="pickup-info">Pick up: <b>14131 Roxanne Dr, Westminster, CA 92683</b> (8am–8pm)</div>
+                <div class="pickup-info">Pick up: <b>14131 Roxanne Dr, Westminster, CA 92683</b> (8am–11am · 2pm–8pm)</div>
                 <div class="field">
-                  <label for="inPickupTime">Giờ lấy (giờ bạn ghé lấy món)</label>
-                  <input type="text" id="inPickupTime" placeholder="Ví dụ: 12 giờ trưa, 5:30 chiều…" />
+                  <label>Khung giờ lấy <span class="req">*</span></label>
+                  <div class="radio-group" style="margin-bottom:6px;">
+                    <label class="radio-opt"><input type="radio" name="pickupWindow" value="8am–11am" checked /> Sáng 8am–11am</label>
+                    <label class="radio-opt"><input type="radio" name="pickupWindow" value="2pm–8pm" /> Chiều 2pm–8pm</label>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="inPickupTime">Giờ lấy cụ thể (không bắt buộc)</label>
+                  <input type="text" id="inPickupTime" placeholder="Ví dụ: 9:30 sáng, 5:30 chiều…" />
                 </div>
               </div>
 
@@ -1736,7 +1743,9 @@
               : "Phí giao $" + fee);
           }
         } else {
-          pickupTime = $("inPickupTime").value.trim() || null;
+          var pw = document.querySelector("input[name=pickupWindow]:checked");
+          var specific = $("inPickupTime").value.trim();
+          pickupTime = (pw ? pw.value : "8am–11am") + (specific ? " · " + specific : "");
         }
         return {
           day: first.day,
@@ -1824,7 +1833,7 @@
         if (order.method === "ship") {
           html += '<div class="s-meta">Ship đi xa: ' + esc(order.address) + '<br />Phí ship: ' + money(SHIP_FEE) + ' (đã gồm trong tổng)<br />📦 Bếp chuẩn bị: ' + plusDayLabel(order.day, 0) + ' · <b>Bạn nhận hàng: ' + plusDayLabel(order.day, 1) + ' — trước 5PM</b></div>';
         } else if (order.method === "pickup") {
-          html += '<div class="s-meta">Pick up: 14131 Roxanne Dr, Westminster, CA 92683 (8am–8pm)' +
+          html += '<div class="s-meta">Pick up: 14131 Roxanne Dr, Westminster, CA 92683 (8am–11am · 2pm–8pm)' +
             (order.pickup_time ? '<br />Giờ lấy: ' + esc(order.pickup_time) : "") + '</div>';
         } else {
           html += '<div class="s-meta">Giao hàng: ' + esc(order.address) + '<br />Ca giao: ' + esc(order.shift) + '</div>';
@@ -2627,7 +2636,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261108-1658";
+window.__BUILD__ = "20261109-1136";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -2654,7 +2663,7 @@ window.__BUILD__ = "20261108-1658";
   setInterval(check, 300000);
 })();
 </script>
-<script src="../assets/i18n.js?v=20261026-2115"></script>
+<script src="../assets/i18n.js?v=20261109-1136"></script>
 <!-- TEIP: install + notify + promo popup -->
 <style>
 #teip{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fff;color:#26221a;border-radius:16px;box-shadow:0 12px 34px rgba(0,0,0,.28);padding:16px 16px 13px;font-family:inherit;border:1px solid #e7ddca}
