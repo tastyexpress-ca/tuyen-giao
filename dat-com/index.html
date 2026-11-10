@@ -597,7 +597,7 @@
                   <input type="text" id="inAddress" autocomplete="street-address" placeholder="Số nhà, đường, thành phố" />
                   <div class="err">Vui lòng nhập địa chỉ giao hàng.</div>
                 </div>
-                <div class="fee-note">⏰ Ca Sáng 9–11am: chốt đơn 10:00 tối hôm trước · Ca Tối 7–9pm: chốt đơn 4:00 chiều cùng ngày.</div>
+                <div class="fee-note">⏰ Ca Sáng 9–11am: chốt đơn 10:00 tối hôm trước · Ca Tối 7–9pm: chốt đơn 4:00 chiều cùng ngày.<br />🚗 Bên mình chỉ giao trong vòng tối đa 10 miles từ tiệm ạ.</div>
                 <div class="field">
                   <label>Ca giao</label>
                   <div class="radio-group" style="margin-bottom:6px;">
@@ -892,6 +892,38 @@
 
       /* ================= STATE ================= */
       var cart = []; // {key, day, wd, dm, name, detail, qty, price}
+      /* ============ GIỎ LƯU LẠI — trang tự tải lại (bản mới / trình duyệt đóng) cũng không mất giỏ ============ */
+      var CART_STORE_KEY = "te-datcom-cart-v1";
+      var cartStoreReady = false; // true sau khi đã khôi phục xong lúc mở trang — tránh ghi đè giỏ đã lưu bằng giỏ trống
+      function saveCartState() {
+        if (!cartStoreReady) return;
+        try {
+          if (!cart.length) { localStorage.removeItem(CART_STORE_KEY); return; }
+          localStorage.setItem(CART_STORE_KEY, JSON.stringify({
+            t: Date.now(), cart: cart, method: method,
+            name: ($("inName") || {}).value || "", phone: ($("inPhone") || {}).value || "",
+            address: ($("inAddress") || {}).value || "", note: ($("inNote") || {}).value || ""
+          }));
+        } catch (e) {}
+      }
+      function clearCartState() { try { localStorage.removeItem(CART_STORE_KEY); } catch (e) {} }
+      function restoreCartState() {
+        var s = null;
+        try { s = JSON.parse(localStorage.getItem(CART_STORE_KEY) || "null"); } catch (e) {}
+        if (!s || !s.cart || !s.cart.length) return;
+        if (Date.now() - (s.t || 0) > 12 * 3600 * 1000) { clearCartState(); return; }
+        var kept = s.cart.filter(function (l) { return l && l.day && !dayLocked(l.day); });
+        if (!kept.length) { clearCartState(); return; }
+        if (s.name) $("inName").value = s.name;
+        if (s.phone) $("inPhone").value = s.phone;
+        if (s.address) $("inAddress").value = s.address;
+        if (s.note) $("inNote").value = s.note;
+        cart = kept;
+        if ((s.method === "delivery" || s.method === "pickup") && !/[?&]ship=1(&|$)/.test(window.location.search)) setMethod(s.method);
+        renderMenu();
+        refreshCartUI();
+      }
+      window.teCartCount = function () { return cart.length; };
       var dayIdx = defaultDayIndex();
       var method = "pickup";
       var cpSel = { man: null, xao: null, canh: null, rice: "Lấy cơm", qty: 1 };
@@ -1496,6 +1528,7 @@
         $("cartTotal").textContent = money(sub);
         if ($("cartOverlay").classList.contains("open")) renderCart();
         if (method === "ship") renderShipMenu();
+        saveCartState();
       }
 
       function renderCart() {
@@ -2099,6 +2132,7 @@
           checkoutSid = qs.get("session_id");
         } catch (e) { return; }
         if (paid !== "1" && paid !== "0") return;
+        if (paid === "1") { cart = []; clearCartState(); }
         try { history.replaceState(null, "", window.location.pathname + window.location.hash); } catch (e) {}
         var order = null;
         try {
@@ -2549,8 +2583,10 @@
           var f = $(id).closest(".field");
           if (f) f.classList.remove("invalid");
           $("formAlert").classList.remove("show");
+          saveCartState();
         });
       });
+      $("inNote").addEventListener("input", saveCartState);
       $("inAddress").addEventListener("input", scheduleFeeCalc);
       $("inAddress").addEventListener("blur", function () {
         if (method === "delivery" && $("inAddress").value.trim()) calcDeliveryFee();
@@ -2606,6 +2642,8 @@
       renderDayChips();
       renderMenu();
       refreshCartUI();
+      cartStoreReady = true;
+      restoreCartState();
       if (/[?&]ship=1(&|$)/.test(window.location.search)) { document.body.classList.add("ship-only"); setMethod("ship"); }
       loadExtraProducts();
       handlePaidReturn();
@@ -2636,7 +2674,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261110-1405";
+window.__BUILD__ = "20261110-1420";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -2648,6 +2686,7 @@ window.__BUILD__ = "20261110-1405";
           try { sessionStorage.removeItem(KEY); } catch (e) {}
           return;
         }
+        if (window.teCartCount && window.teCartCount() > 0) return; // giỏ đang có món — không tự tải lại, để khách đặt xong đã
         try {
           if (sessionStorage.getItem(KEY) === j.build) return;
           sessionStorage.setItem(KEY, j.build);
@@ -2663,7 +2702,7 @@ window.__BUILD__ = "20261110-1405";
   setInterval(check, 300000);
 })();
 </script>
-<script src="../assets/i18n.js?v=20261110-1405"></script>
+<script src="../assets/i18n.js?v=20261110-1420"></script>
 <!-- TEIP: install + notify + promo popup -->
 <style>
 #teip{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fff;color:#26221a;border-radius:16px;box-shadow:0 12px 34px rgba(0,0,0,.28);padding:16px 16px 13px;font-family:inherit;border:1px solid #e7ddca}

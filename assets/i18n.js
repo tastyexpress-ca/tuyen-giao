@@ -222,6 +222,7 @@
     "Sáng 9–11am": "Morning 9–11am",
     "Tối 7–9pm": "Evening 7–9pm",
     "⏰ Ca Sáng 9–11am: chốt đơn 10:00 tối hôm trước · Ca Tối 7–9pm: chốt đơn 4:00 chiều cùng ngày.": "⏰ Morning shift 9–11am: orders close 10:00 PM the night before · Evening shift 7–9pm: orders close 4:00 PM the same day.",
+    "🚗 Bên mình chỉ giao trong vòng tối đa 10 miles từ tiệm ạ.": "🚗 We deliver within a maximum of 10 miles from the shop.",
     "🏠 Hệ Thống Các Tiệm": "🏠 Our Shops",
     "Đơn của tôi": "My orders",
     "Đăng nhập để xem lại đơn đã đặt & đặt hàng nhanh hơn": "Log in to see your past orders & check out faster",
