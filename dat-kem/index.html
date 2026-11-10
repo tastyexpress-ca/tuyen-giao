@@ -213,6 +213,15 @@
       .dish.small .stepper .qv { min-width: 22px; font-size: 14px; }
 
       .foot-note { margin-top: 30px; font-size: 13px; color: var(--ink-soft); text-align: center; }
+      .party-block { margin-top: 26px; }
+      .party-sub { margin: 0 0 10px; font-size: .88rem; line-height: 1.45; color: var(--ink-soft); }
+      .party-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 8px; }
+      .party-item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; }
+      .party-name { font-weight: 800; font-size: .78rem; letter-spacing: .02em; color: var(--ink); }
+      .party-guests { font-size: .76rem; color: var(--ink-soft); margin-top: 1px; }
+      .party-price { font-weight: 800; color: var(--accent-ink); font-size: 1.02rem; margin-top: 3px; }
+      .party-note { margin: 10px 0 0; font-size: .84rem; color: var(--ink-soft); }
+      .party-call { display: inline-block; margin-top: 10px; background: var(--brown-head); color: #fdf3e0; font-weight: 700; font-size: .9rem; padding: 10px 16px; border-radius: 999px; text-decoration: none; }
 
       /* ---------- Cart bar (static, in page flow) ---------- */
       .cartbar {
@@ -401,6 +410,21 @@
         </div>
       </div>
       <main class="wrap" id="menuMain"></main>
+      <section class="wrap party-block">
+        <div class="sec-head"><h2>🎉 Ice Cream Party Bar — Tiệc &amp; Sự kiện</h2><div class="rule"></div></div>
+        <p class="party-sub">Kem ăn thoải mái (all-you-can-eat) trong 2 giờ · Đã gồm toppings + setup · Thêm giờ +$50/giờ</p>
+        <div class="party-grid">
+          <div class="party-item"><div class="party-name">MINI PACKAGE</div><div class="party-guests">Tối đa 15 khách · 2 vị kem</div><div class="party-price">$135</div></div>
+          <div class="party-item"><div class="party-name">CLASSIC PACKAGE</div><div class="party-guests">Tối đa 25 khách · 3 vị kem</div><div class="party-price">$195</div></div>
+          <div class="party-item"><div class="party-name">DELUXE PACKAGE</div><div class="party-guests">Tối đa 40 khách · 4 vị kem</div><div class="party-price">$295</div></div>
+          <div class="party-item"><div class="party-name">LARGE EVENTS</div><div class="party-guests">Tối đa 50 khách</div><div class="party-price">$350</div></div>
+          <div class="party-item"><div class="party-name">GIANT EVENTS</div><div class="party-guests">Tối đa 80 khách</div><div class="party-price">$545</div></div>
+          <div class="party-item"><div class="party-name">LARGE PARTY</div><div class="party-guests">Tối đa 100 khách</div><div class="party-price">$650</div></div>
+          <div class="party-item"><div class="party-name">GIANT PARTY</div><div class="party-guests">Tối đa 150 khách</div><div class="party-price">$945</div></div>
+        </div>
+        <p class="party-note">Gói lớn có thể tuỳ chỉnh theo nhu cầu — gọi tiệm để được tư vấn và đặt tiệc.</p>
+        <a class="party-call" href="tel:+16262839994">📞 Gọi đặt tiệc: 626-283-9994</a>
+      </section>
       <!-- Cart bar (static — sits at the end of the menu, in the page flow) -->
       <div class="cartbar hidden" id="cartBar">
         <button class="cartbar-inner" id="cartBarBtn" type="button">
@@ -1353,7 +1377,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261110-1355";
+window.__BUILD__ = "20261110-1400";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
