@@ -87,6 +87,7 @@
     "Tối đa 150 khách": "Up to 150 guests",
     "Gói lớn có thể tuỳ chỉnh theo nhu cầu — gọi tiệm để được tư vấn và đặt tiệc.": "Large packages can be customized — call us for details and to book your party.",
     "📞 Gọi đặt tiệc: 626-283-9994": "📞 Book a party: 626-283-9994",
+    "🎉 ICE CREAM PARTY BAR — ĐẶT TIỆC": "🎉 ICE CREAM PARTY BAR — BOOK A PARTY",
     "Cơm ngon như cơm nhà nấu, giao đúng giờ. Cả nhà mình đặt cơm tháng luôn!": "Tastes just like home cooking and arrives on time. Our whole family is on the monthly plan!",
     "Phần cơm đầy đặn, thực đơn thay đổi mỗi ngày, ăn hoài không ngán.": "Generous portions and a menu that changes daily — you never get tired of it.",
     "Món mặn đậm đà, canh ngọt thanh. Ăn một lần là ghiền!": "Rich, savory mains and light, sweet soups. One try and you're hooked!",
