@@ -1532,6 +1532,59 @@
         cursor: pointer;
       }
       .btn-receipt:active { transform: scale(0.99); }
+      /* 📄 Xem hoá đơn (invoice view, Chris 2026-11-10): a full
+         readable invoice for one online order, next to the 62mm
+         receipt button above. */
+      .btn-invoice {
+        width: 100%;
+        margin-top: 7px;
+        min-height: 40px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        background: #fff;
+        color: #000;
+        border: 2.5px solid #000;
+        cursor: pointer;
+      }
+      .btn-invoice:active { transform: scale(0.99); }
+      .inv-shop { font-size: 22px; font-weight: 900; letter-spacing: 0.04em; text-align: center; }
+      .inv-title { font-size: 14px; font-weight: 800; text-align: center; margin-top: 2px; }
+      .inv-sub { font-size: 12px; text-align: center; color: #555; margin-top: 2px; }
+      .inv-meta { margin-top: 12px; font-size: 14px; line-height: 1.55; }
+      .inv-meta b { font-weight: 800; }
+      .inv-hr { border-top: 1.5px dashed #999; margin: 12px 0; }
+      .inv-row { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 3px 0; }
+      .inv-row .inv-name { flex: 1; }
+      .inv-row .inv-amt { font-weight: 700; white-space: nowrap; }
+      .inv-detail { display: block; font-size: 12px; color: #555; }
+      .inv-total-row { display: flex; justify-content: space-between; font-size: 14px; padding: 2px 0; }
+      .inv-grand { display: flex; justify-content: space-between; font-size: 18px; font-weight: 900; padding-top: 6px; }
+      .inv-paid { margin-top: 12px; font-size: 15px; font-weight: 900; text-align: center; }
+      .inv-note { margin-top: 10px; font-size: 13px; }
+      .inv-foot { margin-top: 14px; font-size: 12px; text-align: center; color: #555; }
+      /* Print/PDF capture of the invoice (wider than the 62mm
+         receipt): #printArea-scoped like .pl-label. */
+      #printArea .inv-print {
+        box-sizing: border-box;
+        width: 640px;
+        padding: 28px 30px;
+        background: #fff;
+        color: #000;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      #printArea .inv-print .inv-shop { font-size: 30px; }
+      #printArea .inv-print .inv-title { font-size: 19px; }
+      #printArea .inv-print .inv-sub { font-size: 15px; color: #444; }
+      #printArea .inv-print .inv-meta { font-size: 18px; }
+      #printArea .inv-print .inv-row { font-size: 18px; }
+      #printArea .inv-print .inv-detail { font-size: 15px; color: #444; }
+      #printArea .inv-print .inv-total-row { font-size: 18px; }
+      #printArea .inv-print .inv-grand { font-size: 24px; }
+      #printArea .inv-print .inv-paid { font-size: 20px; }
+      #printArea .inv-print .inv-note { font-size: 16px; }
+      #printArea .inv-print .inv-foot { font-size: 15px; color: #444; }
 
       /* ---------- Kitchen print label (🖨 In order) ---------- */
       .btn-print {
@@ -2294,6 +2347,25 @@
       </div>
     </div>
 
+    <!-- ================= INVOICE VIEW (one online order — Chris 2026-11-10) ================= -->
+    <div id="invoiceView" hidden>
+      <header>
+        <div class="wrap">
+          <button type="button" class="back-btn" id="invoiceBackBtn">← Quay lại</button>
+          <div class="brand">Think's Kitchen <span class="route-name">· Hoá đơn</span></div>
+          <div class="dayline" id="invoiceDayline"></div>
+        </div>
+      </header>
+      <div class="wrap">
+        <main>
+          <div class="totals-card">
+            <div id="invoiceBody"></div>
+            <button type="button" class="btn-receipt" id="invoicePdfBtn">🧾 IN / CHIA SẺ PDF</button>
+          </div>
+        </main>
+      </div>
+    </div>
+
     <!-- ================= CHRIS ALL MONTH VIEW (monthly profit, same password gate as TIỀN CỦA THINH) ================= -->
     <div id="chrisMonthView" hidden>
       <header>
@@ -2582,6 +2654,11 @@
         var totalsMeta = document.getElementById("totalsMeta");
         var kitchenTotalsView = document.getElementById("kitchenTotalsView");
         var ktDayline = document.getElementById("ktDayline");
+        var invoiceView = document.getElementById("invoiceView");
+        var invoiceBody = document.getElementById("invoiceBody");
+        var invoiceDayline = document.getElementById("invoiceDayline");
+        var currentInvoiceOrder = null;
+        var invoiceReturnView = null;
         var ktBody = document.getElementById("ktBody");
         var chrisBtn = document.getElementById("chrisBtn");
         var chrisView = document.getElementById("chrisView");
@@ -4102,7 +4179,26 @@
                note is handed back to the shop too, exactly like a
                bếp giao fee. */
             var isSat = new Date(dayStr + "T12:00:00").getDay() === 6;
-            var fee = (gkey === "bep" || (isSat && gkey === "sang")) ? parseShipFee(o.note) : 0;
+            /* Fee source: the note first (Chris's quoted fee); a
+               linked paid web/app order's stored delivery_fee is the
+               fallback — a bếp giao web order's kitchen note often
+               carries NO fee text at all (app #75 Jasmine, 2026-11-10:
+               her $10 fee lived only in web_orders, so the day netted
+               $290 instead of $300 until this fallback landed,
+               Chris 2026-11-10 "em cộng vô"). */
+            var fee = 0;
+            if (gkey === "bep" || (isSat && gkey === "sang")) {
+              fee = parseShipFee(o.note);
+              if (!fee) {
+                var lmFee = /Đơn online #(\d+)/i.exec(String(o.note || "")) ||
+                  /^Order app #(\d+)/i.exec(String(o.label || ""));
+                if (lmFee) {
+                  (webOrdersByDay[dayStr] || []).forEach(function (w) {
+                    if (String(w.id) === lmFee[1] && w.paid && Number(w.delivery_fee)) fee = Number(w.delivery_fee);
+                  });
+                }
+              }
+            }
             /* Display fee for the settlement table's Phí giao
                column (Chris 2026-11-07: "Ghi thêm dòng phí giao
                giúp anh — mỗi ngày luôn"): EVERY delivery order
@@ -4288,6 +4384,20 @@
           net.appendChild(el("div", "totals-label", "Tổng kết ngày"));
           net.appendChild(el("div", "totals-big", "Tổng anh trả tiệm: " + fmtPhan(aEq) + " phần × $8" + (traysTotal > 0 ? " + " + traysTotal + " tray (" + fmtMoney(trayDueTotal) + ")" : "") + (feesTotal > 0 ? " + phí giao " + fmtMoney(feesTotal) : "") + " = " + fmtMoney(a)));
           net.appendChild(el("div", "totals-big", "Tổng tiệm nợ anh: " + fmtPhan(bEq) + " phần × $2 = " + fmtMoney(b)));
+          /* Ship money spelled out (Chris 2026-11-10: "ghi thêm cho
+             anh tiền ship là bao nhiêu"): the morning delivery fees
+             are the owner's own income; the returned fees (bếp giao,
+             Saturday) are already inside the "anh trả tiệm" total
+             above — both get their own visible line so the day card
+             never hides them inside the net again. */
+          var sangShip = 0;
+          groups.sang.rows.forEach(function (r) { sangShip += r.feeDisp || 0; });
+          if (sangShip > 0) {
+            net.appendChild(el("div", "totals-sub kt-fee-total", "🚚 Tiền ship giao sáng (của anh): " + fmtMoney(sangShip)));
+          }
+          if (feesTotal > 0) {
+            net.appendChild(el("div", "totals-sub kt-fee-total", "🚚 Tiền ship trả tiệm: " + fmtMoney(feesTotal) + " (đã cộng vào tổng anh trả tiệm)"));
+          }
           var aC = Math.round(a * 100);
           var bC = Math.round(b * 100);
           var netText = aC > bC ? "→ Anh gửi tiệm " + fmtMoney(a - b)
@@ -4474,8 +4584,16 @@
                groups keep the note-based fee the charged total has
                always used; only GIAO SÁNG fees are Chris's shipping,
                bếp giao fees belong to the shop, pick up has none. */
+            /* Morning fee source order (Chris 2026-11-10): the fee
+               written in the kitchen note FIRST — it is his quoted
+               fee and it exists on every delivery note since
+               2026-11-07 — and the driver-stop derivation only as a
+               fallback. The stop derivation alone silently zeroes
+               weekly-paid stops whose money line carries no total
+               (8328 trả theo tuần: the page showed his $6 profit and
+               dropped the $5 fee until this flip). */
             var fee = web ? (Number(web.delivery_fee) || 0)
-              : gkey === "sang" ? chrisDriverFee(dayStr, o, sell) : parseShipFee(o.note);
+              : gkey === "sang" ? (parseShipFee(o.note) || chrisDriverFee(dayStr, o, sell)) : parseShipFee(o.note);
             /* SATURDAY: every delivery fee is handed back to the
                kitchen (Chris 2026-11-07), so a Saturday fee is
                never the owner's shipping income. */
@@ -6142,6 +6260,135 @@
         }
 
         /* ================================================================
+           INVOICE VIEW — 📄 XEM HOÁ ĐƠN (Chris 2026-11-10): a full,
+           readable invoice for ONE online order, opened from its
+           🌐 card. Unlike the 62mm receipt it always foots: the Tip
+           line prints whenever a tip exists, so Tạm tính + Phí giao
+           + Thuế + Tip = TỔNG CỘNG (e.g. order #75: 30 + 10 + 3.50
+           + tip 3 = 46.50). The 🧾 PDF button renders the same
+           invoice on a wide page (~148mm) through the same
+           html2canvas → jsPDF pipeline as the receipt.
+           ================================================================ */
+        function buildInvoiceEl(o, forPrint) {
+          var box = el("div", forPrint ? "inv-print" : "");
+          box.appendChild(el("div", "inv-shop", "THINK'S KITCHEN"));
+          box.appendChild(el("div", "inv-title", "HOÁ ĐƠN — ORDER APP #" + o.id));
+          var dp = String(o.day || "").split("-");
+          var dateTxt = dp.length === 3 ? dp[2] + "/" + dp[1] + "/" + dp[0] : String(o.day || "");
+          box.appendChild(el("div", "inv-sub",
+            "Roxanne Dr, Westminster, CA 92683 · 626-283-9994" +
+            (o.weekday_label ? " · " + o.weekday_label + " " + dateTxt : " · " + dateTxt)));
+          var meta = el("div", "inv-meta");
+          var m1 = el("div", ""); m1.innerHTML = "Khách: <b></b>"; m1.querySelector("b").textContent = o.customer_name || "";
+          meta.appendChild(m1);
+          if (o.phone) meta.appendChild(el("div", "", "SĐT: " + o.phone));
+          if (o.method === "delivery") {
+            meta.appendChild(el("div", "", "🚗 Giao hàng" + (o.shift ? " · Ca " + o.shift : "")));
+            if (o.address) meta.appendChild(el("div", "", "Địa chỉ: " + o.address));
+          } else if (o.method === "pickup") {
+            meta.appendChild(el("div", "", "🏠 Pick up" + (o.pickup_time ? " · " + o.pickup_time : "")));
+          } else {
+            meta.appendChild(el("div", "", "📦 Ship"));
+            if (o.address) meta.appendChild(el("div", "", "Địa chỉ: " + o.address));
+          }
+          box.appendChild(meta);
+          box.appendChild(el("div", "inv-hr", ""));
+          (Array.isArray(o.items) ? o.items : []).forEach(function (it) {
+            var row = el("div", "inv-row");
+            var nm = el("span", "inv-name", webDishLine(it));
+            var price = Number(it.price) || 0, qty = Number(it.qty) || 0;
+            var detail = String(it.detail || "");
+            if (detail && detail.indexOf("Sửa:") === -1) {
+              if (detail.indexOf("Phần nhỏ") !== -1 || detail.indexOf("Phần lớn") !== -1) {
+                detail = "- " + detail.split(" · ")[0];
+              }
+              var dEl = el("span", "inv-detail", detail);
+              nm.appendChild(dEl);
+            }
+            row.appendChild(nm);
+            row.appendChild(el("span", "inv-amt", price > 0 ? webMoney(price * qty) : ""));
+            box.appendChild(row);
+          });
+          box.appendChild(el("div", "inv-hr", ""));
+          function tRow(label, val, cls) {
+            var r = el("div", cls || "inv-total-row");
+            r.appendChild(el("span", "", label));
+            r.appendChild(el("span", "", webMoney(val)));
+            box.appendChild(r);
+          }
+          tRow("Tạm tính", Number(o.subtotal) || 0);
+          if (Number(o.delivery_fee)) tRow("Phí giao", Number(o.delivery_fee));
+          tRow("Thuế (8.75%)", Number(o.tax) || 0);
+          if (Number(o.tip)) tRow("Tip", Number(o.tip));
+          tRow("TỔNG CỘNG", Number(o.total) || 0, "inv-grand");
+          box.appendChild(el("div", "inv-paid", o.paid
+            ? "✓ ĐÃ THANH TOÁN" + (o.payment_method ? " · " + o.payment_method : " · qua app")
+            : "⚠️ CHƯA THANH TOÁN"));
+          if (o.note) box.appendChild(el("div", "inv-note", "📝 " + o.note));
+          box.appendChild(el("div", "inv-foot", "Cảm ơn quý khách đã ủng hộ Think's Kitchen!"));
+          return box;
+        }
+
+        function openInvoice(o, fromShip) {
+          currentInvoiceOrder = o;
+          invoiceReturnView = fromShip ? shipView : kitchenView;
+          invoiceDayline.textContent = "ORDER APP #" + o.id;
+          invoiceBody.innerHTML = "";
+          invoiceBody.appendChild(buildInvoiceEl(o, false));
+          showView(invoiceView);
+          window.scrollTo(0, 0);
+        }
+
+        function buildInvoicePdf(o) {
+          printArea.innerHTML = "";
+          var node = buildInvoiceEl(o, true);
+          printArea.appendChild(node);
+          return new Promise(function (resolve) {
+            requestAnimationFrame(function () {
+              requestAnimationFrame(function () {
+                html2canvas(node, { scale: 2, backgroundColor: "#ffffff", logging: false }).then(function (canvas) {
+                  try {
+                    var img = printFastImage(canvas);
+                    var doc = new window.jspdf.jsPDF({ unit: "mm", format: [148, 210], compress: true });
+                    var pageW = 148;
+                    var imgH = pageW * img.height / img.width;
+                    var pageH = Math.min(297, Math.max(80, Math.ceil(imgH) + 2));
+                    if (Math.abs(pageH - 210) > 0.5) {
+                      doc = new window.jspdf.jsPDF({ unit: "mm", format: [148, pageH], compress: true });
+                    }
+                    doc.addImage(img.dataUrl, img.format, 0, 0, pageW, imgH, undefined, "FAST");
+                    resolve(doc);
+                  } catch (e) { resolve(null); }
+                }, function () { resolve(null); });
+              });
+            });
+          });
+        }
+
+        function printInvoice() {
+          var o = currentInvoiceOrder;
+          if (!o || printPdfBusy) return;
+          printPdfBusy = true;
+          loadPdfLibs().then(function (ok) {
+            if (!ok) {
+              printPdfBusy = false;
+              showToast("⚠️ Tạo PDF cần có mạng — thử lại giúp em");
+              return;
+            }
+            buildInvoicePdf(o).then(function (pdf) {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              if (!pdf) { showToast("⚠️ Không tạo được hoá đơn — thử lại giúp em"); return; }
+              deliverLabelsPdf(pdf.output("blob"), "invoice-app-" + o.id + ".pdf");
+            }, function () {
+              printPdfBusy = false;
+              printArea.innerHTML = "";
+              showToast("⚠️ Không tạo được hoá đơn — thử lại giúp em");
+            });
+          });
+        }
+
+        /* ================================================================
            ONLINE ORDERS — 🌐 Đơn online section at the top of the
            kitchen day view. Rows come from the web_orders table (the
            customer ordering app), read with the signed-in session, and
@@ -6301,6 +6548,12 @@
           wReceiptBtn.type = "button";
           wReceiptBtn.addEventListener("click", function () { printWebReceipt(o); });
           card.appendChild(wReceiptBtn);
+          /* 📄 Xem hoá đơn (Chris 2026-11-10): the full invoice
+             view for this order — screen first, PDF from there. */
+          var wInvoiceBtn = el("button", "btn-invoice", "📄 XEM HOÁ ĐƠN");
+          wInvoiceBtn.type = "button";
+          wInvoiceBtn.addEventListener("click", function () { openInvoice(o, rerender === renderShipDay); });
+          card.appendChild(wInvoiceBtn);
 
           /* 🖨 IN LABEL (Chris 2026-10-30): ship orders get a
              one-tap 62mm shipping label (recipient block) right on
@@ -6944,6 +7197,12 @@
         document.getElementById("kitchenTotalsBackBtn").addEventListener("click", function () {
           showView(kitchenView);
         });
+        document.getElementById("invoiceBackBtn").addEventListener("click", function () {
+          showView(invoiceReturnView || kitchenView);
+        });
+        document.getElementById("invoicePdfBtn").addEventListener("click", function () {
+          printInvoice();
+        });
         document.getElementById("chrisBackBtn").addEventListener("click", function () {
           showView(kitchenView);
         });
@@ -7529,7 +7788,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261110-1420";
+window.__BUILD__ = "20261110-2016";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
