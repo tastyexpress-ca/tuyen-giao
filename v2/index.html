@@ -4013,8 +4013,16 @@
            next to "phí" or "ship" ("phí ship $5", "$3 phí giao"…). */
         function parseShipFee(note) {
           var n = String(note || "").toLowerCase();
+          /* FREE delivery (Chris 2026-11-11, order 1297): an explicit
+             free marker right after phí/ship/giao means the fee is $0.
+             Check it FIRST: a collect note like
+             'Thu $20 khi giao · Phí giao FREE' otherwise matches the
+             reversed pattern below ($20 ... phí) and invents a $20 fee
+             out of the food amount being collected. */
+          if (/(?:phí|ship|giao)[^$\d]{0,20}free/.test(n) ||
+              n.indexOf("miễn phí") !== -1) return 0;
           var m = /(?:phí|ship)[^$\d]{0,24}\$\s*([\d]+(?:[.,]\d+)?)/.exec(n) ||
-            /\$\s*([\d]+(?:[.,]\d+)?)[^$\d]{0,24}(?:phí|ship)/.exec(n);
+            /\$\s*([\d]+(?:[.,]\d+)?)[^$\d·]{0,24}(?:phí|ship)/.exec(n);
           return m ? (parseFloat(m[1].replace(",", ".")) || 0) : 0;
         }
         /* Tray detection on a raw kitchen dish line: đặc tiệc trays
@@ -7788,7 +7796,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261110-2016";
+window.__BUILD__ = "20261111-1847";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
