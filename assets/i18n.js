@@ -470,7 +470,10 @@
     "🍳 Đơn này bếp chuẩn bị vào ngày mai — bạn sẽ nhận được vào ngày mốt trước 5PM": "🍳 Our kitchen will prepare this order tomorrow — you'll receive it the day after tomorrow, before 5PM",
     "Xin lỗi bạn 🙏 Hiện tại tiệm chỉ nhận ship đi CA, AZ & NV thôi ạ.": "Sorry 🙏 We currently only ship within CA, AZ & NV.",
     "Bạn ghi thêm tiểu bang vào địa chỉ giúp tiệm nhé — hiện tiệm chỉ nhận ship đi CA, AZ & NV ạ.": "Please add the state to your address — we currently only ship within CA, AZ & NV.",
-    "Ship 1 package chứa tối đa 12 phần — bạn giảm bớt món trong giỏ giúp tiệm nhé.": "One shipping package holds up to 12 portions — please remove a few items from your cart."
+    "Ship 1 package chứa tối đa 12 phần — bạn giảm bớt món trong giỏ giúp tiệm nhé.": "One shipping package holds up to 12 portions — please remove a few items from your cart.",
+    "Tạm tính": "Subtotal",
+    "Bạn kiểm tra lại giúp tiệm: còn thiếu tên, số điện thoại nhé.": "Please double-check: your name or phone number is still missing.",
+    "Bạn kiểm tra lại giúp tiệm: còn thiếu tên, số điện thoại hoặc địa chỉ nhận hàng nhé.": "Please double-check: your name, phone number or delivery address is still missing."
   };
 
   var WD = { "Thứ 2": "Monday", "Thứ 3": "Tuesday", "Thứ 4": "Wednesday", "Thứ 5": "Thursday", "Thứ 6": "Friday", "Thứ 7": "Saturday", "Chủ Nhật": "Sunday" };
@@ -510,7 +513,9 @@
     [/^📦 Bếp chuẩn bị: (Thứ \d|Chủ Nhật) ([\d/]+) ·$/,
       function (m, wd, dm) { return "📦 Kitchen preps: " + (WD[wd] || wd) + " " + dm + " ·"; }],
     [/^Bạn nhận hàng: (Thứ \d|Chủ Nhật) ([\d/]+) — trước 5PM$/,
-      function (m, wd, dm) { return "You receive it: " + (WD[wd] || wd) + " " + dm + " — before 5PM"; }]
+      function (m, wd, dm) { return "You receive it: " + (WD[wd] || wd) + " " + dm + " — before 5PM"; }],
+    [/^(\d+)\/12 phần$/, "$1/12 portions"],
+    [/\/ phần$/, "/ portion"]
   ];
 
   var PREFIX = { "Mặn: ": "Main: ", "Xào: ": "Stir-fry: ", "Canh: ": "Soup: ", "Cơm: ": "Rice: " };
