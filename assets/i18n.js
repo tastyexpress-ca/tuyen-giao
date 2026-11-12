@@ -436,7 +436,41 @@
     "Tôm rim": "Caramelized shrimp",
     "Tôm rim thịt ba rọi": "Caramelized shrimp with pork belly",
     "Đậu hủ dồi thịt sốt cà chua": "Stuffed tofu in tomato sauce",
-    "Đậu que xào": "Stir-fried green beans"
+    "Đậu que xào": "Stir-fried green beans",
+
+    /* ----- Menu ship đi xa (bổ sung 2026-11-11: bản English còn sót tiếng Việt) ----- */
+    "Thịt ba rọi kho quẹt": "Caramelized pork belly dip (kho quẹt)",
+    "Thịt ba rọi mắm ruốc": "Pork belly braised in shrimp paste",
+    "Cá kho tộ (cá ba sa)": "Clay-pot braised basa fish",
+    "Tôm rim ba rọi": "Caramelized shrimp with pork belly",
+    "Cánh gà chiên sốt mắm tỏi": "Garlic fish-sauce fried chicken wings",
+    "Đùi gà chiên sốt mắm tỏi": "Garlic fish-sauce fried chicken drumsticks",
+    "Đùi gà chiên nước mắm": "Fish-sauce fried chicken drumsticks",
+    "Canh chua": "Sweet & sour tamarind soup",
+    "Canh gà nấu lá giang": "Chicken soup with giang leaves",
+    "Cơm chiên dương châu": "Yangzhou fried rice",
+    "📦 MENU SHIP ĐI XA": "📦 SHIPPING MENU",
+    "MÓN MẶN": "MAIN DISHES",
+    "CANH": "SOUPS",
+    "XÀO": "STIR-FRIES",
+    "CƠM CHIÊN · NUI · MÌ": "FRIED RICE · MACARONI · NOODLES",
+    "Phần nhỏ $5.99 · phần lớn $10.5.": "Small portion $5.99 · Large portion $10.50.",
+    "Nhỏ $5.99": "Small $5.99",
+    "Lớn $10.5": "Large $10.5",
+    "Nhỏ · Ship": "Small · Shipping",
+    "Lớn · Ship": "Large · Shipping",
+    "Phí ship": "Shipping fee",
+    "Địa chỉ nhận hàng": "Delivery address",
+    "Vui lòng nhập địa chỉ nhận hàng.": "Please enter the delivery address.",
+    "Số nhà, đường, thành phố, bang, ZIP": "Street address, city, state, ZIP",
+    "Đã đủ 12 phần — đầy 1 package 📦": "12 portions — one full package 📦",
+    "🍳 Đơn này bếp chuẩn bị vào": "🍳 Our kitchen will prepare this order on",
+    "— bạn sẽ nhận được vào": "— you'll receive it on",
+    "trước 5PM": "before 5PM",
+    "🍳 Đơn này bếp chuẩn bị vào ngày mai — bạn sẽ nhận được vào ngày mốt trước 5PM": "🍳 Our kitchen will prepare this order tomorrow — you'll receive it the day after tomorrow, before 5PM",
+    "Xin lỗi bạn 🙏 Hiện tại tiệm chỉ nhận ship đi CA, AZ & NV thôi ạ.": "Sorry 🙏 We currently only ship within CA, AZ & NV.",
+    "Bạn ghi thêm tiểu bang vào địa chỉ giúp tiệm nhé — hiện tiệm chỉ nhận ship đi CA, AZ & NV ạ.": "Please add the state to your address — we currently only ship within CA, AZ & NV.",
+    "Ship 1 package chứa tối đa 12 phần — bạn giảm bớt món trong giỏ giúp tiệm nhé.": "One shipping package holds up to 12 portions — please remove a few items from your cart."
   };
 
   var WD = { "Thứ 2": "Monday", "Thứ 3": "Tuesday", "Thứ 4": "Wednesday", "Thứ 5": "Thursday", "Thứ 6": "Friday", "Thứ 7": "Saturday", "Chủ Nhật": "Sunday" };
@@ -468,7 +502,15 @@
     [/^Mức commission chung: /, "General commission rate: "],
     [/^Không tìm thấy tiệm nào khớp với “/, "No shop matches “"],
     [/^(\d+) phút$/, "$1 min"],
-    [/^(\d+) giờ$/, "$1 hr"]
+    [/^(\d+) giờ$/, "$1 hr"],
+    [/^Đã chọn: (\d+)\/12 phần$/, "Selected: $1 / 12 portions"],
+    [/^Ship đi xa: /, "Shipping to: "],
+    [/^Phí ship: ([\d.,$]+) \(đã gồm trong tổng\)$/, "Shipping fee: $1 (included in the total)"],
+    [/^Phí ship: /, "Shipping fee: "],
+    [/^📦 Bếp chuẩn bị: (Thứ \d|Chủ Nhật) ([\d/]+) ·$/,
+      function (m, wd, dm) { return "📦 Kitchen preps: " + (WD[wd] || wd) + " " + dm + " ·"; }],
+    [/^Bạn nhận hàng: (Thứ \d|Chủ Nhật) ([\d/]+) — trước 5PM$/,
+      function (m, wd, dm) { return "You receive it: " + (WD[wd] || wd) + " " + dm + " — before 5PM"; }]
   ];
 
   var PREFIX = { "Mặn: ": "Main: ", "Xào: ": "Stir-fry: ", "Canh: ": "Soup: ", "Cơm: ": "Rice: " };
