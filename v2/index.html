@@ -4242,8 +4242,12 @@
                  per-portion profit by price class + 20% of món lẻ. */
               tiemNo = profit + monLe * 0.2 + (trayMoney - trayDue);
             } else {
-              /* Pick up paid to the shop: flat $2/portion profit back. */
-              tiemNo = portions * 2 + monLe * 0.2 + (trayMoney - trayDue);
+              /* Pick up paid to the shop: the shop holds the
+                 $8/portion food money; it owes back the per-portion
+                 profit by price class ($4 premium / $2 regular) +
+                 20% of món lẻ (Chris corrected 2026-11-13 — pickup
+                 profit follows dish margin, not flat $2). */
+              tiemNo = profit + monLe * 0.2 + (trayMoney - trayDue);
             }
             /* Portion-equivalents behind each money total, for the
                day summary's formula lines (Chris 2026-10-27: "Tổng
@@ -4252,13 +4256,14 @@
                anhTra and shopEq × $2 is exactly tiemNo — trays are
                NOT folded into the phần equivalents; they print as
                their own "+ N tray ($D)" term in the day summary.
-               The bếp giao shop branch runs on profit, so its
-               equivalent is profit ÷ 2 ($4 premium = 2 phần), and a
-               priced tray's profit-back counts at profit ÷ 2 too. */
+               Both shop-paid branches (bếp giao + pick up) run on
+               profit, so their equivalent is profit ÷ 2 ($4 premium
+               = 2 phần), and a priced tray's profit-back counts at
+               profit ÷ 2 too. */
             if (gkey === "sang" || payee === "chris") {
               g.anhEq += (portions - unpricedTrays) + monLe / 10;
             } else {
-              g.shopEq += (gkey === "bep" ? profit / 2 : portions) + monLe / 10 + (trayMoney - trayDue) / 2;
+              g.shopEq += profit / 2 + monLe / 10 + (trayMoney - trayDue) / 2;
             }
             g.trays += trays;
             g.trayDue += trayDue;
@@ -7796,7 +7801,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261111-1926";
+window.__BUILD__ = "20261113-1935";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
