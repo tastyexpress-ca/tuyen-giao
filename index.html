@@ -3941,9 +3941,15 @@
              kem orders Chris directs onto this kitchen are written
              as "Combo … ly" lines with no "kem" in them, and those
              were parsed as food portions (Diệp Ngọc, Chris
-             2026-11-03: "Em bỏ diep ngoc ra"). */
+             2026-11-03: "Em bỏ diep ngoc ra"). A line opening with
+             "Box" is a kem box too: Trisha Le Nguyen's 2026-11-14
+             boxes were written as per-box flavor lines ("Box 1: 8
+             black sesame, 2 thai tea…") carrying neither word, and
+             settled as 8 food portions / $16 until Chris flagged
+             it that night ("kem là ko tính em nhé"). */
           var nameLc = name.toLowerCase();
-          if (nameLc.indexOf("kem") !== -1 || nameLc.indexOf("combo") !== -1) {
+          if (nameLc.indexOf("kem") !== -1 || nameLc.indexOf("combo") !== -1 ||
+              /^box\b/.test(nameLc)) {
             return { type: "kem" };
           }
           return { type: "food", qty: qty, name: kitchenDishName(name) };
@@ -4128,10 +4134,13 @@
             var trayDue = 0;
             var trayMoney = 0;
             var unpricedTrays = 0;
-            (Array.isArray(o.dishes) ? o.dishes : []).forEach(function (d) {
+            var dishList = Array.isArray(o.dishes) ? o.dishes : [];
+            var hasFood = false;
+            dishList.forEach(function (d) {
               var p = parseKitchenDish(d);
               var tray = isTrayLine(d);
               if (p.type === "monle") {
+                hasFood = true;
                 if (p.unit <= 10) {
                   /* Món lẻ is NOT listed separately — it folds into
                      the portion count at price ÷ 10 ($10 = 1 phần,
@@ -4160,6 +4169,7 @@
                   monLe += p.money;
                 }
               } else if (p.type === "food") {
+                hasFood = true;
                 portions += p.qty;
                 portionsDisp += p.qty;
                 profit += p.qty * (isPremiumDish(p.name) ? 4 : 2);
@@ -4180,6 +4190,15 @@
                 }
               }
             });
+            /* Kem-only orders never settle (Chris's standing rule:
+               kem is excluded from ALL food money) — a row whose
+               dish lines are all kem drops out of every table,
+               exactly like the Chris page's hasFood skip. Trisha Le
+               Nguyen 2026-11-14: her kem rows sat in Bảng 2 as
+               8 phần / $16 plus a $0 row until this landed. A mixed
+               food+kem row keeps settling its food lines only, and
+               a row with no dish lines settles as before. */
+            if (dishList.length && !hasFood) return;
             var payee = effectivePayee(dayStr, o, gkey);
             /* SATURDAY (Chris 2026-11-07: "Toàn bộ tiền giao là anh
                trả lại cho bếp"): the kitchen delivers everything on
@@ -7801,7 +7820,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261114-2200";
+window.__BUILD__ = "20261115-0021";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
