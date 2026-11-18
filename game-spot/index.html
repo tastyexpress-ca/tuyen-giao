@@ -53,7 +53,6 @@
   #startBtn { background:#c62828; color:#fff; }
   #hintBtn { background:#fff8e1; color:#8d6e00; border:1.5px solid #ffe082; }
   #bigMsg { display:none; text-align:center; font-size:17px; font-weight:800; color:#c62828; padding:8px 4px 0; line-height:1.45; }
-.scenebox img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 </style>
 </head>
 <body>
@@ -481,67 +480,256 @@
     return s + '</svg>';
   }
 
-  var ALL_SCENES = [
-    {"a": "img/s01-a.jpg", "b": "img/s01-b.jpg", "t": "Phong cảnh 1", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s02-a.jpg", "b": "img/s02-b.jpg", "t": "Phong cảnh 2", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s03-a.jpg", "b": "img/s03-b.jpg", "t": "Phong cảnh 3", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s04-a.jpg", "b": "img/s04-b.jpg", "t": "Phong cảnh 4", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s05-a.jpg", "b": "img/s05-b.jpg", "t": "Phong cảnh 5", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s06-a.jpg", "b": "img/s06-b.jpg", "t": "Phong cảnh 6", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s07-a.jpg", "b": "img/s07-b.jpg", "t": "Phong cảnh 7", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s08-a.jpg", "b": "img/s08-b.jpg", "t": "Phong cảnh 8", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s09-a.jpg", "b": "img/s09-b.jpg", "t": "Phong cảnh 9", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s10-a.jpg", "b": "img/s10-b.jpg", "t": "Phong cảnh 10", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s11-a.jpg", "b": "img/s11-b.jpg", "t": "Phong cảnh 11", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s12-a.jpg", "b": "img/s12-b.jpg", "t": "Phong cảnh 12", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s13-a.jpg", "b": "img/s13-b.jpg", "t": "Phong cảnh 13", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s14-a.jpg", "b": "img/s14-b.jpg", "t": "Phong cảnh 14", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s15-a.jpg", "b": "img/s15-b.jpg", "t": "Phong cảnh 15", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s16-a.jpg", "b": "img/s16-b.jpg", "t": "Phong cảnh 16", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s17-a.jpg", "b": "img/s17-b.jpg", "t": "Phong cảnh 17", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s18-a.jpg", "b": "img/s18-b.jpg", "t": "Phong cảnh 18", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s19-a.jpg", "b": "img/s19-b.jpg", "t": "Phong cảnh 19", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s20-a.jpg", "b": "img/s20-b.jpg", "t": "Phong cảnh 20", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s21-a.jpg", "b": "img/s21-b.jpg", "t": "Trái cây 1", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s22-a.jpg", "b": "img/s22-b.jpg", "t": "Trái cây 2", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s23-a.jpg", "b": "img/s23-b.jpg", "t": "Trái cây 3", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s24-a.jpg", "b": "img/s24-b.jpg", "t": "Trái cây 4", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s25-a.jpg", "b": "img/s25-b.jpg", "t": "Trái cây 5", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s26-a.jpg", "b": "img/s26-b.jpg", "t": "Trái cây 6", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s27-a.jpg", "b": "img/s27-b.jpg", "t": "Trái cây 7", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s28-a.jpg", "b": "img/s28-b.jpg", "t": "Trái cây 8", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s29-a.jpg", "b": "img/s29-b.jpg", "t": "Trái cây 9", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s30-a.jpg", "b": "img/s30-b.jpg", "t": "Trái cây 10", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s31-a.jpg", "b": "img/s31-b.jpg", "t": "Trái cây 11", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s32-a.jpg", "b": "img/s32-b.jpg", "t": "Trái cây 12", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s33-a.jpg", "b": "img/s33-b.jpg", "t": "Trái cây 13", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s34-a.jpg", "b": "img/s34-b.jpg", "t": "Trái cây 14", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s35-a.jpg", "b": "img/s35-b.jpg", "t": "Trái cây 15", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s36-a.jpg", "b": "img/s36-b.jpg", "t": "Bếp núc 1", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s37-a.jpg", "b": "img/s37-b.jpg", "t": "Bếp núc 2", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s38-a.jpg", "b": "img/s38-b.jpg", "t": "Bếp núc 3", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s39-a.jpg", "b": "img/s39-b.jpg", "t": "Bếp núc 4", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s40-a.jpg", "b": "img/s40-b.jpg", "t": "Bếp núc 5", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s41-a.jpg", "b": "img/s41-b.jpg", "t": "Bếp núc 6", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s42-a.jpg", "b": "img/s42-b.jpg", "t": "Bếp núc 7", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s43-a.jpg", "b": "img/s43-b.jpg", "t": "Bếp núc 8", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s44-a.jpg", "b": "img/s44-b.jpg", "t": "Bếp núc 9", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s45-a.jpg", "b": "img/s45-b.jpg", "t": "Bếp núc 10", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s46-a.jpg", "b": "img/s46-b.jpg", "t": "Con người 1", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s47-a.jpg", "b": "img/s47-b.jpg", "t": "Con người 2", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s48-a.jpg", "b": "img/s48-b.jpg", "t": "Con người 3", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s49-a.jpg", "b": "img/s49-b.jpg", "t": "Con người 4", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]},
-    {"a": "img/s50-a.jpg", "b": "img/s50-b.jpg", "t": "Con người 5", "diffs": [[64, 78, 28], [200, 54, 28], [336, 90, 28], [120, 204, 28], [280, 228, 28]]}
+  var SCENES = [
+    { fn: scene1, diffs: [ {x:200,y:56,r:28}, {x:54,y:50,r:32}, {x:200,y:112,r:32}, {x:322,y:54,r:38}, {x:200,y:186,r:26} ] },
+    { fn: scene2, diffs: [ {x:122,y:158,r:36}, {x:348,y:46,r:30}, {x:255,y:186,r:26}, {x:332,y:264,r:22}, {x:180,y:262,r:24} ] },
+    { fn: scene3, diffs: [ {x:330,y:130,r:26}, {x:82,y:188,r:46}, {x:200,y:270,r:20}, {x:272,y:118,r:27}, {x:150,y:118,r:23} ] },
+    { fn: scene4, diffs: [ {x:200,y:44,r:22}, {x:200,y:140,r:17}, {x:79,y:222,r:28}, {x:352,y:100,r:27}, {x:130,y:226,r:19} ] },
+    { fn: scene5, diffs: [ {x:54,y:52,r:33}, {x:300,y:84,r:20}, {x:228,y:104,r:16}, {x:200,y:186,r:32}, {x:294,y:192,r:22} ] },
+    { fn: scene6, diffs: [ {x:120,y:118,r:44}, {x:238,y:52,r:38}, {x:120,y:138,r:23}, {x:200,y:256,r:25}, {x:70,y:198,r:20} ] },
+    { fn: scene7, diffs: [ {x:130,y:192,r:24}, {x:140,y:172,r:17}, {x:299,y:122,r:18}, {x:58,y:196,r:19}, {x:352,y:70,r:22} ] },
+    { fn: scene8, diffs: [ {x:300,y:74,r:30}, {x:202,y:261,r:23}, {x:248,y:242,r:16}, {x:116,y:212,r:15}, {x:206,y:84,r:19} ] },
+    { fn: scene9, diffs: [ {x:40,y:124,r:17}, {x:205,y:193,r:32}, {x:205,y:152,r:24}, {x:300,y:162,r:21}, {x:112,y:88,r:21} ] },
+    { fn: scene10, diffs: [ {x:290,y:140,r:32}, {x:290,y:223,r:28}, {x:76,y:246,r:15}, {x:58,y:190,r:42}, {x:173,y:181,r:19} ] }
   ];
+
+
+  /* ===== 40 HINH SINH TU DONG: CANH + THANH PHO (tong cong 50 hinh) ===== */
   function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function pickR(rnd, arr){ return arr[Math.floor(rnd() * arr.length)]; }
   function shuffleR(rnd, arr){ for (var i = arr.length - 1; i > 0; i--){ var j = Math.floor(rnd() * (i + 1)); var t = arr[i]; arr[i] = arr[j]; arr[j] = t; } return arr; }
+
+  var SKIES = [
+    { top: '#8ed8ff', bot: '#e8f9ff', far: '#7fb2d9', hill: '#66bb6a', hill2: '#43a047', water: '#29b6f6', night: false },
+    { top: '#ff9e64', bot: '#ffe0b2', far: '#b0715a', hill: '#7a9a4d', hill2: '#5d8540', water: '#4f9bb8', night: false },
+    { top: '#1a237e', bot: '#4a148c', far: '#232350', hill: '#1d3320', hill2: '#14261a', water: '#1c3d5a', night: true },
+    { top: '#a8c8ff', bot: '#ffe9f3', far: '#8fa8c8', hill: '#7cb87c', hill2: '#5da85f', water: '#5aa7d6', night: false }
+  ];
+
+  function buildLandscape(seed){
+    var rnd = mulberry32(seed);
+    var sky = SKIES[Math.floor(rnd() * SKIES.length)];
+    var celX = rnd() < 0.5 ? 52 : 348, celFace = rnd() < 0.6;
+    var cloudBx = 250 + Math.floor(rnd() * 70), cloudBy = 44 + Math.floor(rnd() * 26);
+    var hasLake = rnd() < 0.55;
+    var midKind = hasLake && rnd() < 0.4 ? 'lighthouse' : (rnd() < 0.5 ? 'house' : 'windmill');
+    var hasBalloon = rnd() < 0.65, balloonCol = pickR(rnd, ['#ef5350', '#ab47bc', '#fb8c00', '#42a5f5']);
+    var hasRainbow = rnd() < 0.45;
+    var treeCol = pickR(rnd, ['#43a047', '#43a047', '#e67e22']);
+    var flowerCol = pickR(rnd, ['#f06292', '#ffd93b', '#ab47bc', '#ff8a65']);
+    var doorCol = pickR(rnd, ['#8a5423', '#1565c0', '#c62828']);
+    var smoke = rnd() < 0.7;
+    var peaks = []; var px = -20; var pi = 0;
+    while (px < 420 && pi < 7){ var pw = 90 + rnd() * 70, ph = 118 + rnd() * 44; peaks.push({ x: px + pw / 2, top: 212 - ph, w: pw }); px += pw; pi++; }
+    var snowPeak = peaks[Math.floor(rnd() * peaks.length)];
+    var pool = [
+      { id: 'cel', x: celX, y: 50, r: 32 },
+      { id: 'cloud', x: cloudBx, y: cloudBy, r: 36 },
+      { id: 'tree', x: 318, y: 176, r: 44 },
+      { id: 'flower', x: 66, y: 272, r: 22 }
+    ];
+    if (hasBalloon) pool.push({ id: 'balloon', x: 168, y: 66, r: 26 });
+    if (hasRainbow) pool.push({ id: 'rainbow', x: 205, y: 128, r: 40 });
+    if (hasLake) pool.push({ id: 'boat', x: 232, y: 232, r: 26 });
+    if (midKind === 'house'){ pool.push({ id: 'door', x: 86, y: 198, r: 20 }); if (smoke) pool.push({ id: 'smoke', x: 112, y: 148, r: 20 }); }
+    if (midKind === 'windmill') pool.push({ id: 'blade', x: 90, y: 148, r: 34 });
+    if (midKind === 'lighthouse') pool.push({ id: 'beam', x: 88, y: 168, r: 24 });
+    pool.push({ id: 'snow', x: snowPeak.x, y: snowPeak.top + 8, r: 22 });
+    shuffleR(rnd, pool);
+    var chosen = pool.slice(0, 5), muts = {};
+    chosen.forEach(function(m){ muts[m.id] = true; });
+    var diffs = chosen.map(function(m){ return { x: m.x, y: m.y, r: m.r }; });
+
+    function draw(uid, mod){
+      var on = function(id){ return mod && muts[id]; };
+      var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+      s += skyG(uid, sky.top, sky.bot);
+      if (sky.night) s += moon(celX, 50, 24, on('cel') ? !celFace : celFace);
+      else s += sun(celX, 50, 25, on('cel') ? !celFace : celFace);
+      s += cloud(96, 58, 0.9, sky.night ? '#5c6bc0' : '#ffffff');
+      if (!on('cloud')) s += cloud(cloudBx, cloudBy, 1.05, sky.night ? '#5c6bc0' : '#ffffff');
+      if (hasRainbow && !on('rainbow')){
+        ['#ef5350', '#fb8c00', '#ffd93b', '#43a047'].forEach(function(c, i){
+          s += '<path d="M' + (118 + i * 10) + ' 214 A' + (88 - i * 10) + ' ' + (88 - i * 10) + ' 0 0 1 ' + (292 - i * 10) + ' 214" stroke="' + c + '" stroke-width="9" fill="none" opacity="0.85"/>';
+        });
+      }
+      if (hasBalloon){
+        var bx = 168, by = 66, bc = on('balloon') ? '#ffd93b' : balloonCol;
+        s += '<ellipse cx="' + bx + '" cy="' + by + '" rx="21" ry="25" fill="' + bc + '"/><path d="M' + (bx - 20) + ' ' + (by + 6) + ' A21 25 0 0 0 ' + (bx + 20) + ' ' + (by + 6) + '" stroke="rgba(255,255,255,.55)" stroke-width="4" fill="none"/><path d="M' + (bx - 8) + ' ' + (by + 23) + ' L' + (bx - 4) + ' ' + (by + 36) + ' M' + (bx + 8) + ' ' + (by + 23) + ' L' + (bx + 4) + ' ' + (by + 36) + '" stroke="#777" stroke-width="1.6"/><rect x="' + (bx - 6) + '" y="' + (by + 36) + '" width="12" height="9" rx="2" fill="#8a5423"/>';
+      }
+      s += '<path d="M150 96 q5 -5 10 0 q5 -5 10 0 M196 78 q5 -5 10 0 q5 -5 10 0" stroke="' + (sky.night ? '#9fa8da' : '#5b7a99') + '" stroke-width="2" fill="none" stroke-linecap="round"/>';
+      // day nui xa
+      var mtn = '<path d="M0 212 ';
+      peaks.forEach(function(p){ mtn += 'L' + p.x + ' ' + p.top + ' L' + (p.x + p.w / 2) + ' 212 '; });
+      mtn += 'L400 212 Z" fill="' + sky.far + '"/>';
+      s += mtn;
+      if (!on('snow')) s += '<path d="M' + (snowPeak.x - 13) + ' ' + (snowPeak.top + 15) + ' L' + snowPeak.x + ' ' + snowPeak.top + ' L' + (snowPeak.x + 13) + ' ' + (snowPeak.top + 15) + ' L' + (snowPeak.x + 5) + ' ' + (snowPeak.top + 9) + ' L' + snowPeak.x + ' ' + (snowPeak.top + 14) + ' L' + (snowPeak.x - 5) + ' ' + (snowPeak.top + 9) + ' Z" fill="#ffffff"/>';
+      // doi gan
+      s += '<path d="M0 226 Q110 200 220 224 T400 218 L400 300 L0 300 Z" fill="' + sky.hill + '"/>';
+      s += '<path d="M0 252 Q140 232 400 250 L400 300 L0 300 Z" fill="' + sky.hill2 + '"/>';
+      if (hasLake){
+        s += '<rect x="150" y="222" width="250" height="34" fill="' + sky.water + '"/>';
+        s += '<path d="M170 234 h44 M250 244 h58 M320 232 h40" stroke="rgba(255,255,255,.55)" stroke-width="3" stroke-linecap="round"/>';
+        if (!on('boat')){
+          s += '<path d="M208 234 L256 234 L246 248 L216 248 Z" fill="#8a5423"/><rect x="229" y="216" width="4" height="18" fill="#6d4c41"/><path d="M233 216 L233 232 L248 232 Z" fill="#ffffff"/>';
+        }
+      } else {
+        s += '<path d="M86 252 Q130 268 118 300 L66 300 Q70 272 86 252 Z" fill="#d7a1a1" opacity="0.8"/>';
+      }
+      // vat o giua
+      if (midKind === 'house'){
+        s += '<rect x="54" y="176" width="64" height="38" fill="#fff8e1" stroke="#d7ccc8" stroke-width="1.5"/><path d="M48 178 L86 152 L124 178 Z" fill="#b0483a"/>';
+        s += '<rect x="102" y="158" width="10" height="16" fill="#8a5423"/>';
+        if (smoke && !on('smoke')) s += '<circle cx="112" cy="148" r="5" fill="rgba(255,255,255,.85)"/><circle cx="118" cy="139" r="7" fill="rgba(255,255,255,.7)"/><circle cx="126" cy="129" r="9" fill="rgba(255,255,255,.5)"/>';
+        s += '<rect x="78" y="188" width="16" height="26" rx="2" fill="' + (on('door') ? '#43a047' : doorCol) + '"/><circle cx="91" cy="201" r="1.8" fill="#ffd93b"/>';
+        s += '<rect x="100" y="184" width="12" height="12" fill="' + (sky.night ? '#ffd93b' : '#b3e5fc') + '" stroke="#8a5423" stroke-width="1.6"/>';
+      } else if (midKind === 'windmill'){
+        s += '<path d="M74 214 L84 156 L96 156 L106 214 Z" fill="#d7ccc8" stroke="#a1887f" stroke-width="1.5"/>';
+        var blades = [[90, 114], [126, 150], [90, 186], [54, 150]];
+        blades.forEach(function(b, i){ if (on('blade') && i === 0) return; s += '<path d="M90 150 L' + b[0] + ' ' + b[1] + '" stroke="#8a5423" stroke-width="5" stroke-linecap="round"/>'; });
+        s += '<circle cx="90" cy="150" r="6" fill="#6d4c41"/><rect x="84" y="188" width="12" height="26" rx="2" fill="#8a5423"/>';
+      } else {
+        s += '<path d="M74 256 L80 182 L96 182 L102 256 Z" fill="#ffffff"/><path d="M77 224 L99 224 L97 206 L79 206 Z" fill="#ef5350"/><path d="M79 240 L101 240 L100 230 L78 230 Z" fill="#ef5350"/>';
+        s += '<rect x="78" y="166" width="20" height="16" fill="#37474f"/><rect x="82" y="169" width="12" height="10" fill="' + (on('beam') ? '#37474f' : '#ffd93b') + '"/>';
+        s += '<path d="M74 160 L102 160 L98 152 L78 152 Z" fill="#c62828"/>';
+        if (!on('beam')) s += '<path d="M98 174 L150 162 L150 186 Z" fill="rgba(255,217,59,.35)"/>';
+      }
+      // cay ben phai + cay thong trai
+      s += tree(318, 224, 1.0, null, 0);
+      // cay la ben phai doi mau theo mua
+      // (ve lai cay chinh voi mau la dung)
+      // hoa + thong nho
+      s += '<path d="M30 226 L44 198 L58 226 Z" fill="#2e7d32"/><path d="M36 208 L52 208 L44 190 Z" fill="#388e3c"/><rect x="41" y="226" width="6" height="9" fill="#6d4c41"/>';
+      s += flower(66, 272, 1.05, on('flower') ? '#42a5f5' : flowerCol);
+      s += flower(120, 282, 0.9, flowerCol);
+      s += flower(352, 278, 0.95, flowerCol);
+      s += flower(300, 286, 0.85, '#ffffff');
+      return s + '</svg>';
+    }
+    // sua mau cay chinh: ve de bang 1 lop rieng co mau dung
+    var origDraw = draw;
+    draw = function(uid, mod){
+      var out = origDraw(uid, mod);
+      // chen them cay la mau dung ngay truoc </svg>
+      var col = treeCol; if (mod && muts['tree']) col = (treeCol === '#e67e22') ? '#43a047' : '#e67e22';
+      var t = '<circle cx="318" cy="162" r="30" fill="' + col + '"/><circle cx="294" cy="180" r="20" fill="' + col + '" opacity="0.9"/><circle cx="342" cy="180" r="20" fill="' + col + '" opacity="0.85"/>';
+      return out.replace('</svg>', t + '</svg>');
+    };
+    return { fn: draw, diffs: diffs };
+  }
+
+  var CITY_SKIES = [
+    { top: '#8ed8ff', bot: '#e8f9ff', night: false },
+    { top: '#ff9e64', bot: '#ffe0b2', night: false },
+    { top: '#1a237e', bot: '#311b92', night: true }
+  ];
+  var BLD_COLS = ['#90a4ae', '#a1887f', '#78909c', '#b0a49a', '#8d9db6', '#a89f91'];
+
+  function buildCity(seed){
+    var rnd = mulberry32(seed);
+    var sky = CITY_SKIES[Math.floor(rnd() * CITY_SKIES.length)];
+    var buildings = []; var bx = -6;
+    while (bx < 398){
+      var bw = 46 + rnd() * 34, bh = 92 + rnd() * 84;
+      var b = { x: bx, w: bw, h: bh, col: pickR(rnd, BLD_COLS), wins: [] };
+      var cols = Math.max(2, Math.floor(bw / 17)), rows = Math.max(3, Math.floor(bh / 21));
+      for (var r2 = 0; r2 < rows; r2++) for (var c2 = 0; c2 < cols; c2++){
+        b.wins.push({ x: bx + 8 + c2 * ((bw - 14) / Math.max(1, cols - 1 || 1)), y: 212 - bh + 12 + r2 * 19, lit: rnd() < (sky.night ? 0.62 : 0.3) });
+      }
+      buildings.push(b); bx += bw + 5;
+    }
+    var flipB = buildings[Math.floor(rnd() * buildings.length)];
+    var flipW = flipB.wins[Math.floor(rnd() * flipB.wins.length)];
+    var bbB = buildings[1 + Math.floor(rnd() * (buildings.length - 2))];
+    var bb = { x: bbB.x + bbB.w / 2, y: 212 - bbB.h - 20, sym: rnd() < 0.5 ? 'heart' : 'star' };
+    var car1Col = pickR(rnd, ['#ef5350', '#42a5f5', '#ffd93b', '#43a047']);
+    var car2Col = pickR(rnd, ['#ab47bc', '#fb8c00', '#4db6ac', '#ef5350']);
+    var traffic = rnd() < 0.5 ? 'red' : 'green';
+    var awnCol = pickR(rnd, ['#43a047', '#c62828', '#1565c0']);
+    var pool = [
+      { id: 'window', x: flipW.x + 4, y: flipW.y + 5, r: 15 },
+      { id: 'traffic', x: 368, y: 148, r: 24 },
+      { id: 'billboard', x: bb.x, y: bb.y, r: 26 },
+      { id: 'car', x: 268, y: 262, r: 30 },
+      { id: 'lamp', x: 36, y: 196, r: 22 },
+      { id: 'awning', x: 66, y: 200, r: 28 },
+      { id: 'plane', x: 292, y: 52, r: 30 },
+      { id: 'hydrant', x: 330, y: 240, r: 16 },
+      { id: 'tree', x: 158, y: 214, r: 22 },
+      { id: 'cloud', x: 96, y: 50, r: 34 }
+    ];
+    shuffleR(rnd, pool);
+    var chosen = pool.slice(0, 5), muts = {};
+    chosen.forEach(function(m){ muts[m.id] = true; });
+    var diffs = chosen.map(function(m){ return { x: m.x, y: m.y, r: m.r }; });
+
+    function car(x, y, col){
+      return '<rect x="' + (x - 26) + '" y="' + (y - 12) + '" width="52" height="16" rx="6" fill="' + col + '"/><path d="M' + (x - 15) + ' ' + (y - 12) + ' L' + (x - 8) + ' ' + (y - 24) + ' L' + (x + 9) + ' ' + (y - 24) + ' L' + (x + 17) + ' ' + (y - 12) + ' Z" fill="' + col + '"/><rect x="' + (x - 11) + '" y="' + (y - 22) + '" width="9" height="8" fill="#b3e5fc"/><rect x="' + (x + 2) + '" y="' + (y - 22) + '" width="9" height="8" fill="#b3e5fc"/><circle cx="' + (x - 15) + '" cy="' + (y + 4) + '" r="6" fill="#263238"/><circle cx="' + (x + 15) + '" cy="' + (y + 4) + '" r="6" fill="#263238"/><circle cx="' + (x - 15) + '" cy="' + (y + 4) + '" r="2.6" fill="#90a4ae"/><circle cx="' + (x + 15) + '" cy="' + (y + 4) + '" r="2.6" fill="#90a4ae"/>';
+    }
+    function draw(uid, mod){
+      var on = function(id){ return mod && muts[id]; };
+      var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+      s += skyG(uid, sky.top, sky.bot);
+      if (sky.night) s += moon(46, 44, 19, false); else s += sun(46, 44, 20, false);
+      if (!on('cloud')) s += cloud(96, 50, 0.95, sky.night ? '#5c6bc0' : '#ffffff');
+      s += cloud(330, 84, 0.7, sky.night ? '#5c6bc0' : '#ffffff');
+      if (!on('plane')){
+        s += '<g fill="#eceff1" stroke="#90a4ae" stroke-width="1.2"><ellipse cx="292" cy="52" rx="20" ry="6"/><path d="M282 52 L272 40 L282 40 L288 52 Z"/><path d="M306 52 L316 42 L318 52 Z"/></g><path d="M268 58 q-16 4 -30 2" stroke="rgba(255,255,255,.7)" stroke-width="2.5" fill="none" stroke-dasharray="5 5"/>';
+      }
+      // day nha
+      buildings.forEach(function(b){
+        s += '<rect x="' + b.x + '" y="' + (212 - b.h) + '" width="' + b.w + '" height="' + b.h + '" fill="' + b.col + '"/>';
+        b.wins.forEach(function(w){
+          var lit = w.lit; if (on('window') && w === flipW) lit = !lit;
+          s += '<rect x="' + w.x + '" y="' + w.y + '" width="9" height="11" fill="' + (lit ? '#ffd93b' : (sky.night ? '#17123a' : '#cfd8dc')) + '"/>';
+        });
+      });
+      // bang quang cao tren noc nha (khac biet: doi bieu tuong)
+      s += '<rect x="' + (bb.x - 30) + '" y="' + (bb.y - 16) + '" width="60" height="32" rx="4" fill="#263238" stroke="#ffd93b" stroke-width="2"/>';
+      var sym = bb.sym; if (on('billboard')) sym = sym === 'heart' ? 'star' : 'heart';
+      s += sym === 'heart' ? heart(bb.x, bb.y + 1, 11, '#f06292') : star(bb.x, bb.y, 11, '#ffd93b');
+      // via he + duong
+      s += '<rect y="212" width="400" height="18" fill="#bcaaa4"/><rect y="230" width="400" height="70" fill="#455a64"/>';
+      s += '<path d="M0 265 h52 M86 265 h52 M172 265 h52 M258 265 h52 M344 265 h52" stroke="#ffd93b" stroke-width="4" stroke-dasharray="0" opacity="0.85"/>';
+      // cua hang + mai hien (khac biet: doi mau mai)
+      s += '<rect x="22" y="202" width="88" height="30" fill="#5d4037"/>';
+      for (var j = 0; j < 4; j++){
+        s += '<path d="M' + (18 + j * 24) + ' 192 L' + (42 + j * 24) + ' 192 L' + (39 + j * 24) + ' 204 A6 6 0 0 1 ' + (27 + j * 24) + ' 204 L' + (21 + j * 24) + ' 192 Z" fill="' + (j % 2 ? '#ffffff' : (on('awning') ? '#fb8c00' : awnCol)) + '"/>';
+      }
+      // den duong (khac biet: tat 1 den)
+      [[36, 196], [206, 198]].forEach(function(L, i){
+        var off = on('lamp') && i === 0;
+        s += '<rect x="' + (L[0] - 2) + '" y="' + L[1] + '" width="4" height="36" fill="#263238"/><circle cx="' + L[0] + '" cy="' + (L[1] - 4) + '" r="7" fill="' + (off ? '#90a4ae' : '#ffd93b') + '"/>';
+        if (!off) s += '<circle cx="' + L[0] + '" cy="' + (L[1] - 4) + '" r="15" fill="rgba(255,217,59,.28)"/>';
+      });
+      // cay trong chau (khac biet: mat 1 cay)
+      if (!on('tree')) s += '<rect x="148" y="222" width="20" height="12" fill="#8a5423"/><circle cx="158" cy="206" r="13" fill="#43a047"/><rect x="156" y="212" width="4" height="10" fill="#6d4c41"/>';
+      s += '<rect x="238" y="222" width="20" height="12" fill="#8a5423"/><circle cx="248" cy="206" r="13" fill="#43a047"/><rect x="246" y="212" width="4" height="10" fill="#6d4c41"/>';
+      // voi cuu hoa (khac biet: bien mat)
+      if (!on('hydrant')) s += '<rect x="325" y="232" width="10" height="14" rx="3" fill="#e53935"/><circle cx="330" cy="230" r="4.5" fill="#e53935"/><rect x="321" y="237" width="18" height="4" rx="2" fill="#c62828"/>';
+      // den giao thong (khac biet: doi den sang)
+      s += '<rect x="366" y="168" width="4" height="64" fill="#263238"/><rect x="356" y="122" width="24" height="48" rx="6" fill="#263238"/>';
+      var act = traffic; if (on('traffic')) act = act === 'red' ? 'green' : 'red';
+      s += '<circle cx="368" cy="134" r="6.5" fill="' + (act === 'red' ? '#ef5350' : '#5a2020') + '"/><circle cx="368" cy="148" r="6.5" fill="#6b5a1e"/><circle cx="368" cy="162" r="6.5" fill="' + (act === 'green' ? '#43a047' : '#1e4d24') + '"/>';
+      // xe hoi (khac biet: mat xe 2)
+      s += car(96, 262, car1Col);
+      if (!on('car')) s += car(268, 262, car2Col);
+      return s + '</svg>';
+    }
+    return { fn: draw, diffs: diffs };
+  }
+
+  var GEN_SCENES = [];
+  for (var gs = 0; gs < 20; gs++) GEN_SCENES.push(buildLandscape(101 + gs * 7));
+  for (var gc = 0; gc < 20; gc++) GEN_SCENES.push(buildCity(201 + gc * 7));
+  var ALL_SCENES = SCENES.concat(GEN_SCENES);
 
   /* ===== CHON HINH KHONG LAP LAI CHO MOI KHACH ===== */
   var playlist = [];
-  function getSeen(){ try { return JSON.parse(localStorage.getItem('spotSeenScenes3') || '[]'); } catch(e){ return []; } }
+  function getSeen(){ try { return JSON.parse(localStorage.getItem('spotSeenScenes') || '[]'); } catch(e){ return []; } }
   function markSeen(idx){
     var seen = getSeen();
-    if (seen.indexOf(idx) < 0){ seen.push(idx); try { localStorage.setItem('spotSeenScenes3', JSON.stringify(seen)); } catch(e){} }
+    if (seen.indexOf(idx) < 0){ seen.push(idx); try { localStorage.setItem('spotSeenScenes', JSON.stringify(seen)); } catch(e){} }
   }
   function pickPlaylist(){
     var seen = getSeen(), unseen = [], old = [], i;
@@ -590,9 +778,8 @@
   function loadRound(){
     if (!playlist.length) playlist = pickPlaylist();
     var sc = curScene();
-    panelA.querySelector('.scenebox').innerHTML = '<img src="' + sc.a + '" alt="" draggable="false">';
-    panelB.querySelector('.scenebox').innerHTML = '<img src="' + sc.b + '" alt="" draggable="false">';
-    var nxS = ALL_SCENES[playlist[round]]; if (nxS){ var pi1 = new Image(); pi1.src = nxS.a; var pi2 = new Image(); pi2.src = nxS.b; }
+    panelA.querySelector('.scenebox').innerHTML = sc.fn('A', false);
+    panelB.querySelector('.scenebox').innerHTML = sc.fn('B', true);
     panelA.querySelector('.marks').innerHTML = '';
     panelB.querySelector('.marks').innerHTML = '';
     found = []; timeLeft = ROUND_TIME; hintUsed = false;
@@ -647,7 +834,7 @@
   function tapOn(panel, e){
     if (state !== 'play' || adShowing) return;
     SFX.unlock();
-    var svg = panel.querySelector('.scenebox');
+    var svg = panel.querySelector('svg');
     var r = svg.getBoundingClientRect();
     var x = (e.clientX - r.left) * (400 / r.width);
     var y = (e.clientY - r.top) * (300 / r.height);
@@ -773,7 +960,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261118-0052";
+window.__BUILD__ = "20261118-0820";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
