@@ -327,16 +327,24 @@
   /* ===== VOUCHER $10 KHI THANG ===== */
   var SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
   function claimVoucher(game){
+    if (!isLoggedIn()) { showVoucherLogin(); return; }
+    var s = teSession();
     fetch('https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/rpc/claim_game_voucher', {
       method: 'POST',
-      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + (s && s.access_token ? s.access_token : SB_ANON), 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_game: game })
     }).then(function(r){ return r.json(); }).then(function(code){
-      if (code) {
+      if (code === 'LOGIN_REQUIRED') { showVoucherLogin(); return; }
+      if (code && code !== 'HET_MA') {
         document.getElementById('voucherCode').textContent = code;
         document.getElementById('voucherBox').style.display = 'block';
       }
     }).catch(function(){});
+  }
+  function showVoucherLogin(){
+    var b = document.getElementById('voucherBox'); if (!b) return;
+    b.innerHTML = '🎉 Bạn đã thắng! <b>Voucher $10 chỉ dành cho khách có tài khoản</b> — đăng nhập / đăng ký miễn phí để nhận mã của bạn &nbsp;<a href="../dat-com/?login=1" style="background:#fff;color:#c62828;font-weight:800;border-radius:999px;padding:7px 16px;text-decoration:none;white-space:nowrap">Đăng nhập</a>';
+    b.style.display = 'block';
   }
   function hideVoucher(){ var b = document.getElementById('voucherBox'); if (b) b.style.display = 'none'; }
   document.getElementById('voucherCopy').addEventListener('click', function(){
@@ -364,7 +372,7 @@
   function updateChip(){
     var c = document.getElementById('tokenChip'); if (!c) return;
     if (isLoggedIn()) c.textContent = '🪙 ' + (tokenBalance == null ? '…' : tokenBalance);
-    else c.textContent = '🪙 Free: ' + Math.max(0, PLAY_LIMIT - guestPlays());
+    else c.textContent = '🪙 Free ∞';
   }
   function refreshBalance(){
     if (!isLoggedIn()){ updateChip(); return; }
@@ -384,10 +392,7 @@
     document.getElementById('limitBox').style.display = 'flex';
   }
   function gatePlay(){
-    if (!isLoggedIn()){
-      if (guestPlays() < PLAY_LIMIT){ registerPlay(); updateChip(); return true; }
-      showLimit('guest'); return false;
-    }
+    if (!isLoggedIn()){ return true; }
     if (tokenBalance == null){ refreshBalance(); return true; }
     if (tokenBalance <= 0){ showLimit('token'); return false; }
     tokenBalance--; updateChip();
@@ -403,7 +408,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-2100";
+window.__BUILD__ = "20261117-2115";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
