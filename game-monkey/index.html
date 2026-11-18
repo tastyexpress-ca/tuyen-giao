@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Monkey Catch Kem — Tasty Express</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system, "Segoe UI", Roboto, sans-serif; background:#fff5f7; color:#333;
+         display:flex; flex-direction:column; align-items:center; min-height:100vh; }
+  header { width:100%; max-width:430px; padding:12px 16px 4px; display:flex; align-items:center; gap:10px; }
+  header a.back { text-decoration:none; font-size:22px; color:#c62828; }
+  header h1 { font-size:20px; color:#c62828; }
+  header p { font-size:12px; color:#888; }
+  #wrap { width:100%; max-width:430px; padding:6px 12px 0; }
+  canvas { width:100%; display:block; border-radius:16px; box-shadow:0 4px 18px rgba(0,0,0,.15);
+           touch-action:none; background:#aee7ff; }
+  .hint { text-align:center; font-size:13px; color:#777; padding:8px 0 2px; }
+  #adslot { width:100%; max-width:430px; padding:10px 12px 18px; }
+  .ad-label { font-size:10px; letter-spacing:1px; color:#bbb; text-align:center; margin-bottom:4px; }
+  .ad-card { display:none; border-radius:14px; padding:14px 16px; text-decoration:none; color:#fff;
+             box-shadow:0 3px 10px rgba(0,0,0,.15); }
+  .ad-card.show { display:block; }
+  .ad-card h3 { font-size:17px; margin-bottom:3px; }
+  .ad-card p { font-size:13px; opacity:.92; }
+  .ad-party { background:linear-gradient(135deg,#ec407a,#c62828); }
+  .ad-comthang { background:linear-gradient(135deg,#43a047,#2e7d32); }
+  #interstitial { display:none; position:fixed; inset:0; z-index:999; background:rgba(20,8,12,.92);
+                  flex-direction:column; align-items:center; justify-content:center; padding:22px; }
+  #interstitial.show { display:flex; }
+  #interstitial .ad-label { color:#ffb3c1; margin-bottom:10px; }
+  #interstitial .ad-big { width:100%; max-width:400px; border-radius:20px; padding:30px 24px; color:#fff;
+                          text-decoration:none; text-align:center; box-shadow:0 10px 34px rgba(0,0,0,.45); }
+  #interstitial .ad-big h2 { font-size:26px; margin-bottom:10px; }
+  #interstitial .ad-big p { font-size:16px; line-height:1.5; opacity:.95; }
+  #interstitial .ad-big .cta { display:inline-block; margin-top:18px; background:#fff; color:#c62828;
+                               font-weight:800; padding:12px 26px; border-radius:999px; font-size:16px; }
+  #interstitial .count { margin-top:20px; color:#ffd9e1; font-size:14px; }
+  #interstitial .count b { font-size:17px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../game/">‹</a>
+  <div style="flex:1">
+    <h1>🐒 Monkey Catch Kem</h1>
+    <p>Di chuyển khỉ hứng viên kem rơi · Đạt 500 điểm nhận quà!</p>
+  </div>
+  <button id="soundBtn" type="button" aria-label="Bật/tắt âm thanh"
+    style="font-size:22px;background:#fff;border:1.5px solid #f3c6d3;border-radius:999px;padding:6px 12px;cursor:pointer">🔊</button>
+</header>
+
+<div id="wrap"><canvas id="game" width="400" height="560"></canvas></div>
+<p class="hint">Vuốt / di chuột để khỉ chạy theo hứng kem — né bom 💣, hụt kem là mất tim đó!</p>
+
+<div id="interstitial">
+  <div class="ad-label">QUẢNG CÁO</div>
+  <a class="ad-big ad-party" id="interAd" href="../dat-kem/">
+    <h2 id="interTitle">🎉 Ice Cream Party Bar</h2>
+    <p id="interBody">Tiệc kem trọn gói từ $135 · Ăn thoải mái 2 giờ · Có xe kem đến tận nơi cho sinh nhật &amp; sự kiện!</p>
+    <span class="cta" id="interCta">Xem các gói tiệc →</span>
+  </a>
+  <p class="count">Chơi tiếp sau <b id="interCount">10</b> giây…</p>
+</div>
+
+<div id="adslot">
+  <div class="ad-label">QUẢNG CÁO</div>
+  <a class="ad-card ad-party show" id="ad1" href="../dat-kem/">
+    <h3>🎉 Ice Cream Party Bar — từ $135</h3>
+    <p>Đặt tiệc kem cho sinh nhật, sự kiện · Ăn thoải mái 2 giờ · Bấm để xem các gói tiệc</p>
+  </a>
+  <a class="ad-card ad-comthang" id="ad2" href="../dat-com/">
+    <h3>🍱 Cơm tháng chỉ $9.50/phần</h3>
+    <p>Đăng ký cơm tháng cho gia đình &amp; văn phòng · Bấm để đặt ngay</p>
+  </a>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('game'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height, PRIZE = 500, GROUND = 46;
+  var SCOOPS = ['#f06292','#7cb342','#6d4c41','#9575cd','#ffb300','#f2e3b3','#fb8c00','#8ed8ff'];
+  var state = 'ready'; // ready | play | over
+  var monkeyX = W/2, targetX = W/2, items = [], score = 0, lives = 3, frame = 0, spawnT = 0, elapsed = 0;
+  var best = +(localStorage.getItem('monkeyKemBest') || 0);
+  var keys = {};
+
+  /* ===== AM THANH ===== */
+  var SFX = (function(){
+    var ac = null, muted = localStorage.getItem('monkeyKemMuted') === '1';
+    var btn = document.getElementById('soundBtn');
+    function syncBtn(){ btn.textContent = muted ? '🔇' : '🔊'; }
+    syncBtn();
+    btn.addEventListener('click', function(e){
+      e.stopPropagation(); muted = !muted;
+      localStorage.setItem('monkeyKemMuted', muted ? '1' : '0'); syncBtn();
+      if (!muted) tone(660, 0.07, 'sine', 0.15, 0);
+    });
+    function ctx(){ if (!ac){ try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+      if (ac && ac.state === 'suspended') ac.resume(); return ac; }
+    function tone(freq, dur, type, vol, delay, slideTo){
+      if (muted) return; var a = ctx(); if (!a) return;
+      var t = a.currentTime + (delay || 0);
+      var o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+      if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+      g.gain.setValueAtTime(vol || 0.15, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+    }
+    return {
+      unlock: function(){ ctx(); },
+      catchIt: function(gold){ if (gold){ tone(1047, 0.1, 'triangle', 0.16, 0); tone(1568, 0.14, 'triangle', 0.14, 0.07); } else tone(880, 0.08, 'triangle', 0.14, 0); },
+      miss: function(){ tone(220, 0.16, 'sawtooth', 0.09, 0, 130); },
+      boom: function(){ tone(150, 0.35, 'sawtooth', 0.18, 0, 45); },
+      fanfare: function(){ [523,659,784,1047,784,1047].forEach(function(f,i){ tone(f, 0.16, 'triangle', 0.16, i * 0.11); }); }
+    };
+  })();
+
+  /* ===== QUANG CAO TOAN MAN HINH 10 GIAY KHI THUA ===== */
+  var adShowing = false;
+  var INTER_ADS = [
+    { cls: 'ad-big ad-party', href: '../dat-kem/', title: '🎉 Ice Cream Party Bar',
+      body: 'Tiệc kem trọn gói từ $135 · Ăn thoải mái 2 giờ · Có xe kem đến tận nơi cho sinh nhật & sự kiện!', cta: 'Xem các gói tiệc →' },
+    { cls: 'ad-big ad-comthang', href: '../dat-com/', title: '🍱 Cơm tháng $9.50/phần',
+      body: 'Cơm nhà nấu mỗi ngày, giao tận nơi hoặc pick up tại Westminster · Đăng ký cơm tháng cho gia đình & văn phòng!', cta: 'Đặt cơm ngay →' }
+  ], interIdx = 0;
+  var interEl = document.getElementById('interstitial'), interAd = document.getElementById('interAd'), interCount = document.getElementById('interCount');
+  function showInterstitial(wonPrize){
+    var ad = INTER_ADS[interIdx % INTER_ADS.length]; interIdx++;
+    interAd.className = ad.cls; interAd.href = ad.href;
+    document.getElementById('interTitle').textContent = ad.title;
+    document.getElementById('interBody').textContent = ad.body;
+    document.getElementById('interCta').textContent = ad.cta;
+    adShowing = true; interEl.classList.add('show');
+    var left = 10; interCount.textContent = left;
+    var iv = setInterval(function(){
+      left--;
+      if (left <= 0){ clearInterval(iv); interEl.classList.remove('show'); adShowing = false; if (wonPrize) SFX.fanfare(); }
+      else interCount.textContent = left;
+    }, 1000);
+  }
+
+  function reset(){
+    monkeyX = targetX = W/2; items = []; score = 0; lives = 3; frame = 0; spawnT = 0; elapsed = 0;
+  }
+  function gameOver(){
+    state = 'over';
+    if (score > best){ best = score; localStorage.setItem('monkeyKemBest', best); }
+    showInterstitial(score >= PRIZE);
+  }
+  function spawn(){
+    var r = Math.random();
+    var kind = r < 0.12 ? 'bomb' : (r < 0.22 ? 'gold' : 'scoop');
+    items.push({ x: 26 + Math.random() * (W - 52), y: -24, kind: kind,
+                 col: SCOOPS[Math.floor(Math.random() * SCOOPS.length)],
+                 v: 2.1 + Math.random() * 0.9 + elapsed * 0.012, rot: Math.random() * 6.28 });
+  }
+
+  function pointerX(e){
+    var r = cv.getBoundingClientRect();
+    return (e.clientX - r.left) * (W / r.width);
+  }
+  cv.addEventListener('pointermove', function(e){ targetX = pointerX(e); });
+  cv.addEventListener('pointerdown', function(e){
+    e.preventDefault(); SFX.unlock();
+    if (adShowing) return;
+    targetX = pointerX(e);
+    if (state === 'ready') state = 'play';
+    else if (state === 'over'){ reset(); state = 'ready'; }
+  });
+  document.addEventListener('keydown', function(e){
+    keys[e.code] = true;
+    if (e.code === 'Space'){ e.preventDefault(); if (!adShowing){ if (state === 'ready') state = 'play'; else if (state === 'over'){ reset(); state = 'ready'; } } }
+  });
+  document.addEventListener('keyup', function(e){ keys[e.code] = false; });
+
+  function drawScoop(x, y, col, gold){
+    ctx.save(); ctx.translate(x, y);
+    if (gold){ ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 14; }
+    ctx.fillStyle = gold ? '#ffd94d' : col;
+    ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    ctx.beginPath(); ctx.arc(-5, -6, 5.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#e0a458';
+    ctx.beginPath(); ctx.moveTo(-8, 11); ctx.lineTo(8, 11); ctx.lineTo(0, 24); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  function draw(){
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#8ed8ff'); sky.addColorStop(1, '#fff7ea');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    [[70,60,24],[300,42,17],[180,110,14]].forEach(function(c){
+      var cx = ((c[0] - frame * 0.25) % (W + 80) + W + 80) % (W + 80) - 40;
+      ctx.beginPath(); ctx.arc(cx, c[1], c[2], 0, Math.PI * 2); ctx.arc(cx + c[2] * 0.9, c[1] + 4, c[2] * 0.7, 0, Math.PI * 2); ctx.fill();
+    });
+    // mat dat rung
+    ctx.fillStyle = '#8bc34a'; ctx.fillRect(0, H - GROUND, W, GROUND);
+    ctx.fillStyle = '#7cb342'; ctx.fillRect(0, H - GROUND, W, 5);
+
+    // vat roi
+    items.forEach(function(it){
+      if (it.kind === 'bomb'){ ctx.font = '30px serif'; ctx.textAlign = 'center'; ctx.fillText('💣', it.x, it.y + 10); ctx.textAlign = 'left'; }
+      else drawScoop(it.x, it.y, it.col, it.kind === 'gold');
+    });
+
+    // chu khi + cai ro hung
+    var my = H - GROUND - 8;
+    ctx.font = '46px serif'; ctx.textAlign = 'center';
+    ctx.fillText('🐒', monkeyX, my);
+    ctx.fillStyle = '#c62828';
+    ctx.beginPath();
+    ctx.moveTo(monkeyX - 30, my - 52); ctx.lineTo(monkeyX + 30, my - 52); ctx.lineTo(monkeyX + 20, my - 36); ctx.lineTo(monkeyX - 20, my - 36);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(monkeyX - 30, my - 52, 60, 5);
+    ctx.textAlign = 'left';
+
+    // diem + tim
+    if (state !== 'ready'){
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 5;
+      ctx.font = 'bold 34px -apple-system, sans-serif'; ctx.textAlign = 'center';
+      ctx.strokeText(score, W/2, 52); ctx.fillText(score, W/2, 52);
+      ctx.font = '19px serif';
+      var hearts = ''; for (var i = 0; i < lives; i++) hearts += '❤️';
+      ctx.fillStyle = '#e53935'; ctx.textAlign = 'left';
+      ctx.fillText(hearts, 12, 34);
+      ctx.font = '13px -apple-system, sans-serif'; ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.textAlign = 'right';
+      ctx.fillText('Kỷ lục: ' + best, W - 12, 30);
+      ctx.textAlign = 'left';
+    }
+
+    if (state === 'ready'){
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+      ctx.font = 'bold 27px -apple-system, sans-serif';
+      ctx.fillText('MONKEY CATCH KEM', W/2, H/2 - 66);
+      ctx.font = '16px -apple-system, sans-serif';
+      ctx.fillText('Vuốt để khỉ chạy theo hứng viên kem', W/2, H/2 - 32);
+      ctx.fillText('Viên vàng +50 · Viên thường +10', W/2, H/2 - 4);
+      ctx.fillText('Né bom 💣 · Hụt kem mất 1 tim', W/2, H/2 + 24);
+      ctx.fillText('Đạt ' + PRIZE + ' điểm = có quà 🎁', W/2, H/2 + 52);
+      ctx.fillText('Chạm để bắt đầu', W/2, H/2 + 88);
+      ctx.textAlign = 'left';
+    }
+    if (state === 'over'){
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+      ctx.font = 'bold 29px -apple-system, sans-serif';
+      ctx.fillText('HẾT TIM RỒI! 🙈', W/2, H/2 - 96);
+      ctx.font = 'bold 21px -apple-system, sans-serif';
+      ctx.fillText('Bạn hứng được: ' + score + ' điểm', W/2, H/2 - 56);
+      ctx.font = '16px -apple-system, sans-serif';
+      ctx.fillText('Kỷ lục: ' + best + ' điểm', W/2, H/2 - 28);
+      if (score >= PRIZE){
+        ctx.fillStyle = '#ffe082'; ctx.font = 'bold 16px -apple-system, sans-serif';
+        ctx.fillText('🎁 ĐẠT ' + score + ' ĐIỂM — CÓ QUÀ!', W/2, H/2 + 8);
+        ctx.fillStyle = '#fff'; ctx.font = '14px -apple-system, sans-serif';
+        ctx.fillText('Chụp màn hình này gửi tiệm qua', W/2, H/2 + 32);
+        ctx.fillText('Messenger để nhận quà kem nhé!', W/2, H/2 + 52);
+      }
+      ctx.font = '15px -apple-system, sans-serif';
+      ctx.fillText('Chạm để chơi lại', W/2, H/2 + 88);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  function step(){
+    frame++;
+    if (state === 'play'){
+      elapsed += 1/60;
+      if (keys['ArrowLeft']) targetX -= 6;
+      if (keys['ArrowRight']) targetX += 6;
+      targetX = Math.max(34, Math.min(W - 34, targetX));
+      monkeyX += (targetX - monkeyX) * 0.35;
+      spawnT--;
+      if (spawnT <= 0){ spawn(); spawnT = Math.max(24, 46 - elapsed * 0.55); }
+      var catchY = H - GROUND - 8 - 44;
+      for (var i = items.length - 1; i >= 0; i--){
+        var it = items[i];
+        it.y += it.v; it.rot += 0.03;
+        if (it.y >= catchY - 8 && it.y <= catchY + 16 && Math.abs(it.x - monkeyX) < 38){
+          items.splice(i, 1);
+          if (it.kind === 'bomb'){ lives--; SFX.boom(); }
+          else { score += it.kind === 'gold' ? 50 : 10; SFX.catchIt(it.kind === 'gold'); }
+          if (lives <= 0){ gameOver(); break; }
+          continue;
+        }
+        if (it.y > H - GROUND - 4){
+          items.splice(i, 1);
+          if (it.kind !== 'bomb'){ lives--; SFX.miss(); if (lives <= 0){ gameOver(); break; } }
+        }
+      }
+    }
+    draw();
+    requestAnimationFrame(step);
+  }
+  reset();
+  step();
+
+  var ads = [document.getElementById('ad1'), document.getElementById('ad2')], ai = 0;
+  setInterval(function(){ ads[ai].classList.remove('show'); ai = (ai + 1) % ads.length; ads[ai].classList.add('show'); }, 8000);
+})();
+</script>
+<script>
+/* Tu dong cap nhat ban moi (Chris 2026-10-26) */
+window.__BUILD__ = "20261117-1945";
+(function () {
+  var KEY = "build-reloaded-for";
+  function check() {
+    fetch("/tuyen-giao/version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.build) return;
+        if (j.build === window.__BUILD__) {
+          try { sessionStorage.removeItem(KEY); } catch (e) {}
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(KEY) === j.build) return;
+          sessionStorage.setItem(KEY, j.build);
+        } catch (e) {}
+        location.reload();
+      })
+      .catch(function () {});
+  }
+  check();
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) check();
+  });
+  setInterval(check, 300000);
+})();
+</script>
+</body>
+</html>
