@@ -425,7 +425,11 @@
     document.getElementById('limitBox').style.display = 'flex';
   }
   function gatePlay(){
-    if (!isLoggedIn()){ return true; }
+    if (!isLoggedIn()){
+      if (guestPlays() >= PLAY_LIMIT){ showLimit('guest'); return false; }
+      registerPlay();
+      return true;
+    }
     if (cooldownUntil > Date.now()){ showLimit('cooldown'); return false; }
     if (tokenBalance == null){ refreshBalance(); return true; }
     if (tokenBalance <= 0){ showLimit('token'); return false; }
@@ -442,7 +446,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-2340";
+window.__BUILD__ = "20261117-2350";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
