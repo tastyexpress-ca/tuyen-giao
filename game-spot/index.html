@@ -60,7 +60,7 @@
   <a class="back" href="../game/">‹</a>
   <div style="flex:1">
     <h1>🔍 Tìm Điểm Khác Nhau</h1>
-    <p>50 hình cảnh &amp; thành phố · 10 vòng × 120 giây · Đạt 950 điểm là thắng! (Chơi vui — không có voucher)</p>
+    <p>50 hình cảnh &amp; thành phố · Tìm hết 50 hình là thắng! · Mỗi hình 120 giây (Chơi vui — không có voucher)</p>
   </div>
   <span id="tokenChip" style="font-size:13px;font-weight:700;color:#8d6e00;background:#fff8e1;border:1.5px solid #ffe082;border-radius:999px;padding:6px 10px;">🪙 …</span>
   <button id="soundBtn" type="button" aria-label="Bật/tắt âm thanh"
@@ -69,9 +69,9 @@
 
 <div id="wrap">
   <div id="statusBar">
-    <span id="roundTxt">Vòng 1/10</span><span id="dots">○○○○○</span>
+    <span id="roundTxt">Vòng 1/50</span><span id="dots">○○○○○</span>
     <span class="sp"></span>
-    <span id="scoreTxt">Tổng: 0</span><span id="clock">⏱ 2:00</span>
+    <span id="scoreTxt">Đã xong: 0/50</span><span id="clock">⏱ 2:00</span>
     <button id="hintBtn" type="button">💡 Gợi ý</button>
     <button id="startBtn" type="button">▶ Bắt đầu</button>
   </div>
@@ -101,7 +101,7 @@
   </div>
 </div>
 
-<p class="hint">Tìm đủ 5 điểm trước khi hết giờ — điểm vòng = thời gian còn lại · Chạm sai trừ 5 giây!</p>
+<p class="hint">Tìm đủ 5 điểm khác nhau trong mỗi hình trước khi hết giờ — chạm sai trừ 5 giây! Tìm hết 50 hình là thắng 🎉</p>
 
 <div id="interstitial">
   <div class="ad-label">QUẢNG CÁO</div>
@@ -127,9 +127,8 @@
 
 <script>
 (function(){
-  var ROUND_TIME = 120, SCORE_MULT = 1, ROUNDS = 10, TARGET = 950;
-  var state = 'ready', round = 1, found = [], totalScore = 0, timeLeft = ROUND_TIME, timer = null, hintUsed = false;
-  var bestScore = +(localStorage.getItem('spotKemBestScore') || 0);
+  var ROUND_TIME = 120, ROUNDS = 50;
+  var state = 'ready', round = 1, found = [], timeLeft = ROUND_TIME, timer = null, hintUsed = false;
 
   /* ===== AM THANH ===== */
   var SFX = (function(){
@@ -733,15 +732,11 @@
     if (seen.indexOf(idx) < 0){ seen.push(idx); try { localStorage.setItem('spotSeenScenes', JSON.stringify(seen)); } catch(e){} }
   }
   function pickPlaylist(){
-    var seen = getSeen(), unseen = [], i;
-    for (i = 0; i < ALL_SCENES.length; i++) if (seen.indexOf(i) < 0) unseen.push(i);
-    if (unseen.length < ROUNDS){
-      unseen = []; for (i = 0; i < ALL_SCENES.length; i++) unseen.push(i);
-      try { localStorage.setItem('spotSeenScenes', '[]'); } catch(e){}
-    }
+    var seen = getSeen(), unseen = [], old = [], i;
+    for (i = 0; i < ALL_SCENES.length; i++){ if (seen.indexOf(i) < 0) unseen.push(i); else old.push(i); }
     var rnd = mulberry32(Date.now() % 100000);
-    shuffleR(rnd, unseen);
-    return unseen.slice(0, ROUNDS);
+    shuffleR(rnd, unseen); shuffleR(rnd, old);
+    return unseen.concat(old).slice(0, ROUNDS);
   }
 
   var panelA = document.getElementById('panelA'), panelB = document.getElementById('panelB');
@@ -757,7 +752,7 @@
     roundTxt.textContent = 'Vòng ' + round + '/' + ROUNDS;
     var d = ''; for (var i = 0; i < 5; i++) d += found.indexOf(i) >= 0 ? '●' : '○';
     dotsEl.textContent = d;
-    scoreTxt.textContent = 'Tổng: ' + totalScore;
+    scoreTxt.textContent = 'Đã xong: ' + (round - 1) + '/' + ROUNDS;
     clockEl.textContent = '⏱ ' + fmtT(timeLeft);
     clockEl.style.color = timeLeft <= 20 ? '#c62828' : '';
   }
@@ -802,7 +797,7 @@
   }
   var runGuest = false;
   function startRun(){
-    round = 1; totalScore = 0;
+    round = 1;
     runGuest = !isLoggedIn();
     playlist = pickPlaylist();
     bigMsg.style.display = 'none';
@@ -814,15 +809,13 @@
     startTimer();
   }
   function completeRound(){
-    var pts = Math.ceil(timeLeft) * SCORE_MULT;
-    totalScore += pts;
     state = 'splash'; stopTimer();
     SFX.good();
-    bigMsg.innerHTML = '🎉 Vòng ' + round + ' xong! +' + pts + ' điểm (còn ' + Math.ceil(timeLeft) + ' giây)<br/>Tổng: ' + totalScore + ' / ' + TARGET + ' điểm';
+    bigMsg.innerHTML = '🎉 Hình ' + round + '/' + ROUNDS + ' xong! (còn ' + Math.ceil(timeLeft) + ' giây)';
     bigMsg.style.display = 'block';
     setTimeout(function(){
       bigMsg.style.display = 'none';
-      if (round >= ROUNDS){ endGame(totalScore >= TARGET, 'done'); }
+      if (round >= ROUNDS){ endGame(true, 'done'); }
       else { round++; loadRound(); markSeen(playlist[round - 1]); state = 'play'; startTimer(); }
     }, 1700);
   }
@@ -831,13 +824,9 @@
     if (!won) playlist.forEach(function(ix){ markSeen(ix); }); // thua: ca luot nay khong lap lai
     startBtn.textContent = '▶ Chơi lại';
     if (won){
-      var rec = '';
-      if (totalScore > bestScore){ bestScore = totalScore; localStorage.setItem('spotKemBestScore', bestScore); rec = ' · Kỷ lục mới! 🏆'; }
-      bigMsg.innerHTML = '🏆 THẮNG RỒI! Tổng ' + totalScore + ' điểm' + rec + '<br/>Bạn có đôi mắt thật tinh tường! 👀';
-    } else if (reason === 'time'){
-      bigMsg.innerHTML = '⏰ Hết giờ ở vòng ' + round + '! Tổng: ' + totalScore + ' điểm.<br/>Đủ ' + TARGET + ' điểm trong ' + ROUNDS + ' vòng mới thắng — thử lại nhé!';
+      bigMsg.innerHTML = '🏆 THẮNG RỒI! Bạn đã tìm hết 50 hình!<br/>Bạn có đôi mắt thật tinh tường! 👀';
     } else {
-      bigMsg.innerHTML = '💔 Hết ' + ROUNDS + ' vòng — tổng ' + totalScore + ' điểm, chưa đủ ' + TARGET + '.<br/>Tìm nhanh hơn nữa là thắng!';
+      bigMsg.innerHTML = '⏰ Hết giờ ở hình ' + round + '/' + ROUNDS + '!<br/>Tìm hết 50 hình mới thắng — thử lại nhé!';
     }
     bigMsg.style.display = 'block';
     showInterstitial(won);
@@ -971,7 +960,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-2330";
+window.__BUILD__ = "20261117-2340";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
