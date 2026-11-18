@@ -235,23 +235,56 @@
 
   function drawPipe(x, y, h, isTop, fi){
     var fl = FLAVORS10[fi || 0];
+    if (h <= 4) return;
+    // than oc que waffle
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, PW, h); ctx.clip();
     var g = ctx.createLinearGradient(x, 0, x + PW, 0);
-    g.addColorStop(0, shade(fl.col, 0.82)); g.addColorStop(0.5, fl.col); g.addColorStop(1, shade(fl.col, 0.82));
-    ctx.fillStyle = g;
-    ctx.fillRect(x, y, PW, h);
-    ctx.fillStyle = shade(fl.col, 0.62);
-    var rimY = isTop ? y + h - 22 : y;
-    ctx.fillRect(x - 4, rimY, PW + 8, 22);
-    ctx.fillStyle = 'rgba(255,255,255,.16)';
-    for (var i = 0; i < h; i += 26) ctx.fillRect(x + 8, y + i + 4, 5, 14);
-    if (h > 100){
+    g.addColorStop(0, '#dfa253'); g.addColorStop(0.5, '#f6cd85'); g.addColorStop(1, '#dfa253');
+    ctx.fillStyle = g; ctx.fillRect(x, y, PW, h);
+    ctx.strokeStyle = 'rgba(165,102,40,.5)'; ctx.lineWidth = 2;
+    for (var d = -h - PW; d < PW + h; d += 18){
+      ctx.beginPath(); ctx.moveTo(x + d, y); ctx.lineTo(x + d + h, y + h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + d, y + h); ctx.lineTo(x + d + h, y); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.fillStyle = 'rgba(120,70,20,.35)';
+    ctx.fillRect(x, y, 2, h); ctx.fillRect(x + PW - 2, y, 2, h);
+    // vien kem tron o canh gan khe bay
+    var edgeY = isTop ? y + h : y;
+    var inward = isTop ? -1 : 1;
+    var R = 18;
+    var cy = edgeY + inward * R * 0.35;
+    ctx.fillStyle = fl.col;
+    ctx.strokeStyle = shade(fl.col, 0.72); ctx.lineWidth = 2;
+    [0.20, 0.5, 0.80].forEach(function(fx){
+      ctx.beginPath(); ctx.arc(x + PW * fx, cy, R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
+    // kem chay xuong than oc que
+    [0.10, 0.34, 0.58, 0.86].forEach(function(fx, i){
+      var dr = 5 + (i % 3) * 2.2;
+      ctx.beginPath(); ctx.arc(x + PW * fx, cy + inward * R * 0.85, dr, 0, Math.PI * 2); ctx.fill();
+    });
+    // bong sang tren vien kem
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    ctx.beginPath(); ctx.arc(x + PW * 0.40, cy - R * 0.36, R * 0.30, 0, Math.PI * 2); ctx.fill();
+    // sprinkles nhieu mau
+    var spr = ['#ff5b7f', '#ffd93b', '#4fc3f7', '#7ee787', '#c792ea'];
+    for (var si = 0; si < 7; si++){
+      var sx = x + 9 + ((si * 23 + fi * 7) % (PW - 18));
+      var sy = cy + ((si * 29 + fi * 11) % 17) - 8;
+      ctx.save(); ctx.translate(sx, sy); ctx.rotate(si * 1.1 + fi);
+      ctx.fillStyle = spr[si % spr.length]; ctx.fillRect(-3, -1.2, 6, 2.4); ctx.restore();
+    }
+    // ten vi kem doc tren than oc que
+    if (h > 130){
       ctx.save();
-      ctx.translate(x + PW / 2, y + h / 2);
+      ctx.translate(x + PW / 2, y + h / 2 + (isTop ? -16 : 16));
       ctx.rotate(-Math.PI / 2);
-      ctx.font = 'bold 16px -apple-system, sans-serif';
+      ctx.font = 'bold 15px -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillStyle = fl.dark ? 'rgba(90,60,0,.85)' : 'rgba(255,255,255,.92)';
-      ctx.fillText(fl.name.toUpperCase(), 0, 6);
+      ctx.fillStyle = 'rgba(96,54,10,.85)';
+      ctx.fillText(fl.name.toUpperCase(), 0, 5);
       ctx.restore();
       ctx.textAlign = 'left';
     }
@@ -479,7 +512,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-2115";
+window.__BUILD__ = "20261117-2140";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
