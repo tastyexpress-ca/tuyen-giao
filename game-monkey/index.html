@@ -60,6 +60,17 @@
   </div>
 </div>
 
+
+<div id="limitBox" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(20,8,12,.92);flex-direction:column;align-items:center;justify-content:center;padding:22px;">
+  <div style="background:#fff;border-radius:20px;padding:26px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 10px 34px rgba(0,0,0,.45);">
+    <div style="font-size:40px;">🎮</div>
+    <h2 style="font-size:20px;color:#c62828;margin:8px 0;">Bạn đã chơi hết 10 lượt miễn phí</h2>
+    <p style="font-size:14.5px;color:#555;line-height:1.55;">Tạo tài khoản miễn phí để chơi tiếp không giới hạn — thắng game còn nhận voucher $10 nữa nhé!</p>
+    <a href="../dat-com/" style="display:inline-block;margin-top:16px;background:#c62828;color:#fff;font-weight:800;padding:13px 28px;border-radius:999px;text-decoration:none;font-size:16px;">Đăng ký / Đăng nhập →</a>
+    <div><button id="limitClose" type="button" style="margin-top:12px;background:none;border:none;color:#999;font-size:14px;cursor:pointer;">Để sau</button></div>
+  </div>
+</div>
+
 <p class="hint">Vuốt / di chuột để khỉ chạy theo hứng kem — né bom 💣, hụt kem là mất tim đó!</p>
 
 <div id="interstitial">
@@ -177,12 +188,12 @@
     e.preventDefault(); SFX.unlock();
     if (adShowing) return;
     targetX = pointerX(e);
-    if (state === 'ready') state = 'play';
+    if (state === 'ready'){ if (gatePlay()) state = 'play'; }
     else if (state === 'over'){ reset(); state = 'ready'; }
   });
   document.addEventListener('keydown', function(e){
     keys[e.code] = true;
-    if (e.code === 'Space'){ e.preventDefault(); if (!adShowing){ if (state === 'ready') state = 'play'; else if (state === 'over'){ reset(); state = 'ready'; } } }
+    if (e.code === 'Space'){ e.preventDefault(); if (!adShowing){ if (state === 'ready'){ if (gatePlay()) state = 'play'; } else if (state === 'over'){ reset(); state = 'ready'; } } }
   });
   document.addEventListener('keyup', function(e){ keys[e.code] = false; });
 
@@ -333,13 +344,24 @@
     if (navigator.clipboard) navigator.clipboard.writeText(code).then(function(){ btn.textContent = '✅ Đã copy!'; setTimeout(function(){ btn.textContent = '📋 Copy mã'; }, 2000); });
   });
 
+
+  /* ===== GIOI HAN GUEST: 10 LUOT CHOI, DANG NHAP = KHONG GIOI HAN ===== */
+  var PLAY_KEY = 'guestPlaysV1', PLAY_LIMIT = 10;
+  function isLoggedIn(){ try { var s = JSON.parse(localStorage.getItem('te_account_session') || 'null'); return !!(s && s.access_token && (!s.expires_at || s.expires_at > Date.now())); } catch(e){ return false; } }
+  function guestPlays(){ try { return +(localStorage.getItem(PLAY_KEY) || 0); } catch(e){ return 0; } }
+  function canPlay(){ return isLoggedIn() || guestPlays() < PLAY_LIMIT; }
+  function registerPlay(){ if (!isLoggedIn()){ try { localStorage.setItem(PLAY_KEY, guestPlays() + 1); } catch(e){} } }
+  function showLimit(){ var b = document.getElementById('limitBox'); if (b) b.style.display = 'flex'; }
+  function gatePlay(){ if (canPlay()){ registerPlay(); return true; } showLimit(); return false; }
+  document.getElementById('limitClose').addEventListener('click', function(){ document.getElementById('limitBox').style.display = 'none'; });
+
   var ads = [document.getElementById('ad1'), document.getElementById('ad2')], ai = 0;
   setInterval(function(){ ads[ai].classList.remove('show'); ai = (ai + 1) % ads.length; ads[ai].classList.add('show'); }, 8000);
 })();
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-2005";
+window.__BUILD__ = "20261117-2018";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
