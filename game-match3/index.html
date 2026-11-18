@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Match-3 Kem — Tasty Express</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system, "Segoe UI", Roboto, sans-serif; background:#fff5f7; color:#333;
+         display:flex; flex-direction:column; align-items:center; min-height:100vh; }
+  header { width:100%; max-width:430px; padding:12px 16px 4px; display:flex; align-items:center; gap:10px; }
+  header a.back { text-decoration:none; font-size:22px; color:#c62828; }
+  header h1 { font-size:20px; color:#c62828; }
+  header p { font-size:12px; color:#888; }
+  #hud { width:100%; max-width:430px; padding:8px 16px 2px; display:flex; gap:10px; }
+  .hud-box { flex:1; background:#fff; border:1.5px solid #ffe3ec; border-radius:12px; padding:8px 6px; text-align:center; }
+  .hud-box b { display:block; font-size:19px; color:#c62828; }
+  .hud-box span { font-size:11px; color:#999; }
+  #boardWrap { padding:10px 12px 0; width:100%; max-width:430px; position:relative; }
+  #board { display:grid; grid-template-columns:repeat(8, 1fr); gap:4px; background:#fff;
+           border-radius:16px; padding:8px; box-shadow:0 4px 18px rgba(0,0,0,.12); }
+  .cell { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:26px;
+          background:#fff7fa; border-radius:10px; cursor:pointer; user-select:none; transition:transform .08s; }
+  .cell.sel { outline:3px solid #c62828; transform:scale(1.08); background:#ffe3ec; }
+  .cell.pop { transform:scale(0.2); opacity:0.2; }
+  #overlay { display:none; position:absolute; inset:10px 12px 0; background:rgba(30,10,16,.88); border-radius:16px;
+             color:#fff; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; z-index:5; }
+  #overlay.show { display:flex; }
+  #overlay h2 { font-size:26px; margin-bottom:8px; }
+  #overlay p { font-size:15px; line-height:1.55; }
+  #overlay .prize { color:#ffe082; font-weight:800; }
+  #replayBtn { margin-top:16px; background:#c62828; color:#fff; border:none; font-size:16px; font-weight:700;
+               padding:12px 28px; border-radius:999px; cursor:pointer; }
+  #replayBtn:disabled { background:#999; }
+  .hint { text-align:center; font-size:13px; color:#777; padding:9px 16px 2px; max-width:430px; }
+  #shuffleBtn { margin-top:6px; background:#fff; border:1.5px solid #f3c6d3; color:#c62828; font-weight:700;
+                font-size:13.5px; padding:8px 18px; border-radius:999px; cursor:pointer; }
+  #adslot { width:100%; max-width:430px; padding:12px 12px 18px; }
+  .ad-label { font-size:10px; letter-spacing:1px; color:#bbb; text-align:center; margin-bottom:4px; }
+  .ad-card { display:none; border-radius:14px; padding:14px 16px; text-decoration:none; color:#fff;
+             box-shadow:0 3px 10px rgba(0,0,0,.15); }
+  .ad-card.show { display:block; }
+  .ad-card h3 { font-size:17px; margin-bottom:3px; }
+  .ad-card p { font-size:13px; opacity:.92; }
+  .ad-party { background:linear-gradient(135deg,#ec407a,#c62828); }
+  .ad-comthang { background:linear-gradient(135deg,#43a047,#2e7d32); }
+  #interstitial { display:none; position:fixed; inset:0; z-index:999; background:rgba(20,8,12,.92);
+                  flex-direction:column; align-items:center; justify-content:center; padding:22px; }
+  #interstitial.show { display:flex; }
+  #interstitial .ad-label { color:#ffb3c1; margin-bottom:10px; }
+  #interstitial .ad-big { width:100%; max-width:400px; border-radius:20px; padding:30px 24px; color:#fff;
+                          text-decoration:none; text-align:center; box-shadow:0 10px 34px rgba(0,0,0,.45); }
+  #interstitial .ad-big h2 { font-size:26px; margin-bottom:10px; }
+  #interstitial .ad-big p { font-size:16px; line-height:1.5; opacity:.95; }
+  #interstitial .ad-big .cta { display:inline-block; margin-top:18px; background:#fff; color:#c62828;
+                               font-weight:800; padding:12px 26px; border-radius:999px; font-size:16px; }
+  #interstitial .count { margin-top:20px; color:#ffd9e1; font-size:14px; }
+  #interstitial .count b { font-size:17px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../game/">‹</a>
+  <div style="flex:1">
+    <h1>🍬 Match-3 Kem</h1>
+    <p>Ghép 3 vị kem giống nhau · Đạt 3.000 điểm nhận quà!</p>
+  </div>
+  <button id="soundBtn" type="button" aria-label="Bật/tắt âm thanh"
+    style="font-size:22px;background:#fff;border:1.5px solid #f3c6d3;border-radius:999px;padding:6px 12px;cursor:pointer">🔊</button>
+</header>
+
+<div id="hud">
+  <div class="hud-box"><b id="score">0</b><span>ĐIỂM</span></div>
+  <div class="hud-box"><b id="time">90</b><span>GIÂY</span></div>
+  <div class="hud-box"><b id="best">0</b><span>KỶ LỤC</span></div>
+</div>
+
+<div id="boardWrap">
+  <div id="board"></div>
+  <div id="overlay">
+    <h2 id="ovTitle">⏰ HẾT GIỜ!</h2>
+    <p id="ovText"></p>
+    <button id="replayBtn" type="button">Chơi lại</button>
+  </div>
+</div>
+<p class="hint">Chạm 1 ô rồi chạm ô kề bên để đổi chỗ — ghép từ 3 ô giống nhau trở lên để ghi điểm. Ghép càng dài, điểm càng cao!</p>
+<button id="shuffleBtn" type="button">🔀 Trộn lại bàn</button>
+
+<div id="interstitial">
+  <div class="ad-label">QUẢNG CÁO</div>
+  <a class="ad-big ad-party" id="interAd" href="../dat-kem/">
+    <h2 id="interTitle">🎉 Ice Cream Party Bar</h2>
+    <p id="interBody">Tiệc kem trọn gói từ $135 · Ăn thoải mái 2 giờ · Có xe kem đến tận nơi cho sinh nhật &amp; sự kiện!</p>
+    <span class="cta" id="interCta">Xem các gói tiệc →</span>
+  </a>
+  <p class="count">Chơi tiếp sau <b id="interCount">10</b> giây…</p>
+</div>
+
+<div id="adslot">
+  <div class="ad-label">QUẢNG CÁO</div>
+  <a class="ad-card ad-party show" id="ad1" href="../dat-kem/">
+    <h3>🎉 Ice Cream Party Bar — từ $135</h3>
+    <p>Đặt tiệc kem cho sinh nhật, sự kiện · Ăn thoải mái 2 giờ · Bấm để xem các gói tiệc</p>
+  </a>
+  <a class="ad-card ad-comthang" id="ad2" href="../dat-com/">
+    <h3>🍱 Cơm tháng chỉ $9.50/phần</h3>
+    <p>Đăng ký cơm tháng cho gia đình &amp; văn phòng · Bấm để đặt ngay</p>
+  </a>
+</div>
+
+<script>
+(function(){
+  var FLAVORS = ['🍓','🍵','🍫','🍠','🥭','🥥'];
+  var N = 8, TIME0 = 90, PRIZE = 3000;
+  var board = [], score = 0, timeLeft = TIME0, playing = false, busy = false, sel = null, timer = null;
+  var best = +(localStorage.getItem('match3KemBest') || 0);
+  var boardEl = document.getElementById('board');
+  var scoreEl = document.getElementById('score'), timeEl = document.getElementById('time'), bestEl = document.getElementById('best');
+  var overlay = document.getElementById('overlay'), ovText = document.getElementById('ovText'), replayBtn = document.getElementById('replayBtn');
+  bestEl.textContent = best;
+
+  /* ===== AM THANH ===== */
+  var SFX = (function(){
+    var ac = null, muted = localStorage.getItem('match3KemMuted') === '1';
+    var btn = document.getElementById('soundBtn');
+    function syncBtn(){ btn.textContent = muted ? '🔇' : '🔊'; }
+    syncBtn();
+    btn.addEventListener('click', function(e){
+      e.stopPropagation(); muted = !muted;
+      localStorage.setItem('match3KemMuted', muted ? '1' : '0'); syncBtn();
+      if (!muted) tone(660, 0.07, 'sine', 0.15, 0);
+    });
+    function ctx(){ if (!ac){ try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+      if (ac && ac.state === 'suspended') ac.resume(); return ac; }
+    function tone(freq, dur, type, vol, delay, slideTo){
+      if (muted) return; var a = ctx(); if (!a) return;
+      var t = a.currentTime + (delay || 0);
+      var o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+      if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+      g.gain.setValueAtTime(vol || 0.15, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+    }
+    return {
+      unlock: function(){ ctx(); },
+      tap: function(){ tone(600, 0.05, 'sine', 0.08, 0); },
+      swap: function(){ tone(440, 0.07, 'sine', 0.10, 0, 660); },
+      pop: function(chain){ var base = 700 + (chain - 1) * 120; tone(base, 0.09, 'triangle', 0.16, 0); tone(base * 1.5, 0.12, 'triangle', 0.14, 0.06); },
+      bad: function(){ tone(180, 0.15, 'sawtooth', 0.08, 0, 120); },
+      fanfare: function(){ [523,659,784,1047,784,1047].forEach(function(f,i){ tone(f, 0.16, 'triangle', 0.16, i * 0.11); }); },
+      end: function(){ tone(392, 0.15, 'sine', 0.12, 0); tone(330, 0.15, 'sine', 0.12, 0.14); tone(262, 0.25, 'sine', 0.12, 0.28); }
+    };
+  })();
+
+  /* ===== QUANG CAO TOAN MAN HINH 10 GIAY KHI HET GAME ===== */
+  var adShowing = false;
+  var INTER_ADS = [
+    { cls: 'ad-big ad-party', href: '../dat-kem/', title: '🎉 Ice Cream Party Bar',
+      body: 'Tiệc kem trọn gói từ $135 · Ăn thoải mái 2 giờ · Có xe kem đến tận nơi cho sinh nhật & sự kiện!', cta: 'Xem các gói tiệc →' },
+    { cls: 'ad-big ad-comthang', href: '../dat-com/', title: '🍱 Cơm tháng $9.50/phần',
+      body: 'Cơm nhà nấu mỗi ngày, giao tận nơi hoặc pick up tại Westminster · Đăng ký cơm tháng cho gia đình & văn phòng!', cta: 'Đặt cơm ngay →' }
+  ], interIdx = 0;
+  var interEl = document.getElementById('interstitial'), interAd = document.getElementById('interAd'), interCount = document.getElementById('interCount');
+  function showInterstitial(done){
+    var ad = INTER_ADS[interIdx % INTER_ADS.length]; interIdx++;
+    interAd.className = ad.cls; interAd.href = ad.href;
+    document.getElementById('interTitle').textContent = ad.title;
+    document.getElementById('interBody').textContent = ad.body;
+    document.getElementById('interCta').textContent = ad.cta;
+    adShowing = true; interEl.classList.add('show');
+    var left = 10; interCount.textContent = left;
+    var iv = setInterval(function(){
+      left--;
+      if (left <= 0){ clearInterval(iv); interEl.classList.remove('show'); adShowing = false; if (done) done(); }
+      else interCount.textContent = left;
+    }, 1000);
+  }
+
+  function rnd(){ return Math.floor(Math.random() * FLAVORS.length); }
+  function idx(r, c){ return r * N + c; }
+
+  function newBoard(){
+    board = new Array(N * N);
+    for (var r = 0; r < N; r++) for (var c = 0; c < N; c++){
+      var v;
+      do { v = rnd(); }
+      while ((c >= 2 && board[idx(r, c-1)] === v && board[idx(r, c-2)] === v) ||
+             (r >= 2 && board[idx(r-1, c)] === v && board[idx(r-2, c)] === v));
+      board[idx(r, c)] = v;
+    }
+  }
+
+  function render(popSet){
+    boardEl.innerHTML = '';
+    for (var i = 0; i < N * N; i++){
+      var d = document.createElement('div');
+      d.className = 'cell' + (popSet && popSet[i] ? ' pop' : '');
+      if (sel === i) d.className += ' sel';
+      d.textContent = board[i] === null ? '' : FLAVORS[board[i]];
+      d.setAttribute('data-i', i);
+      boardEl.appendChild(d);
+    }
+  }
+
+  function findMatches(){
+    var hit = {};
+    var r, c, v, run;
+    for (r = 0; r < N; r++){ run = 1;
+      for (c = 1; c <= N; c++){
+        v = c < N ? board[idx(r, c)] : null;
+        if (v !== null && v === board[idx(r, c-1)]) run++;
+        else { if (run >= 3 && board[idx(r, c-1)] !== null) for (var k = 1; k <= run; k++) hit[idx(r, c-k)] = true; run = 1; }
+      }
+    }
+    for (c = 0; c < N; c++){ run = 1;
+      for (r = 1; r <= N; r++){
+        v = r < N ? board[idx(r, c)] : null;
+        if (v !== null && v === board[idx(r-1, c)]) run++;
+        else { if (run >= 3 && board[idx(r-1, c)] !== null) for (var k2 = 1; k2 <= run; k2++) hit[idx(r-k2, c)] = true; run = 1; }
+      }
+    }
+    return hit;
+  }
+
+  function collapse(){
+    for (var c = 0; c < N; c++){
+      var write = N - 1;
+      for (var r = N - 1; r >= 0; r--){
+        var v = board[idx(r, c)];
+        if (v !== null){ board[idx(write, c)] = v; if (write !== r) board[idx(r, c)] = null; write--; }
+      }
+      for (var r2 = write; r2 >= 0; r2--) board[idx(r2, c)] = rnd();
+    }
+  }
+
+  function resolve(chain){
+    var hit = findMatches();
+    var keys = Object.keys(hit);
+    if (!keys.length){ busy = false; render(null); return; }
+    score += keys.length * 10 * chain;
+    scoreEl.textContent = score;
+    SFX.pop(chain);
+    render(hit);
+    setTimeout(function(){
+      keys.forEach(function(k){ board[k] = null; });
+      collapse();
+      render(null);
+      setTimeout(function(){ resolve(chain + 1); }, 130);
+    }, 180);
+  }
+
+  function trySwap(a, b){
+    var t = board[a]; board[a] = board[b]; board[b] = t;
+    render(null);
+    var hit = findMatches();
+    if (!Object.keys(hit).length){
+      setTimeout(function(){ var t2 = board[a]; board[a] = board[b]; board[b] = t2; busy = false; SFX.bad(); render(null); }, 200);
+    } else {
+      SFX.swap();
+      setTimeout(function(){ resolve(1); }, 130);
+    }
+  }
+
+  boardEl.addEventListener('click', function(e){
+    SFX.unlock();
+    if (!playing || busy || adShowing) return;
+    var t = e.target.closest('.cell'); if (!t) return;
+    var i = +t.getAttribute('data-i');
+    if (sel === null){ sel = i; SFX.tap(); render(null); return; }
+    if (sel === i){ sel = null; render(null); return; }
+    var r1 = Math.floor(sel / N), c1 = sel % N, r2 = Math.floor(i / N), c2 = i % N;
+    if (Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1){
+      busy = true; var a = sel; sel = null; trySwap(a, i);
+    } else { sel = i; SFX.tap(); render(null); }
+  });
+
+  document.getElementById('shuffleBtn').addEventListener('click', function(){
+    if (!playing || busy) return;
+    newBoard(); sel = null; render(null); SFX.swap();
+  });
+
+  function endGame(){
+    playing = false;
+    clearInterval(timer);
+    SFX.end();
+    if (score > best){ best = score; localStorage.setItem('match3KemBest', best); bestEl.textContent = best; }
+    var won = score >= PRIZE;
+    ovText.innerHTML = 'Bạn được <b>' + score + '</b> điểm · Kỷ lục: ' + best +
+      (won ? '<br><span class="prize">🎁 ĐẠT ' + score + ' ĐIỂM — CÓ QUÀ!<br>Chụp màn hình này gửi tiệm qua Messenger để nhận quà kem nhé!</span>' : '');
+    replayBtn.disabled = true;
+    replayBtn.textContent = 'Đang quảng cáo…';
+    overlay.classList.add('show');
+    showInterstitial(function(){
+      replayBtn.disabled = false;
+      replayBtn.textContent = 'Chơi lại';
+      if (won) SFX.fanfare();
+    });
+  }
+
+  function startGame(){
+    newBoard(); score = 0; timeLeft = TIME0; sel = null; busy = false; playing = true;
+    scoreEl.textContent = '0'; timeEl.textContent = timeLeft;
+    overlay.classList.remove('show');
+    render(null);
+    clearInterval(timer);
+    timer = setInterval(function(){
+      timeLeft--; timeEl.textContent = Math.max(0, timeLeft);
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+  }
+  replayBtn.addEventListener('click', function(){ if (!adShowing) startGame(); });
+
+  newBoard(); render(null);
+  overlay.classList.add('show');
+  document.getElementById('ovTitle').textContent = '🍬 MATCH-3 KEM';
+  ovText.innerHTML = 'Ghép 3 vị kem giống nhau để ghi điểm trong ' + TIME0 + ' giây.<br>Đạt <b>' + PRIZE + '</b> điểm = nhận quà kem 🎁';
+  replayBtn.textContent = 'Bắt đầu chơi';
+
+  var ads = [document.getElementById('ad1'), document.getElementById('ad2')], ai = 0;
+  setInterval(function(){ ads[ai].classList.remove('show'); ai = (ai + 1) % ads.length; ads[ai].classList.add('show'); }, 8000);
+})();
+</script>
+<script>
+/* Tu dong cap nhat ban moi (Chris 2026-10-26) */
+window.__BUILD__ = "20261117-1830";
+(function () {
+  var KEY = "build-reloaded-for";
+  function check() {
+    fetch("/tuyen-giao/version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.build) return;
+        if (j.build === window.__BUILD__) {
+          try { sessionStorage.removeItem(KEY); } catch (e) {}
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(KEY) === j.build) return;
+          sessionStorage.setItem(KEY, j.build);
+        } catch (e) {}
+        location.reload();
+      })
+      .catch(function () {});
+  }
+  check();
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) check();
+  });
+  setInterval(check, 300000);
+})();
+</script>
+</body>
+</html>
