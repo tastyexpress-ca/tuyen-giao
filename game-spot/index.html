@@ -826,6 +826,7 @@
   }
   function endGame(won, reason){
     state = 'over'; stopTimer();
+    if (!won) playlist.forEach(function(ix){ markSeen(ix); }); // thua: ca luot nay khong lap lai
     startBtn.textContent = '▶ Chơi lại';
     if (won){
       var rec = '';
@@ -881,7 +882,7 @@
     var m1 = addMarker(panelA, d, 'hintmk'), m2 = addMarker(panelB, d, 'hintmk');
     setTimeout(function(){ m1.remove(); m2.remove(); }, 1300);
   });
-  loadRound();
+  loadRound(); if (playlist.length) markSeen(playlist[0]);
 
   /* ===== VOUCHER $10 KHI THANG ===== */
   var SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
@@ -967,7 +968,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-2225";
+window.__BUILD__ = "20261117-2240";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
