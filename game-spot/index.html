@@ -60,7 +60,7 @@
   <a class="back" href="../game/">‹</a>
   <div style="flex:1">
     <h1>🔍 Tìm Điểm Khác Nhau</h1>
-    <p>50 hình cảnh &amp; thành phố · 10 vòng × 120 giây · Đủ 850 điểm được ngay 1 voucher $10!</p>
+    <p>50 hình cảnh &amp; thành phố · 10 vòng × 120 giây · Đủ 950 điểm được ngay 1 voucher $10!</p>
   </div>
   <span id="tokenChip" style="font-size:13px;font-weight:700;color:#8d6e00;background:#fff8e1;border:1.5px solid #ffe082;border-radius:999px;padding:6px 10px;">🪙 …</span>
   <button id="soundBtn" type="button" aria-label="Bật/tắt âm thanh"
@@ -127,7 +127,7 @@
 
 <script>
 (function(){
-  var ROUND_TIME = 120, SCORE_MULT = 1, ROUNDS = 10, TARGET = 850;
+  var ROUND_TIME = 120, SCORE_MULT = 1, ROUNDS = 10, TARGET = 950;
   var state = 'ready', round = 1, found = [], totalScore = 0, timeLeft = ROUND_TIME, timer = null, hintUsed = false;
   var bestScore = +(localStorage.getItem('spotKemBestScore') || 0);
 
@@ -968,7 +968,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-2240";
+window.__BUILD__ = "20261117-2250";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
