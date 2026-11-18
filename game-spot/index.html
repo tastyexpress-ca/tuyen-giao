@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tìm Điểm Khác Nhau — Tasty Express</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system, "Segoe UI", Roboto, sans-serif; background:#fff5f7; color:#333;
+         display:flex; flex-direction:column; align-items:center; min-height:100vh; }
+  header { width:100%; max-width:430px; padding:12px 16px 4px; display:flex; align-items:center; gap:10px; }
+  header a.back { text-decoration:none; font-size:22px; color:#c62828; }
+  header h1 { font-size:20px; color:#c62828; }
+  header p { font-size:12px; color:#888; }
+  #wrap { width:100%; max-width:430px; padding:6px 12px 0; }
+  canvas { width:100%; display:block; border-radius:16px; box-shadow:0 4px 18px rgba(0,0,0,.15);
+           touch-action:none; background:#aee7ff; }
+  .hint { text-align:center; font-size:13px; color:#777; padding:8px 0 2px; }
+  #adslot { width:100%; max-width:430px; padding:10px 12px 18px; }
+  .ad-label { font-size:10px; letter-spacing:1px; color:#bbb; text-align:center; margin-bottom:4px; }
+  .ad-card { display:none; border-radius:14px; padding:14px 16px; text-decoration:none; color:#fff;
+             box-shadow:0 3px 10px rgba(0,0,0,.15); }
+  .ad-card.show { display:block; }
+  .ad-card h3 { font-size:17px; margin-bottom:3px; }
+  .ad-card p { font-size:13px; opacity:.92; }
+  .ad-party { background:linear-gradient(135deg,#ec407a,#c62828); }
+  .ad-comthang { background:linear-gradient(135deg,#43a047,#2e7d32); }
+  #interstitial { display:none; position:fixed; inset:0; z-index:999; background:rgba(20,8,12,.92);
+                  flex-direction:column; align-items:center; justify-content:center; padding:22px; }
+  #interstitial.show { display:flex; }
+  #interstitial .ad-label { color:#ffb3c1; margin-bottom:10px; }
+  #interstitial .ad-big { width:100%; max-width:400px; border-radius:20px; padding:30px 24px; color:#fff;
+                          text-decoration:none; text-align:center; box-shadow:0 10px 34px rgba(0,0,0,.45); }
+  #interstitial .ad-big h2 { font-size:26px; margin-bottom:10px; }
+  #interstitial .ad-big p { font-size:16px; line-height:1.5; opacity:.95; }
+  #interstitial .ad-big .cta { display:inline-block; margin-top:18px; background:#fff; color:#c62828;
+                               font-weight:800; padding:12px 26px; border-radius:999px; font-size:16px; }
+  #interstitial .count { margin-top:20px; color:#ffd9e1; font-size:14px; }
+  #interstitial .count b { font-size:17px; }
+
+  .panel { position:relative; border-radius:16px; overflow:hidden; box-shadow:0 4px 18px rgba(0,0,0,.15); margin-bottom:6px; background:#aee7ff; }
+  .panel svg { width:100%; display:block; }
+  .marks, .fxlayer { position:absolute; inset:0; pointer-events:none; }
+  .mk { position:absolute; transform:translate(-50%,-50%); border:3.5px solid #2e7d32; border-radius:50%; aspect-ratio:1; background:rgba(46,125,50,.12); }
+  .mk.hintmk { border-color:#fb8c00; border-style:dashed; background:rgba(251,140,0,.15); animation:pulse .45s ease-in-out infinite alternate; }
+  @keyframes pulse { from { scale:1; } to { scale:1.18; } }
+  .fx { position:absolute; transform:translate(-50%,-50%); font-size:26px; font-weight:900; color:#e53935; text-shadow:0 1px 3px #fff; transition:opacity .5s; }
+  .cap { font-size:11.5px; color:#999; text-align:center; margin:0 0 8px; }
+  #statusBar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 2px 10px; font-size:13.5px; font-weight:700; color:#555; }
+  #statusBar .sp { flex:1; }
+  #dots { color:#2e7d32; letter-spacing:2px; font-size:15px; }
+  #startBtn, #hintBtn { border:none; border-radius:999px; font-weight:800; cursor:pointer; padding:8px 16px; font-size:13.5px; }
+  #startBtn { background:#c62828; color:#fff; }
+  #hintBtn { background:#fff8e1; color:#8d6e00; border:1.5px solid #ffe082; }
+  #bigMsg { display:none; text-align:center; font-size:17px; font-weight:800; color:#c62828; padding:8px 4px 0; line-height:1.45; }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../game/">‹</a>
+  <div style="flex:1">
+    <h1>🔍 Tìm Điểm Khác Nhau</h1>
+    <p>So 2 hình · Tìm đủ 5 điểm khác nhau được ngay 1 voucher $10!</p>
+  </div>
+  <span id="tokenChip" style="font-size:13px;font-weight:700;color:#8d6e00;background:#fff8e1;border:1.5px solid #ffe082;border-radius:999px;padding:6px 10px;">🪙 …</span>
+  <button id="soundBtn" type="button" aria-label="Bật/tắt âm thanh"
+    style="font-size:22px;background:#fff;border:1.5px solid #f3c6d3;border-radius:999px;padding:6px 12px;cursor:pointer">🔊</button>
+</header>
+
+<div id="wrap">
+  <div id="statusBar">
+    <span id="dots">○○○○○</span><span id="foundTxt">Đã tìm 0/5</span>
+    <span class="sp"></span>
+    <span id="hearts">❤️❤️❤️</span><span id="clock">0:00</span>
+    <button id="hintBtn" type="button">💡 Gợi ý</button>
+    <button id="startBtn" type="button">▶ Bắt đầu</button>
+  </div>
+  <div class="panel" id="panelA"><div class="scenebox"></div><div class="marks"></div><div class="fxlayer"></div></div>
+  <p class="cap">Hình 1</p>
+  <div class="panel" id="panelB"><div class="scenebox"></div><div class="marks"></div><div class="fxlayer"></div></div>
+  <p class="cap">Hình 2 — có 5 điểm khác Hình 1</p>
+  <div id="bigMsg"></div>
+</div>
+<div id="voucherBox" style="display:none;width:100%;max-width:430px;padding:0 12px;margin-top:10px;">
+  <div style="background:linear-gradient(135deg,#fff8e1,#ffecb3);border:2px dashed #e0a800;border-radius:16px;padding:14px 16px;text-align:center;">
+    <div style="font-size:14px;font-weight:700;color:#6d4c00;">🎁 VOUCHER $10 CỦA BẠN</div>
+    <div id="voucherCode" style="font-size:27px;font-weight:900;letter-spacing:2px;color:#c62828;margin:6px 0;">…</div>
+    <div style="font-size:12.5px;color:#6d4c00;line-height:1.5;">Nhập mã này khi thanh toán trên app để được giảm $10<br/>Mỗi mã chỉ dùng được 1 lần — nhớ lưu lại mã nhé!</div>
+    <button id="voucherCopy" type="button" style="margin-top:9px;background:#c62828;color:#fff;border:none;font-weight:700;font-size:14px;padding:9px 20px;border-radius:999px;cursor:pointer;">📋 Copy mã</button>
+  </div>
+</div>
+
+
+<div id="limitBox" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(20,8,12,.92);flex-direction:column;align-items:center;justify-content:center;padding:22px;">
+  <div style="background:#fff;border-radius:20px;padding:26px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 10px 34px rgba(0,0,0,.45);">
+    <div style="font-size:40px;">🎮</div>
+    <h2 id="limitTitle" style="font-size:20px;color:#c62828;margin:8px 0;">Bạn đã chơi hết 10 lượt miễn phí</h2>
+    <p id="limitText" style="font-size:14.5px;color:#555;line-height:1.55;">Đăng nhập để chơi tiếp bằng token — tài khoản mới được tặng ngay 10 token!</p>
+    <a id="limitCta" href="../dat-com/?login=1" style="display:inline-block;margin-top:16px;background:#c62828;color:#fff;font-weight:800;padding:13px 28px;border-radius:999px;text-decoration:none;font-size:16px;">Đăng ký / Đăng nhập →</a>
+    <div><button id="limitClose" type="button" style="margin-top:12px;background:none;border:none;color:#999;font-size:14px;cursor:pointer;">Để sau</button></div>
+  </div>
+</div>
+
+<p class="hint">Chạm vào chỗ khác nhau trên 1 trong 2 hình · Chạm sai mất 1 tim, sai 3 lần là thua đó!</p>
+
+<div id="interstitial">
+  <div class="ad-label">QUẢNG CÁO</div>
+  <a class="ad-big ad-party" id="interAd" href="../dat-kem/">
+    <h2 id="interTitle">🎉 Ice Cream Party Bar</h2>
+    <p id="interBody">Tiệc kem trọn gói từ $135 · Ăn thoải mái 2 giờ · Có xe kem đến tận nơi cho sinh nhật &amp; sự kiện!</p>
+    <span class="cta" id="interCta">Xem các gói tiệc →</span>
+  </a>
+  <p class="count">Chơi tiếp sau <b id="interCount">5</b> giây…</p>
+</div>
+
+<div id="adslot">
+  <div class="ad-label">QUẢNG CÁO</div>
+  <a class="ad-card ad-party show" id="ad1" href="../dat-kem/">
+    <h3>🎉 Ice Cream Party Bar — từ $135</h3>
+    <p>Đặt tiệc kem cho sinh nhật, sự kiện · Ăn thoải mái 2 giờ · Bấm để xem các gói tiệc</p>
+  </a>
+  <a class="ad-card ad-comthang" id="ad2" href="../dat-com/">
+    <h3>🍱 Cơm tháng chỉ $9.50/phần</h3>
+    <p>Đăng ký cơm tháng cho gia đình &amp; văn phòng · Bấm để đặt ngay</p>
+  </a>
+</div>
+
+<script>
+(function(){
+  var DIFFS = [
+    { x: 200, y: 56,  r: 28 },
+    { x: 54,  y: 50,  r: 32 },
+    { x: 200, y: 112, r: 32 },
+    { x: 322, y: 54,  r: 38 },
+    { x: 200, y: 186, r: 26 }
+  ];
+  var state = 'ready', found = [], hearts = 3, seconds = 0, timer = null, hintUsed = false;
+  var bestTime = +(localStorage.getItem('spotKemBestTime') || 0);
+
+  /* ===== AM THANH ===== */
+  var SFX = (function(){
+    var ac = null, muted = localStorage.getItem('spotKemMuted') === '1';
+    var btn = document.getElementById('soundBtn');
+    function syncBtn(){ btn.textContent = muted ? '🔇' : '🔊'; }
+    syncBtn();
+    btn.addEventListener('click', function(e){
+      e.stopPropagation(); muted = !muted;
+      localStorage.setItem('spotKemMuted', muted ? '1' : '0'); syncBtn();
+      if (!muted) tone(660, 0.07, 'sine', 0.15, 0);
+    });
+    function ctx(){ if (!ac){ try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+      if (ac && ac.state === 'suspended') ac.resume(); return ac; }
+    function tone(freq, dur, type, vol, delay, slideTo){
+      if (muted) return; var a = ctx(); if (!a) return;
+      var t = a.currentTime + (delay || 0);
+      var o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+      if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+      g.gain.setValueAtTime(vol || 0.15, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+    }
+    return {
+      unlock: function(){ ctx(); },
+      good: function(){ tone(880, 0.09, 'triangle', 0.16, 0); tone(1319, 0.13, 'triangle', 0.15, 0.08); },
+      bad: function(){ tone(200, 0.18, 'sawtooth', 0.10, 0, 120); },
+      fanfare: function(){ [523,659,784,1047,784,1047].forEach(function(f,i){ tone(f, 0.16, 'triangle', 0.16, i * 0.11); }); }
+    };
+  })();
+
+  /* ===== QUANG CAO TOAN MAN HINH KHI KET THUC ===== */
+  var adShowing = false;
+  var INTER_ADS = [
+    { cls: 'ad-big ad-party', href: '../dat-kem/', title: '🎉 Ice Cream Party Bar',
+      body: 'Tiệc kem trọn gói từ $135 · Ăn thoải mái 2 giờ · Có xe kem đến tận nơi cho sinh nhật & sự kiện!', cta: 'Xem các gói tiệc →' },
+    { cls: 'ad-big ad-comthang', href: '../dat-com/', title: '🍱 Cơm tháng $9.50/phần',
+      body: 'Cơm nhà nấu mỗi ngày, giao tận nơi hoặc pick up tại Westminster · Đăng ký cơm tháng cho gia đình & văn phòng!', cta: 'Đặt cơm ngay →' }
+  ], interIdx = 0;
+  var interEl = document.getElementById('interstitial'), interAd = document.getElementById('interAd'), interCount = document.getElementById('interCount');
+  function showInterstitial(wonPrize){
+    var ad = INTER_ADS[interIdx % INTER_ADS.length]; interIdx++;
+    interAd.className = ad.cls; interAd.href = ad.href;
+    document.getElementById('interTitle').textContent = ad.title;
+    document.getElementById('interBody').textContent = ad.body;
+    document.getElementById('interCta').textContent = ad.cta;
+    adShowing = true; interEl.classList.add('show');
+    var left = 5; interCount.textContent = left;
+    var iv = setInterval(function(){
+      left--;
+      if (left <= 0){ clearInterval(iv); interEl.classList.remove('show'); adShowing = false; if (wonPrize) SFX.fanfare(); }
+      else interCount.textContent = left;
+    }, 1000);
+  }
+
+  /* ===== VE CANH KEM (SVG) — mod=true la hinh 2 co 5 diem khac ===== */
+  function scene(mod){
+    var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+    s += '<defs><linearGradient id="sky' + (mod ? 'B' : 'A') + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ed8ff"/><stop offset="1" stop-color="#e8f9ff"/></linearGradient></defs>';
+    s += '<rect width="400" height="300" fill="url(#sky' + (mod ? 'B' : 'A') + ')"/>';
+    // mat troi (khac biet 2: mat cuoi)
+    s += '<circle cx="54" cy="50" r="26" fill="#ffd93b" stroke="#f9a825" stroke-width="3"/>';
+    if (!mod) s += '<circle cx="46" cy="46" r="3" fill="#8d6e00"/><circle cx="62" cy="46" r="3" fill="#8d6e00"/><path d="M45 58 Q54 66 63 58" stroke="#8d6e00" stroke-width="3" fill="none" stroke-linecap="round"/>';
+    // may trai (giong nhau)
+    s += '<g fill="#ffffff" opacity="0.9"><ellipse cx="112" cy="74" rx="22" ry="12"/><ellipse cx="128" cy="68" rx="16" ry="10"/></g>';
+    // may phai (khac biet 4: bien mat)
+    if (!mod) s += '<g fill="#ffffff" opacity="0.95"><ellipse cx="322" cy="54" rx="26" ry="13"/><ellipse cx="340" cy="47" rx="17" ry="11"/></g>';
+    s += '<path d="M152 38 q5 -5 10 0 q5 -5 10 0" stroke="#5b7a99" stroke-width="2" fill="none" stroke-linecap="round"/>';
+    // mat dat + ban quay
+    s += '<rect y="252" width="400" height="48" fill="#8bc34a"/><rect y="252" width="400" height="5" fill="#7cb342"/>';
+    s += '<rect x="52" y="230" width="296" height="15" rx="4" fill="#a5672f"/><rect x="66" y="245" width="10" height="13" fill="#8a5423"/><rect x="324" y="245" width="10" height="13" fill="#8a5423"/>';
+    // ly nuoc ben trai (giong nhau)
+    s += '<path d="M88 198 L116 198 L111 230 L93 230 Z" fill="#ffffff" stroke="#cccccc" stroke-width="1.5"/>';
+    s += '<path d="M90 210 L114 210 L111 230 L93 230 Z" fill="#f48fb1"/>';
+    s += '<path d="M104 178 L110 198" stroke="#e53935" stroke-width="4" stroke-linecap="round"/>';
+    s += '<circle cx="102" cy="206" r="4" fill="#e53935"/>';
+    // cay kem nho ben phai (giong nhau)
+    s += '<path d="M288 202 L316 202 L302 232 Z" fill="#f0be78" stroke="#d99a45" stroke-width="1.5"/>';
+    s += '<circle cx="302" cy="196" r="15" fill="#9575cd"/><circle cx="297" cy="191" r="4.5" fill="rgba(255,255,255,.55)"/>';
+    // oc que lon o giua
+    s += '<path d="M166 148 L234 148 L200 236 Z" fill="#f0be78" stroke="#d99a45" stroke-width="2"/>';
+    s += '<path d="M178 176 L218 168 M186 202 L210 196" stroke="#d99a45" stroke-width="2" stroke-linecap="round"/>';
+    // trai tim tren oc que (khac biet 5: bien mat)
+    if (!mod) s += '<path d="M200 206 C190 194 181 188 181 179 C181 170 191 166 200 177 C209 166 219 170 219 179 C219 188 210 194 200 206 Z" fill="#e53935"/>';
+    // vien kem duoi (hong, giong nhau) + sprinkles
+    s += '<circle cx="200" cy="146" r="38" fill="#f06292"/>';
+    s += '<circle cx="182" cy="134" r="3" fill="#ffd93b"/><circle cx="214" cy="128" r="3" fill="#4fc3f7"/><circle cx="222" cy="152" r="3" fill="#7ee787"/><circle cx="186" cy="158" r="3" fill="#ffffff"/><circle cx="206" cy="142" r="3" fill="#ff5b7f"/>';
+    s += '<circle cx="188" cy="136" r="8" fill="rgba(255,255,255,.35)"/>';
+    // vien kem giua (khac biet 3: doi mau socola -> matcha)
+    s += '<circle cx="200" cy="112" r="31" fill="' + (mod ? '#7cb342' : '#8d5a33') + '"/>';
+    s += '<circle cx="190" cy="104" r="6.5" fill="rgba(255,255,255,.35)"/>';
+    // vien kem tren (vani, giong nhau)
+    s += '<circle cx="200" cy="82" r="24" fill="#fff3c4" stroke="#e8cf8a" stroke-width="2"/>';
+    s += '<circle cx="192" cy="75" r="5" fill="rgba(255,255,255,.6)"/>';
+    // qua cherry tren dinh (khac biet 1: bien mat)
+    if (!mod) s += '<path d="M200 58 q4 -10 14 -13" stroke="#388e3c" stroke-width="2.5" fill="none"/><circle cx="200" cy="60" r="9" fill="#e53935"/><circle cx="196.5" cy="56.5" r="3" fill="#ff8a80"/>';
+    s += '</svg>';
+    return s;
+  }
+
+  var panelA = document.getElementById('panelA'), panelB = document.getElementById('panelB');
+  panelA.querySelector('.scenebox').innerHTML = scene(false);
+  panelB.querySelector('.scenebox').innerHTML = scene(true);
+  var dotsEl = document.getElementById('dots'), foundTxt = document.getElementById('foundTxt'),
+      heartsEl = document.getElementById('hearts'), clockEl = document.getElementById('clock'),
+      bigMsg = document.getElementById('bigMsg'), startBtn = document.getElementById('startBtn'),
+      hintBtn = document.getElementById('hintBtn');
+
+  function fmtT(sec){ return Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); }
+  function renderStatus(){
+    var d = ''; for (var i = 0; i < 5; i++) d += found.indexOf(i) >= 0 ? '●' : '○';
+    dotsEl.textContent = d;
+    foundTxt.textContent = 'Đã tìm ' + found.length + '/5';
+    var hh = ''; for (var j = 0; j < hearts; j++) hh += '❤️';
+    heartsEl.textContent = hh || '💔';
+    clockEl.textContent = fmtT(seconds);
+  }
+  function addMarker(panel, diff, cls){
+    var m = document.createElement('div');
+    m.className = 'mk' + (cls ? ' ' + cls : '');
+    m.style.left = (diff.x / 400 * 100) + '%';
+    m.style.top = (diff.y / 300 * 100) + '%';
+    m.style.width = (diff.r * 2 / 400 * 100) + '%';
+    panel.querySelector('.marks').appendChild(m);
+    return m;
+  }
+  function addFx(panel, x, y){
+    var f = document.createElement('div');
+    f.className = 'fx'; f.textContent = '✗';
+    f.style.left = (x / 400 * 100) + '%'; f.style.top = (y / 300 * 100) + '%';
+    panel.querySelector('.fxlayer').appendChild(f);
+    setTimeout(function(){ f.style.opacity = '0'; }, 60);
+    setTimeout(function(){ f.remove(); }, 650);
+  }
+  function stopTimer(){ if (timer){ clearInterval(timer); timer = null; } }
+  function startGame(){
+    found = []; hearts = 3; seconds = 0; hintUsed = false;
+    panelA.querySelector('.marks').innerHTML = '';
+    panelB.querySelector('.marks').innerHTML = '';
+    bigMsg.style.display = 'none';
+    hideVoucher();
+    state = 'play';
+    startBtn.textContent = '↺ Chơi lại';
+    hintBtn.textContent = '💡 Gợi ý';
+    renderStatus();
+    stopTimer();
+    timer = setInterval(function(){ seconds++; clockEl.textContent = fmtT(seconds); }, 1000);
+  }
+  function endGame(won){
+    state = 'over'; stopTimer();
+    if (won){
+      var rec = '';
+      if (!bestTime || seconds < bestTime){ bestTime = seconds; localStorage.setItem('spotKemBestTime', bestTime); rec = ' · Kỷ lục mới! 🏆'; }
+      bigMsg.innerHTML = '🎉 TÌM ĐỦ 5 ĐIỂM trong ' + fmtT(seconds) + '!' + rec + '<br/>Mã VOUCHER $10 hiện ngay bên dưới game 👇';
+      claimVoucher('spot');
+    } else {
+      bigMsg.innerHTML = '💔 Hết tim rồi! Bạn tìm được ' + found.length + '/5 điểm.<br/>Bấm Chơi lại thử lần nữa nhé!';
+    }
+    bigMsg.style.display = 'block';
+    showInterstitial(won);
+  }
+  function tapOn(panel, e){
+    if (state !== 'play' || adShowing) return;
+    SFX.unlock();
+    var svg = panel.querySelector('svg');
+    var r = svg.getBoundingClientRect();
+    var x = (e.clientX - r.left) * (400 / r.width);
+    var y = (e.clientY - r.top) * (300 / r.height);
+    for (var i = 0; i < DIFFS.length; i++){
+      if (found.indexOf(i) >= 0) continue;
+      var d = DIFFS[i], dx = x - d.x, dy = y - d.y;
+      if (dx * dx + dy * dy <= d.r * d.r){
+        found.push(i);
+        addMarker(panelA, d); addMarker(panelB, d);
+        SFX.good(); renderStatus();
+        if (found.length >= 5) endGame(true);
+        return;
+      }
+    }
+    hearts--; SFX.bad(); addFx(panel, x, y); renderStatus();
+    if (hearts <= 0) endGame(false);
+  }
+  panelA.addEventListener('pointerdown', function(e){ tapOn(panelA, e); });
+  panelB.addEventListener('pointerdown', function(e){ tapOn(panelB, e); });
+  startBtn.addEventListener('click', function(){
+    SFX.unlock();
+    if (adShowing) return;
+    if (state === 'play'){ startGame(); return; }
+    if (gatePlay()) startGame();
+  });
+  hintBtn.addEventListener('click', function(){
+    if (state !== 'play' || hintUsed) return;
+    var rest = DIFFS.filter(function(d, i){ return found.indexOf(i) < 0; });
+    if (!rest.length) return;
+    hintUsed = true; hintBtn.textContent = '💡 Đã dùng';
+    var d = rest[Math.floor(Math.random() * rest.length)];
+    var m1 = addMarker(panelA, d, 'hintmk'), m2 = addMarker(panelB, d, 'hintmk');
+    setTimeout(function(){ m1.remove(); m2.remove(); }, 1300);
+  });
+  renderStatus();
+
+  /* ===== VOUCHER $10 KHI THANG ===== */
+  var SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+  function claimVoucher(game){
+    if (!isLoggedIn()) { showVoucherLogin(); return; }
+    var s = teSession();
+    fetch('https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/rpc/claim_game_voucher', {
+      method: 'POST',
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + (s && s.access_token ? s.access_token : SB_ANON), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_game: game })
+    }).then(function(r){ return r.json(); }).then(function(code){
+      if (code === 'LOGIN_REQUIRED') { showVoucherLogin(); return; }
+      if (code && code !== 'HET_MA') {
+        document.getElementById('voucherCode').textContent = code;
+        document.getElementById('voucherBox').style.display = 'block';
+      }
+    }).catch(function(){});
+  }
+  function showVoucherLogin(){
+    var b = document.getElementById('voucherBox'); if (!b) return;
+    b.innerHTML = '🎉 Bạn đã thắng! <b>Voucher $10 chỉ dành cho khách có tài khoản</b> — đăng nhập / đăng ký miễn phí để nhận mã của bạn &nbsp;<a href="../dat-com/?login=1" style="background:#fff;color:#c62828;font-weight:800;border-radius:999px;padding:7px 16px;text-decoration:none;white-space:nowrap">Đăng nhập</a>';
+    b.style.display = 'block';
+  }
+  function hideVoucher(){ var b = document.getElementById('voucherBox'); if (b) b.style.display = 'none'; }
+  document.getElementById('voucherCopy').addEventListener('click', function(){
+    var code = document.getElementById('voucherCode').textContent;
+    var btn = this;
+    if (navigator.clipboard) navigator.clipboard.writeText(code).then(function(){ btn.textContent = '✅ Đã copy!'; setTimeout(function(){ btn.textContent = '📋 Copy mã'; }, 2000); });
+  });
+
+
+  /* ===== TOKEN: guest 10 luot free, dang nhap tru 1 token/luot ===== */
+  var PLAY_KEY = 'guestPlaysV1', PLAY_LIMIT = 10;
+  var tokenBalance = null;
+  function teSession(){ try { return JSON.parse(localStorage.getItem('te_account_session') || 'null'); } catch(e){ return null; } }
+  function isLoggedIn(){ var s = teSession(); return !!(s && s.access_token && (!s.expires_at || s.expires_at > Date.now())); }
+  function guestPlays(){ try { return +(localStorage.getItem(PLAY_KEY) || 0); } catch(e){ return 0; } }
+  function registerPlay(){ try { localStorage.setItem(PLAY_KEY, guestPlays() + 1); } catch(e){} }
+  function rpcAuth(fn, body){
+    var s = teSession();
+    return fetch('https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/rpc/' + fn, {
+      method: 'POST',
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + (s && s.access_token ? s.access_token : SB_ANON), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    }).then(function(r){ return r.json(); });
+  }
+  function updateChip(){
+    var c = document.getElementById('tokenChip'); if (!c) return;
+    if (isLoggedIn()) c.textContent = '🪙 ' + (tokenBalance == null ? '…' : tokenBalance);
+    else c.textContent = '🪙 Free ∞';
+  }
+  function refreshBalance(){
+    if (!isLoggedIn()){ updateChip(); return; }
+    rpcAuth('get_token_balance', {}).then(function(b){ if (typeof b === 'number') tokenBalance = b; updateChip(); }).catch(function(){ updateChip(); });
+  }
+  function showLimit(mode){
+    var t = document.getElementById('limitTitle'), x = document.getElementById('limitText'), a = document.getElementById('limitCta');
+    if (mode === 'token'){
+      t.textContent = 'Bạn đã hết token';
+      x.textContent = 'Mỗi lượt chơi 1 token (2 cent). Mua thêm token để chơi tiếp nhé!';
+      a.textContent = '🪙 Mua token →'; a.href = '../mua-token/';
+    } else {
+      t.textContent = 'Bạn đã chơi hết 10 lượt miễn phí';
+      x.textContent = 'Đăng nhập để chơi tiếp bằng token — tài khoản mới được tặng ngay 10 token!';
+      a.textContent = 'Đăng nhập / Đăng ký →'; a.href = '../dat-com/?login=1';
+    }
+    document.getElementById('limitBox').style.display = 'flex';
+  }
+  function gatePlay(){
+    if (!isLoggedIn()){ return true; }
+    if (tokenBalance == null){ refreshBalance(); return true; }
+    if (tokenBalance <= 0){ showLimit('token'); return false; }
+    tokenBalance--; updateChip();
+    rpcAuth('spend_token', { p_game: 'spot' }).then(function(r){ if (r && typeof r.balance === 'number'){ tokenBalance = r.balance; updateChip(); } }).catch(function(){});
+    return true;
+  }
+  document.getElementById('limitClose').addEventListener('click', function(){ document.getElementById('limitBox').style.display = 'none'; });
+
+  var ads = [document.getElementById('ad1'), document.getElementById('ad2')], ai = 0;
+  setInterval(function(){ ads[ai].classList.remove('show'); ai = (ai + 1) % ads.length; ads[ai].classList.add('show'); }, 8000);
+  refreshBalance();
+})();
+</script>
+<script>
+/* Tu dong cap nhat ban moi (Chris 2026-10-26) */
+window.__BUILD__ = "20261117-2155";
+(function () {
+  var KEY = "build-reloaded-for";
+  function check() {
+    fetch("/tuyen-giao/version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.build) return;
+        if (j.build === window.__BUILD__) {
+          try { sessionStorage.removeItem(KEY); } catch (e) {}
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(KEY) === j.build) return;
+          sessionStorage.setItem(KEY, j.build);
+        } catch (e) {}
+        location.reload();
+      })
+      .catch(function () {});
+  }
+  check();
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) check();
+  });
+  setInterval(check, 300000);
+})();
+</script>
+</body>
+</html>
