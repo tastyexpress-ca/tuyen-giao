@@ -647,7 +647,7 @@
   function tapOn(panel, e){
     if (state !== 'play' || adShowing) return;
     SFX.unlock();
-    var svg = panel.querySelector('svg');
+    var svg = panel.querySelector('.scenebox');
     var r = svg.getBoundingClientRect();
     var x = (e.clientX - r.left) * (400 / r.width);
     var y = (e.clientY - r.top) * (300 / r.height);
@@ -773,7 +773,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261118-0045";
+window.__BUILD__ = "20261118-0052";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
