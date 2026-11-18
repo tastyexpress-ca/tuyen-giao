@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Chơi Game - Nhận Quà — Tasty Express</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system, "Segoe UI", Roboto, sans-serif; background:#fff5f7; color:#333;
+         display:flex; flex-direction:column; align-items:center; min-height:100vh; }
+  header { width:100%; max-width:430px; padding:14px 16px 6px; display:flex; align-items:center; gap:10px; }
+  header a.back { text-decoration:none; font-size:22px; color:#c62828; }
+  header h1 { font-size:21px; color:#c62828; }
+  header p { font-size:12.5px; color:#888; margin-top:2px; }
+  main { width:100%; max-width:430px; padding:10px 14px 24px; display:flex; flex-direction:column; gap:14px; }
+  .game-card { display:flex; gap:14px; align-items:center; background:#fff; border-radius:18px;
+               padding:16px; text-decoration:none; color:#333;
+               box-shadow:0 4px 14px rgba(0,0,0,.10); border:1.5px solid #ffe3ec; }
+  .game-card .icon { font-size:44px; width:64px; height:64px; flex:0 0 64px; display:flex;
+                     align-items:center; justify-content:center; background:#fff0f4; border-radius:14px; }
+  .game-card h3 { font-size:17px; margin-bottom:3px; }
+  .game-card p { font-size:13px; color:#777; line-height:1.45; }
+  .game-card .play { margin-left:auto; background:#c62828; color:#fff; font-weight:700; font-size:13.5px;
+                     padding:9px 14px; border-radius:999px; white-space:nowrap; }
+  .game-card.soon { opacity:.55; }
+  .game-card.soon .play { background:#bbb; }
+  .gift { background:linear-gradient(135deg,#fff8e1,#ffecb3); border:1.5px dashed #e0a800; border-radius:14px;
+          padding:12px 16px; font-size:13.5px; line-height:1.55; color:#6d4c00; text-align:center; }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../home/">‹</a>
+  <div>
+    <h1>🎮 CHƠI GAME - NHẬN QUÀ</h1>
+    <p>Chọn 1 game để chơi · Đạt điểm cao là có quà kem 🎁</p>
+  </div>
+</header>
+<main>
+  <a class="game-card" href="../game-flappy/">
+    <div class="icon">🍦</div>
+    <div>
+      <h3>Flappy Kem</h3>
+      <p>Bay qua các cột chocolate · Đạt 199 điểm nhận quà kem</p>
+    </div>
+    <span class="play">Chơi ▶</span>
+  </a>
+
+  <div class="game-card soon">
+    <div class="icon">🍬</div>
+    <div>
+      <h3>Match-3 Kem</h3>
+      <p>Ghép 3 vị kem giống nhau để ghi điểm</p>
+    </div>
+    <span class="play">Sắp có</span>
+  </div>
+
+  <div class="game-card soon">
+    <div class="icon">🍨</div>
+    <div>
+      <h3>Xếp Ly Kem</h3>
+      <p>Xếp chồng ly kem càng cao càng thắng</p>
+    </div>
+    <span class="play">Sắp có</span>
+  </div>
+
+  <div class="gift">🎁 <b>Cách nhận quà:</b> đạt điểm theo yêu cầu trong game, chụp màn hình kết quả rồi gửi cho tiệm qua Messenger — tiệm xác nhận và tặng quà kem cho bạn!</div>
+</main>
+<script>
+/* Tu dong cap nhat ban moi (Chris 2026-10-26) */
+window.__BUILD__ = "20261117-1815";
+(function () {
+  var KEY = "build-reloaded-for";
+  function check() {
+    fetch("/tuyen-giao/version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.build) return;
+        if (j.build === window.__BUILD__) {
+          try { sessionStorage.removeItem(KEY); } catch (e) {}
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(KEY) === j.build) return;
+          sessionStorage.setItem(KEY, j.build);
+        } catch (e) {}
+        location.reload();
+      })
+      .catch(function () {});
+  }
+  check();
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) check();
+  });
+  setInterval(check, 300000);
+})();
+</script>
+</body>
+</html>
