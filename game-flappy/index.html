@@ -174,23 +174,26 @@
     ctx.translate(bird.x, bird.y);
     var tilt = Math.max(-0.45, Math.min(0.9, bird.v * 0.07));
     ctx.rotate(tilt);
-    // canh
+    // doi canh vo 2 ben, dap lien tuc
+    var wf = Math.sin(frame * 0.45) * 0.35;
     ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.ellipse(-14, 2, 12, 6, -0.5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(120,160,200,.7)'; ctx.lineWidth = 1.5;
+    ctx.save(); ctx.translate(-22, -4); ctx.rotate(-0.55 - wf);
+    ctx.beginPath(); ctx.ellipse(-11, 0, 15, 6.5, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.translate(22, -4); ctx.rotate(0.55 + wf);
+    ctx.beginPath(); ctx.ellipse(11, 0, 15, 6.5, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore();
     // hu kem cua anh (anh that cat tron) — qua cot vi nao, kem trong hu doi mau theo vi do
     if (cupImg.complete && cupImg.naturalWidth){
       ctx.save();
       ctx.beginPath(); ctx.arc(0, 0, 27, 0, Math.PI*2); ctx.clip();
       var iw = cupImg.naturalWidth, ih = cupImg.naturalHeight, m = Math.min(iw, ih);
-      ctx.drawImage(cupImg, (iw - m) / 2, (ih - m) / 2, m, m, -27, -27, 54, 54);
+      ctx.drawImage(cupImg, (iw - m) / 2, (ih - m) / 2, m, m, -29, -29, 58, 58);
       if (cupTint){
         ctx.globalAlpha = 0.55; ctx.fillStyle = cupTint;
         ctx.beginPath(); ctx.ellipse(0, -14, 20, 8, 0, 0, Math.PI*2); ctx.fill();
         ctx.globalAlpha = 1;
       }
       ctx.restore();
-      ctx.beginPath(); ctx.arc(0, 0, 27, 0, Math.PI*2);
-      ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
     } else {
       ctx.fillStyle = '#ff8fab';
       ctx.beginPath(); ctx.arc(0, -2, 16, 0, Math.PI*2); ctx.fill();
@@ -364,7 +367,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-1905";
+window.__BUILD__ = "20261117-1912";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
