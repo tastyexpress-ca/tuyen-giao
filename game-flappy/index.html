@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Flappy Kem — Tasty Express</title>
+<title>Flappy Ace Ice Cream — Tasty Express</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body { font-family:-apple-system, "Segoe UI", Roboto, sans-serif; background:#fff5f7; color:#333;
@@ -45,8 +45,8 @@
 <header>
   <a class="back" href="../game/">‹</a>
   <div style="flex:1">
-    <h1>🍦 Flappy Kem</h1>
-    <p>Chạm màn hình để bay · Đạt 199 điểm nhận quà kem!</p>
+    <h1>🍦 Flappy Ace Ice Cream</h1>
+    <p>Bay qua các cột kem 10 vị · Đạt 199 điểm nhận quà!</p>
   </div>
   <button id="soundBtn" type="button" aria-label="Bật/tắt âm thanh"
     style="font-size:22px;background:#fff;border:1.5px solid #f3c6d3;border-radius:999px;padding:6px 12px;cursor:pointer">🔊</button>
@@ -86,16 +86,35 @@
   var state = 'ready'; // ready | play | over
   var bird, pipes, score, best = +(localStorage.getItem('flappyKemBest')||0), frame, gamesPlayed = 0;
   var GRAV = 0.42, FLAP = -7.6, SPEED = 2.4, GAP = 158, PW = 68;
+  var cupImg = new Image(); cupImg.src = 'cup.png';
+  var cupTint = null, flavorIdx = 0;
+  var FLAVORS10 = [
+    { name: 'Coffee',     col: '#8d6e63', dark: false },
+    { name: 'Chocolate',  col: '#6d4c41', dark: false },
+    { name: 'Green Tea',  col: '#7cb342', dark: false },
+    { name: 'Thai Tea',   col: '#fb8c00', dark: false },
+    { name: 'Ube',        col: '#9575cd', dark: false },
+    { name: 'Mango',      col: '#ffb300', dark: true },
+    { name: 'Strawberry', col: '#f06292', dark: false },
+    { name: 'Cookie',     col: '#a1887f', dark: false },
+    { name: 'Vanilla',    col: '#f5e6a8', dark: true },
+    { name: 'Sesame',     col: '#616161', dark: false }
+  ];
+  function shade(hex, f){
+    var n = parseInt(hex.slice(1), 16);
+    var r = Math.min(255, Math.round(((n >> 16) & 255) * f)), g = Math.min(255, Math.round(((n >> 8) & 255) * f)), b = Math.min(255, Math.round((n & 255) * f));
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
 
   function reset(){
     bird = { x: 96, y: H/2 - 40, v: 0, r: 17 };
-    pipes = []; score = 0; frame = 0;
+    pipes = []; score = 0; frame = 0; flavorIdx = 0; cupTint = null;
   }
   reset();
 
   function spawnPipe(){
     var top = 60 + Math.random() * (H - GROUND - GAP - 140);
-    pipes.push({ x: W + 20, top: top, passed: false });
+    pipes.push({ x: W + 20, top: top, passed: false, fi: flavorIdx }); flavorIdx = (flavorIdx + 1) % FLAVORS10.length;
   }
 
   /* ===== AM THANH (WebAudio, khong can file) ===== */
@@ -158,37 +177,49 @@
     // canh
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.ellipse(-14, 2, 12, 6, -0.5, 0, Math.PI*2); ctx.fill();
-    // oc que (than)
-    ctx.fillStyle = '#e0a458';
-    ctx.beginPath(); ctx.moveTo(-9, 6); ctx.lineTo(9, 6); ctx.lineTo(0, 26); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#b97e35'; ctx.lineWidth = 1.4;
-    ctx.beginPath(); ctx.moveTo(-6, 12); ctx.lineTo(5, 12); ctx.moveTo(-4, 18); ctx.lineTo(3, 18); ctx.stroke();
-    // vien kem
-    ctx.fillStyle = '#ff8fab';
-    ctx.beginPath(); ctx.arc(0, -2, 16, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#ffc2d4';
-    ctx.beginPath(); ctx.arc(-5, -8, 9, 0, Math.PI*2); ctx.fill();
-    // cherry
-    ctx.fillStyle = '#d90429';
-    ctx.beginPath(); ctx.arc(3, -17, 4.5, 0, Math.PI*2); ctx.fill();
-    // mat + ma hong
-    ctx.fillStyle = '#222';
-    ctx.beginPath(); ctx.arc(7, -3, 2.4, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,90,120,.55)';
-    ctx.beginPath(); ctx.arc(11, 2, 3.4, 0, Math.PI*2); ctx.fill();
+    // hu kem cua anh (anh that cat tron) — qua cot vi nao, kem trong hu doi mau theo vi do
+    if (cupImg.complete && cupImg.naturalWidth){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(0, 0, 27, 0, Math.PI*2); ctx.clip();
+      var iw = cupImg.naturalWidth, ih = cupImg.naturalHeight, m = Math.min(iw, ih);
+      ctx.drawImage(cupImg, (iw - m) / 2, (ih - m) / 2, m, m, -27, -27, 54, 54);
+      if (cupTint){
+        ctx.globalAlpha = 0.55; ctx.fillStyle = cupTint;
+        ctx.beginPath(); ctx.ellipse(0, -14, 20, 8, 0, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(0, 0, 27, 0, Math.PI*2);
+      ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+    } else {
+      ctx.fillStyle = '#ff8fab';
+      ctx.beginPath(); ctx.arc(0, -2, 16, 0, Math.PI*2); ctx.fill();
+    }
     ctx.restore();
   }
 
-  function drawPipe(x, y, h, isTop){
+  function drawPipe(x, y, h, isTop, fi){
+    var fl = FLAVORS10[fi || 0];
     var g = ctx.createLinearGradient(x, 0, x + PW, 0);
-    g.addColorStop(0, '#7b4a21'); g.addColorStop(0.5, '#a9713a'); g.addColorStop(1, '#7b4a21');
+    g.addColorStop(0, shade(fl.col, 0.82)); g.addColorStop(0.5, fl.col); g.addColorStop(1, shade(fl.col, 0.82));
     ctx.fillStyle = g;
     ctx.fillRect(x, y, PW, h);
-    ctx.fillStyle = '#5d3715';
+    ctx.fillStyle = shade(fl.col, 0.62);
     var rimY = isTop ? y + h - 22 : y;
     ctx.fillRect(x - 4, rimY, PW + 8, 22);
     ctx.fillStyle = 'rgba(255,255,255,.16)';
     for (var i = 0; i < h; i += 26) ctx.fillRect(x + 8, y + i + 4, 5, 14);
+    if (h > 100){
+      ctx.save();
+      ctx.translate(x + PW / 2, y + h / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.font = 'bold 16px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = fl.dark ? 'rgba(90,60,0,.85)' : 'rgba(255,255,255,.92)';
+      ctx.fillText(fl.name.toUpperCase(), 0, 6);
+      ctx.restore();
+      ctx.textAlign = 'left';
+    }
   }
 
   function draw(){
@@ -205,8 +236,8 @@
     });
     // ong
     pipes.forEach(function(p){
-      drawPipe(p.x, 0, p.top, true);
-      drawPipe(p.x, p.top + GAP, H - GROUND - (p.top + GAP), false);
+      drawPipe(p.x, 0, p.top, true, p.fi);
+      drawPipe(p.x, p.top + GAP, H - GROUND - (p.top + GAP), false, p.fi);
     });
     // dat banh waffle
     ctx.fillStyle = '#f2c879'; ctx.fillRect(0, H - GROUND, W, GROUND);
@@ -225,11 +256,12 @@
     if (state === 'ready'){
       ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = '#fff'; ctx.font = 'bold 30px -apple-system, sans-serif';
-      ctx.fillText('FLAPPY KEM', W/2, H/2 - 60);
+      ctx.fillText('FLAPPY ACE', W/2, H/2 - 64);
+      ctx.fillText('ICE CREAM', W/2, H/2 - 34);
       ctx.font = '17px -apple-system, sans-serif';
-      ctx.fillText('Chạm màn hình để bắt đầu', W/2, H/2 - 26);
-      ctx.fillText('Bay qua các cột chocolate 🍫', W/2, H/2 + 2);
-      ctx.fillText('Đạt 199 điểm = có quà kem 🎁', W/2, H/2 + 30);
+      ctx.fillText('Chạm màn hình để bắt đầu', W/2, H/2 + 4);
+      ctx.fillText('Bay qua các cột kem 10 vị 🍦', W/2, H/2 + 32);
+      ctx.fillText('Đạt 199 điểm = có quà kem 🎁', W/2, H/2 + 60);
     }
     if (state === 'over'){
       ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 0, W, H);
@@ -262,7 +294,7 @@
       for (var i = pipes.length - 1; i >= 0; i--){
         var p = pipes[i];
         p.x -= SPEED;
-        if (!p.passed && p.x + PW < bird.x){ p.passed = true; score++; SFX.score(); }
+        if (!p.passed && p.x + PW < bird.x){ p.passed = true; score++; cupTint = FLAVORS10[p.fi || 0].col; SFX.score(); }
         if (p.x + PW < -10) pipes.splice(i, 1);
         // va cham
         if (bird.x + bird.r - 3 > p.x && bird.x - bird.r + 3 < p.x + PW &&
@@ -332,7 +364,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-1830";
+window.__BUILD__ = "20261117-1905";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
