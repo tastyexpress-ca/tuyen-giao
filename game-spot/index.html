@@ -60,7 +60,7 @@
   <a class="back" href="../game/">‹</a>
   <div style="flex:1">
     <h1>🔍 Tìm Điểm Khác Nhau</h1>
-    <p>50 hình cảnh &amp; thành phố · 10 vòng × 120 giây · Đủ 950 điểm được ngay 1 voucher $10!</p>
+    <p>50 hình cảnh &amp; thành phố · 10 vòng × 120 giây · Đạt 950 điểm là thắng!</p>
   </div>
   <span id="tokenChip" style="font-size:13px;font-weight:700;color:#8d6e00;background:#fff8e1;border:1.5px solid #ffe082;border-radius:999px;padding:6px 10px;">🪙 …</span>
   <button id="soundBtn" type="button" aria-label="Bật/tắt âm thanh"
@@ -833,8 +833,7 @@
     if (won){
       var rec = '';
       if (totalScore > bestScore){ bestScore = totalScore; localStorage.setItem('spotKemBestScore', bestScore); rec = ' · Kỷ lục mới! 🏆'; }
-      bigMsg.innerHTML = '🏆 THẮNG RỒI! Tổng ' + totalScore + ' điểm' + rec + '<br/>Mã VOUCHER $10 hiện ngay bên dưới game 👇';
-      if (runGuest) showVoucherLogin(); else claimVoucher('spot');
+      bigMsg.innerHTML = '🏆 THẮNG RỒI! Tổng ' + totalScore + ' điểm' + rec + '<br/>Bạn có đôi mắt thật tinh tường! 👀';
     } else if (reason === 'time'){
       bigMsg.innerHTML = '⏰ Hết giờ ở vòng ' + round + '! Tổng: ' + totalScore + ' điểm.<br/>Đủ ' + TARGET + ' điểm trong ' + ROUNDS + ' vòng mới thắng — thử lại nhé!';
     } else {
@@ -918,7 +917,6 @@
 
   /* ===== TOKEN: guest 10 luot free, dang nhap tru 1 token/luot ===== */
   var PLAY_KEY = 'guestPlaysV1', PLAY_LIMIT = 10;
-  var PLAY_COST = 5;
   var tokenBalance = null;
   function teSession(){ try { return JSON.parse(localStorage.getItem('te_account_session') || 'null'); } catch(e){ return null; } }
   function isLoggedIn(){ var s = teSession(); return !!(s && s.access_token && (!s.expires_at || s.expires_at > Date.now())); }
@@ -963,29 +961,17 @@
     }
     document.getElementById('limitBox').style.display = 'flex';
   }
-  function gatePlay(){
-    if (!isLoggedIn()){
-      if (guestPlays() >= PLAY_LIMIT){ showLimit('guest'); return false; }
-      registerPlay();
-      return true;
-    }
-    if (cooldownUntil > Date.now()){ showLimit('cooldown'); return false; }
-    if (tokenBalance == null){ refreshBalance(); return true; }
-    if (tokenBalance < PLAY_COST){ showLimit('token'); return false; }
-    tokenBalance -= PLAY_COST; updateChip();
-    rpcAuth('spend_token', { p_game: 'spot', p_amount: PLAY_COST }).then(function(r){ if (r && typeof r.balance === 'number'){ tokenBalance = r.balance; updateChip(); } }).catch(function(){});
-    return true;
-  }
+  function gatePlay(){ return true; } // game choi vui: mien phi, khong token, khong voucher
   document.getElementById('limitClose').addEventListener('click', function(){ document.getElementById('limitBox').style.display = 'none'; });
 
   var ads = [document.getElementById('ad1'), document.getElementById('ad2')], ai = 0;
   setInterval(function(){ ads[ai].classList.remove('show'); ai = (ai + 1) % ads.length; ads[ai].classList.add('show'); }, 8000);
-  refreshBalance(); refreshCooldown();
+  document.getElementById('tokenChip').textContent = '🎉 Chơi miễn phí';
 })();
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-2310";
+window.__BUILD__ = "20261117-2320";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
