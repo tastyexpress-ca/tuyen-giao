@@ -338,6 +338,7 @@
       if (code && code !== 'HET_MA') {
         document.getElementById('voucherCode').textContent = code;
         document.getElementById('voucherBox').style.display = 'block';
+        cooldownUntil = Date.now() + 7 * 24 * 3600 * 1000;
       }
     }).catch(function(){});
   }
@@ -378,12 +379,21 @@
     if (!isLoggedIn()){ updateChip(); return; }
     rpcAuth('get_token_balance', {}).then(function(b){ if (typeof b === 'number') tokenBalance = b; updateChip(); }).catch(function(){ updateChip(); });
   }
+  var cooldownUntil = 0;
+  function refreshCooldown(){
+    if (!isLoggedIn()) return;
+    rpcAuth('get_game_cooldown', { p_game: 'monkey' }).then(function(sec){ if (typeof sec === 'number' && sec > 0) cooldownUntil = Date.now() + sec * 1000; }).catch(function(){});
+  }
   function showLimit(mode){
     var t = document.getElementById('limitTitle'), x = document.getElementById('limitText'), a = document.getElementById('limitCta');
     if (mode === 'token'){
       t.textContent = 'Bạn đã hết token';
       x.textContent = 'Mỗi lượt chơi 1 token (2 cent). Mua thêm token để chơi tiếp nhé!';
       a.textContent = '🪙 Mua token →'; a.href = '../mua-token/';
+    } else if (mode === 'cooldown'){
+      t.textContent = '🏆 Bạn vừa thắng voucher trò này!';
+      x.textContent = 'Thắng voucher xong phải chờ 1 tuần mới chơi lại trò này được nhé — qua game khác chơi tiếp nè!';
+      a.textContent = '🎮 Chơi game khác →'; a.href = '../game/';
     } else {
       t.textContent = 'Bạn đã chơi hết 10 lượt miễn phí';
       x.textContent = 'Đăng nhập để chơi tiếp bằng token — tài khoản mới được tặng ngay 10 token!';
@@ -393,6 +403,7 @@
   }
   function gatePlay(){
     if (!isLoggedIn()){ return true; }
+    if (cooldownUntil > Date.now()){ showLimit('cooldown'); return false; }
     if (tokenBalance == null){ refreshBalance(); return true; }
     if (tokenBalance <= 0){ showLimit('token'); return false; }
     tokenBalance--; updateChip();
@@ -403,12 +414,12 @@
 
   var ads = [document.getElementById('ad1'), document.getElementById('ad2')], ai = 0;
   setInterval(function(){ ads[ai].classList.remove('show'); ai = (ai + 1) % ads.length; ads[ai].classList.add('show'); }, 8000);
-  refreshBalance();
+  refreshBalance(); refreshCooldown();
 })();
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-2250";
+window.__BUILD__ = "20261117-2310";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
