@@ -26,6 +26,19 @@
   .ad-card p { font-size:13px; opacity:.92; }
   .ad-party { background:linear-gradient(135deg,#ec407a,#c62828); }
   .ad-comthang { background:linear-gradient(135deg,#43a047,#2e7d32); }
+  /* ===== QUANG CAO TOAN MAN HINH KHI THUA (interstitial 3 giay) ===== */
+  #interstitial { display:none; position:fixed; inset:0; z-index:999; background:rgba(20,8,12,.92);
+                  flex-direction:column; align-items:center; justify-content:center; padding:22px; }
+  #interstitial.show { display:flex; }
+  #interstitial .ad-label { color:#ffb3c1; margin-bottom:10px; }
+  #interstitial .ad-big { width:100%; max-width:400px; border-radius:20px; padding:30px 24px; color:#fff;
+                          text-decoration:none; text-align:center; box-shadow:0 10px 34px rgba(0,0,0,.45); }
+  #interstitial .ad-big h2 { font-size:26px; margin-bottom:10px; }
+  #interstitial .ad-big p { font-size:16px; line-height:1.5; opacity:.95; }
+  #interstitial .ad-big .cta { display:inline-block; margin-top:18px; background:#fff; color:#c62828;
+                               font-weight:800; padding:12px 26px; border-radius:999px; font-size:16px; }
+  #interstitial .count { margin-top:20px; color:#ffd9e1; font-size:14px; }
+  #interstitial .count b { font-size:17px; }
 </style>
 </head>
 <body>
@@ -41,6 +54,17 @@
 
 <div id="wrap"><canvas id="game" width="400" height="560"></canvas></div>
 <p class="hint">Chạm / click / phím cách để vỗ cánh 🪽</p>
+
+<!-- ===== QUANG CAO TOAN MAN HINH KHI THUA (3 giay) ===== -->
+<div id="interstitial">
+  <div class="ad-label">QUẢNG CÁO</div>
+  <a class="ad-big ad-party" id="interAd" href="../dat-kem/">
+    <h2 id="interTitle">🎉 Ice Cream Party Bar</h2>
+    <p id="interBody">Tiệc kem trọn gói từ $135 · Ăn thoải mái 2 giờ · Có xe kem đến tận nơi cho sinh nhật &amp; sự kiện!</p>
+    <span class="cta" id="interCta">Xem các gói tiệc →</span>
+  </a>
+  <p class="count">Chơi tiếp sau <b id="interCount">3</b> giây…</p>
+</div>
 
 <!-- ===== O QUANG CAO ===== -->
 <div id="adslot">
@@ -115,8 +139,10 @@
     };
   })();
 
+  var adShowing = false;
   function flap(){
     SFX.unlock();
+    if (adShowing) return;
     if (state === 'ready'){ state = 'play'; bird.v = FLAP; SFX.flap(); }
     else if (state === 'play'){ bird.v = FLAP; SFX.flap(); }
     else if (state === 'over' && frame > 25){ reset(); state = 'ready'; }
@@ -251,8 +277,8 @@
       if (state === 'over'){
         gamesPlayed++;
         SFX.hit();
-        if (score >= 199) setTimeout(function(){ SFX.fanfare(); }, 250);
         if (score > best){ best = score; localStorage.setItem('flappyKemBest', best); }
+        showInterstitial(score >= 199);
       }
     } else if (state === 'ready'){
       bird.y = H/2 - 40 + Math.sin(frame * 0.06) * 7;
@@ -261,6 +287,41 @@
     requestAnimationFrame(step);
   }
   step();
+
+  // Quang cao toan man hinh 3 giay moi khi thua (sau nay thay mang quang cao vao day)
+  var INTER_ADS = [
+    { cls: 'ad-big ad-party', href: '../dat-kem/', title: '🎉 Ice Cream Party Bar',
+      body: 'Tiệc kem trọn gói từ $135 · Ăn thoải mái 2 giờ · Có xe kem đến tận nơi cho sinh nhật & sự kiện!',
+      cta: 'Xem các gói tiệc →' },
+    { cls: 'ad-big ad-comthang', href: '../dat-com/', title: '🍱 Cơm tháng $9.50/phần',
+      body: 'Cơm nhà nấu mỗi ngày, giao tận nơi hoặc pick up tại Westminster · Đăng ký cơm tháng cho gia đình & văn phòng!',
+      cta: 'Đặt cơm ngay →' }
+  ], interIdx = 0;
+  var interEl = document.getElementById('interstitial'),
+      interAd = document.getElementById('interAd'),
+      interCount = document.getElementById('interCount');
+  function showInterstitial(wonPrize){
+    var ad = INTER_ADS[interIdx % INTER_ADS.length]; interIdx++;
+    interAd.className = ad.cls; interAd.href = ad.href;
+    document.getElementById('interTitle').textContent = ad.title;
+    document.getElementById('interBody').textContent = ad.body;
+    document.getElementById('interCta').textContent = ad.cta;
+    adShowing = true;
+    interEl.classList.add('show');
+    var left = 3;
+    interCount.textContent = left;
+    var iv = setInterval(function(){
+      left--;
+      if (left <= 0){
+        clearInterval(iv);
+        interEl.classList.remove('show');
+        adShowing = false;
+        if (wonPrize) SFX.fanfare();
+      } else {
+        interCount.textContent = left;
+      }
+    }, 1000);
+  }
 
   // Xoay vong quang cao nha moi 8 giay
   var ads = [document.getElementById('ad1'), document.getElementById('ad2')], ai = 0;
@@ -271,7 +332,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-1748";
+window.__BUILD__ = "20261117-1755";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
