@@ -60,7 +60,7 @@
   <a class="back" href="../game/">‹</a>
   <div style="flex:1">
     <h1>🔍 Tìm Điểm Khác Nhau</h1>
-    <p>So 2 hình · Tìm đủ 5 điểm khác nhau được ngay 1 voucher $10!</p>
+    <p>10 vòng · Mỗi vòng 120 giây · Đủ 850 điểm được ngay 1 voucher $10!</p>
   </div>
   <span id="tokenChip" style="font-size:13px;font-weight:700;color:#8d6e00;background:#fff8e1;border:1.5px solid #ffe082;border-radius:999px;padding:6px 10px;">🪙 …</span>
   <button id="soundBtn" type="button" aria-label="Bật/tắt âm thanh"
@@ -69,9 +69,9 @@
 
 <div id="wrap">
   <div id="statusBar">
-    <span id="dots">○○○○○</span><span id="foundTxt">Đã tìm 0/5</span>
+    <span id="roundTxt">Vòng 1/10</span><span id="dots">○○○○○</span>
     <span class="sp"></span>
-    <span id="hearts">❤️❤️❤️</span><span id="clock">0:00</span>
+    <span id="scoreTxt">Tổng: 0</span><span id="clock">⏱ 2:00</span>
     <button id="hintBtn" type="button">💡 Gợi ý</button>
     <button id="startBtn" type="button">▶ Bắt đầu</button>
   </div>
@@ -101,7 +101,7 @@
   </div>
 </div>
 
-<p class="hint">Chạm vào chỗ khác nhau trên 1 trong 2 hình · Chạm sai mất 1 tim, sai 3 lần là thua đó!</p>
+<p class="hint">Tìm đủ 5 điểm trước khi hết giờ — điểm vòng = thời gian còn lại · Chạm sai trừ 5 giây!</p>
 
 <div id="interstitial">
   <div class="ad-label">QUẢNG CÁO</div>
@@ -127,15 +127,9 @@
 
 <script>
 (function(){
-  var DIFFS = [
-    { x: 200, y: 56,  r: 28 },
-    { x: 54,  y: 50,  r: 32 },
-    { x: 200, y: 112, r: 32 },
-    { x: 322, y: 54,  r: 38 },
-    { x: 200, y: 186, r: 26 }
-  ];
-  var state = 'ready', found = [], hearts = 3, seconds = 0, timer = null, hintUsed = false;
-  var bestTime = +(localStorage.getItem('spotKemBestTime') || 0);
+  var ROUND_TIME = 120, SCORE_MULT = 1, ROUNDS = 10, TARGET = 850;
+  var state = 'ready', round = 1, found = [], totalScore = 0, timeLeft = ROUND_TIME, timer = null, hintUsed = false;
+  var bestScore = +(localStorage.getItem('spotKemBestScore') || 0);
 
   /* ===== AM THANH ===== */
   var SFX = (function(){
@@ -192,67 +186,329 @@
     }, 1000);
   }
 
-  /* ===== VE CANH KEM (SVG) — mod=true la hinh 2 co 5 diem khac ===== */
-  function scene(mod){
+  /* ===== KHO HINH VE SVG ===== */
+  function skyG(uid, c1, c2){ return '<defs><linearGradient id="sk' + uid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + c1 + '"/><stop offset="1" stop-color="' + c2 + '"/></linearGradient></defs><rect width="400" height="300" fill="url(#sk' + uid + ')"/>'; }
+  function cloud(x, y, s, col){ return '<g fill="' + (col || '#ffffff') + '" opacity="0.92"><ellipse cx="' + x + '" cy="' + y + '" rx="' + (24*s) + '" ry="' + (12*s) + '"/><ellipse cx="' + (x + 16*s) + '" cy="' + (y - 6*s) + '" rx="' + (16*s) + '" ry="' + (10*s) + '"/><ellipse cx="' + (x - 16*s) + '" cy="' + (y - 3*s) + '" rx="' + (14*s) + '" ry="' + (9*s) + '"/></g>'; }
+  function sun(x, y, r, face){ var s = '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#ffd93b" stroke="#f9a825" stroke-width="3"/>'; if (face) s += '<circle cx="' + (x - r*0.3) + '" cy="' + (y - r*0.15) + '" r="' + Math.max(2.2, r*0.11) + '" fill="#8d6e00"/><circle cx="' + (x + r*0.3) + '" cy="' + (y - r*0.15) + '" r="' + Math.max(2.2, r*0.11) + '" fill="#8d6e00"/><path d="M' + (x - r*0.34) + ' ' + (y + r*0.3) + ' Q' + x + ' ' + (y + r*0.62) + ' ' + (x + r*0.34) + ' ' + (y + r*0.3) + '" stroke="#8d6e00" stroke-width="3" fill="none" stroke-linecap="round"/>'; return s; }
+  function moon(x, y, r, face){ var s = '<path d="M' + (x + r*0.82) + ' ' + (y - r*0.68) + ' A' + r + ' ' + r + ' 0 1 0 ' + (x + r*0.82) + ' ' + (y + r*0.68) + ' A' + (r*0.8) + ' ' + (r*0.8) + ' 0 1 1 ' + (x + r*0.82) + ' ' + (y - r*0.68) + ' Z" fill="#ffe082" stroke="#f9a825" stroke-width="2.5"/>'; if (face) s += '<circle cx="' + (x - r*0.28) + '" cy="' + (y - r*0.08) + '" r="' + Math.max(2, r*0.09) + '" fill="#8d6e00"/><path d="M' + (x - r*0.46) + ' ' + (y + r*0.3) + ' Q' + (x - r*0.24) + ' ' + (y + r*0.46) + ' ' + (x - r*0.02) + ' ' + (y + r*0.3) + '" stroke="#8d6e00" stroke-width="2.5" fill="none" stroke-linecap="round"/>'; return s; }
+  function star(x, y, s, col){ var pts = []; for (var i = 0; i < 10; i++){ var a = -Math.PI/2 + i * Math.PI/5, rr = i % 2 ? s*0.45 : s; pts.push((x + rr*Math.cos(a)).toFixed(1) + ',' + (y + rr*Math.sin(a)).toFixed(1)); } return '<polygon points="' + pts.join(' ') + '" fill="' + col + '"/>'; }
+  function heart(x, y, s, col){ return '<path d="M' + x + ' ' + (y + s*0.85) + ' C' + (x - s*0.15) + ' ' + (y + s*0.3) + ' ' + (x - s) + ' ' + (y - s*0.05) + ' ' + (x - s) + ' ' + (y - s*0.5) + ' C' + (x - s) + ' ' + (y - s*0.95) + ' ' + (x - s*0.22) + ' ' + (y - s) + ' ' + x + ' ' + (y - s*0.42) + ' C' + (x + s*0.22) + ' ' + (y - s) + ' ' + (x + s) + ' ' + (y - s*0.95) + ' ' + (x + s) + ' ' + (y - s*0.5) + ' C' + (x + s) + ' ' + (y - s*0.05) + ' ' + (x + s*0.15) + ' ' + (y + s*0.3) + ' ' + x + ' ' + (y + s*0.85) + ' Z" fill="' + col + '"/>'; }
+  function tree(x, y, s, fruitCol, fruitN){ var t = '<rect x="' + (x - 5*s) + '" y="' + (y - 34*s) + '" width="' + (10*s) + '" height="' + (36*s) + '" rx="3" fill="#8a5423"/><circle cx="' + x + '" cy="' + (y - 62*s) + '" r="' + (30*s) + '" fill="#43a047"/><circle cx="' + (x - 24*s) + '" cy="' + (y - 44*s) + '" r="' + (20*s) + '" fill="#4caf50"/><circle cx="' + (x + 24*s) + '" cy="' + (y - 44*s) + '" r="' + (20*s) + '" fill="#388e3c"/>'; if (fruitCol){ var pos = [[-14,-66],[10,-76],[18,-52],[-4,-48],[-20,-52]]; for (var i = 0; i < Math.min(fruitN || 5, 5); i++) t += '<circle cx="' + (x + pos[i][0]*s) + '" cy="' + (y + pos[i][1]*s) + '" r="' + (4.2*s) + '" fill="' + fruitCol + '"/>'; } return t; }
+  function balloon(x, y, col){ return '<path d="M' + x + ' ' + (y + 16) + ' q3 14 -2 26" stroke="#999" stroke-width="1.6" fill="none"/><ellipse cx="' + x + '" cy="' + y + '" rx="15" ry="18" fill="' + col + '"/><ellipse cx="' + (x - 5) + '" cy="' + (y - 6) + '" rx="4.5" ry="6.5" fill="rgba(255,255,255,.5)"/><path d="M' + (x - 3) + ' ' + (y + 17) + ' L' + (x + 3) + ' ' + (y + 17) + ' L' + x + ' ' + (y + 21) + ' Z" fill="' + col + '"/>'; }
+  function flower(x, y, s, petal, center){ var f = '<path d="M' + x + ' ' + y + ' L' + x + ' ' + (y + 22*s) + '" stroke="#388e3c" stroke-width="' + (3*s) + '"/>'; for (var i = 0; i < 6; i++){ var a = i * Math.PI/3; f += '<circle cx="' + (x + 8*s*Math.cos(a)) + '" cy="' + (y + 8*s*Math.sin(a)) + '" r="' + (6*s) + '" fill="' + petal + '"/>'; } f += '<circle cx="' + x + '" cy="' + y + '" r="' + (5*s) + '" fill="' + (center || '#ffd93b') + '"/>'; return f; }
+  function butterfly(x, y, col){ return '<ellipse cx="' + (x - 8) + '" cy="' + (y - 4) + '" rx="9" ry="6" fill="' + col + '" transform="rotate(-24 ' + (x - 8) + ' ' + (y - 4) + ')"/><ellipse cx="' + (x + 8) + '" cy="' + (y - 4) + '" rx="9" ry="6" fill="' + col + '" transform="rotate(24 ' + (x + 8) + ' ' + (y - 4) + ')"/><ellipse cx="' + (x - 6) + '" cy="' + (y + 5) + '" rx="6.5" ry="4.5" fill="' + col + '" opacity="0.75"/><ellipse cx="' + (x + 6) + '" cy="' + (y + 5) + '" rx="6.5" ry="4.5" fill="' + col + '" opacity="0.75"/><rect x="' + (x - 1.6) + '" y="' + (y - 8) + '" width="3.2" height="17" rx="1.6" fill="#4e342e"/>'; }
+
+  function scene1(uid, mod){
     var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
-    s += '<defs><linearGradient id="sky' + (mod ? 'B' : 'A') + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ed8ff"/><stop offset="1" stop-color="#e8f9ff"/></linearGradient></defs>';
-    s += '<rect width="400" height="300" fill="url(#sky' + (mod ? 'B' : 'A') + ')"/>';
-    // mat troi (khac biet 2: mat cuoi)
-    s += '<circle cx="54" cy="50" r="26" fill="#ffd93b" stroke="#f9a825" stroke-width="3"/>';
-    if (!mod) s += '<circle cx="46" cy="46" r="3" fill="#8d6e00"/><circle cx="62" cy="46" r="3" fill="#8d6e00"/><path d="M45 58 Q54 66 63 58" stroke="#8d6e00" stroke-width="3" fill="none" stroke-linecap="round"/>';
-    // may trai (giong nhau)
-    s += '<g fill="#ffffff" opacity="0.9"><ellipse cx="112" cy="74" rx="22" ry="12"/><ellipse cx="128" cy="68" rx="16" ry="10"/></g>';
-    // may phai (khac biet 4: bien mat)
-    if (!mod) s += '<g fill="#ffffff" opacity="0.95"><ellipse cx="322" cy="54" rx="26" ry="13"/><ellipse cx="340" cy="47" rx="17" ry="11"/></g>';
+    s += skyG(uid, '#8ed8ff', '#e8f9ff');
+    s += sun(54, 50, 26, !mod);
+    s += cloud(112, 74, 0.95);
+    if (!mod) s += cloud(322, 54, 1.1);
     s += '<path d="M152 38 q5 -5 10 0 q5 -5 10 0" stroke="#5b7a99" stroke-width="2" fill="none" stroke-linecap="round"/>';
-    // mat dat + ban quay
     s += '<rect y="252" width="400" height="48" fill="#8bc34a"/><rect y="252" width="400" height="5" fill="#7cb342"/>';
     s += '<rect x="52" y="230" width="296" height="15" rx="4" fill="#a5672f"/><rect x="66" y="245" width="10" height="13" fill="#8a5423"/><rect x="324" y="245" width="10" height="13" fill="#8a5423"/>';
-    // ly nuoc ben trai (giong nhau)
-    s += '<path d="M88 198 L116 198 L111 230 L93 230 Z" fill="#ffffff" stroke="#cccccc" stroke-width="1.5"/>';
-    s += '<path d="M90 210 L114 210 L111 230 L93 230 Z" fill="#f48fb1"/>';
-    s += '<path d="M104 178 L110 198" stroke="#e53935" stroke-width="4" stroke-linecap="round"/>';
-    s += '<circle cx="102" cy="206" r="4" fill="#e53935"/>';
-    // cay kem nho ben phai (giong nhau)
-    s += '<path d="M288 202 L316 202 L302 232 Z" fill="#f0be78" stroke="#d99a45" stroke-width="1.5"/>';
-    s += '<circle cx="302" cy="196" r="15" fill="#9575cd"/><circle cx="297" cy="191" r="4.5" fill="rgba(255,255,255,.55)"/>';
-    // oc que lon o giua
-    s += '<path d="M166 148 L234 148 L200 236 Z" fill="#f0be78" stroke="#d99a45" stroke-width="2"/>';
-    s += '<path d="M178 176 L218 168 M186 202 L210 196" stroke="#d99a45" stroke-width="2" stroke-linecap="round"/>';
-    // trai tim tren oc que (khac biet 5: bien mat)
-    if (!mod) s += '<path d="M200 206 C190 194 181 188 181 179 C181 170 191 166 200 177 C209 166 219 170 219 179 C219 188 210 194 200 206 Z" fill="#e53935"/>';
-    // vien kem duoi (hong, giong nhau) + sprinkles
-    s += '<circle cx="200" cy="146" r="38" fill="#f06292"/>';
-    s += '<circle cx="182" cy="134" r="3" fill="#ffd93b"/><circle cx="214" cy="128" r="3" fill="#4fc3f7"/><circle cx="222" cy="152" r="3" fill="#7ee787"/><circle cx="186" cy="158" r="3" fill="#ffffff"/><circle cx="206" cy="142" r="3" fill="#ff5b7f"/>';
-    s += '<circle cx="188" cy="136" r="8" fill="rgba(255,255,255,.35)"/>';
-    // vien kem giua (khac biet 3: doi mau socola -> matcha)
-    s += '<circle cx="200" cy="112" r="31" fill="' + (mod ? '#7cb342' : '#8d5a33') + '"/>';
-    s += '<circle cx="190" cy="104" r="6.5" fill="rgba(255,255,255,.35)"/>';
-    // vien kem tren (vani, giong nhau)
-    s += '<circle cx="200" cy="82" r="24" fill="#fff3c4" stroke="#e8cf8a" stroke-width="2"/>';
-    s += '<circle cx="192" cy="75" r="5" fill="rgba(255,255,255,.6)"/>';
-    // qua cherry tren dinh (khac biet 1: bien mat)
+    s += '<path d="M88 198 L116 198 L111 230 L93 230 Z" fill="#ffffff" stroke="#cccccc" stroke-width="1.5"/><path d="M90 210 L114 210 L111 230 L93 230 Z" fill="#f48fb1"/><path d="M104 178 L110 198" stroke="#e53935" stroke-width="4" stroke-linecap="round"/><circle cx="102" cy="206" r="4" fill="#e53935"/>';
+    s += '<path d="M288 202 L316 202 L302 232 Z" fill="#f0be78" stroke="#d99a45" stroke-width="1.5"/><circle cx="302" cy="196" r="15" fill="#9575cd"/><circle cx="297" cy="191" r="4.5" fill="rgba(255,255,255,.55)"/>';
+    s += '<path d="M166 148 L234 148 L200 236 Z" fill="#f0be78" stroke="#d99a45" stroke-width="2"/><path d="M178 176 L218 168 M186 202 L210 196" stroke="#d99a45" stroke-width="2" stroke-linecap="round"/>';
+    if (!mod) s += heart(200, 186, 19, '#e53935');
+    s += '<circle cx="200" cy="146" r="38" fill="#f06292"/><circle cx="182" cy="134" r="3" fill="#ffd93b"/><circle cx="214" cy="128" r="3" fill="#4fc3f7"/><circle cx="222" cy="152" r="3" fill="#7ee787"/><circle cx="186" cy="158" r="3" fill="#ffffff"/><circle cx="206" cy="142" r="3" fill="#ff5b7f"/><circle cx="188" cy="136" r="8" fill="rgba(255,255,255,.35)"/>';
+    s += '<circle cx="200" cy="112" r="31" fill="' + (mod ? '#7cb342' : '#8d5a33') + '"/><circle cx="190" cy="104" r="6.5" fill="rgba(255,255,255,.35)"/>';
+    s += '<circle cx="200" cy="82" r="24" fill="#fff3c4" stroke="#e8cf8a" stroke-width="2"/><circle cx="192" cy="75" r="5" fill="rgba(255,255,255,.6)"/>';
     if (!mod) s += '<path d="M200 58 q4 -10 14 -13" stroke="#388e3c" stroke-width="2.5" fill="none"/><circle cx="200" cy="60" r="9" fill="#e53935"/><circle cx="196.5" cy="56.5" r="3" fill="#ff8a80"/>';
-    s += '</svg>';
-    return s;
+    return s + '</svg>';
   }
 
+  function scene2(uid, mod){
+    var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+    s += skyG(uid, '#7ed6ff', '#e8f9ff');
+    s += sun(348, 46, 24, !mod);
+    s += cloud(120, 48, 0.9);
+    s += '<rect y="148" width="400" height="60" fill="#29b6f6"/><path d="M20 168 q12 -8 24 0 q12 8 24 0 M120 188 q12 -8 24 0 q12 8 24 0 M280 172 q12 -8 24 0 q12 8 24 0" stroke="#b3e5fc" stroke-width="3" fill="none" stroke-linecap="round"/>';
+    s += '<rect y="208" width="400" height="92" fill="#ffe0a3"/>';
+    // cay dua
+    s += '<path d="M42 268 Q58 208 84 172" stroke="#8a5423" stroke-width="8" fill="none" stroke-linecap="round"/>';
+    s += '<path d="M84 172 Q60 150 34 158 M84 172 Q78 146 58 136 M84 172 Q100 146 124 142 M84 172 Q110 160 128 168 M84 172 Q64 166 50 178" stroke="#43a047" stroke-width="6" fill="none" stroke-linecap="round"/>';
+    s += '<circle cx="78" cy="178" r="7" fill="#6d4c41"/><circle cx="90" cy="180" r="6" fill="#795548"/>';
+    // o du che nang (khac biet 1: doi mau)
+    s += '<path d="M120 208 L132 168" stroke="#8a5423" stroke-width="4" stroke-linecap="round"/>';
+    s += '<path d="M84 172 A38 38 0 0 1 160 172 Z" fill="' + (mod ? '#42a5f5' : '#ef5350') + '"/><path d="M122 140 L122 172" stroke="rgba(255,255,255,.5)" stroke-width="3"/>';
+    // cay kem tren cat (khac biet 3: mat cherry)
+    s += '<path d="M238 224 L272 224 L255 268 Z" fill="#f0be78" stroke="#d99a45" stroke-width="2"/>';
+    s += '<circle cx="255" cy="220" r="21" fill="#f06292"/><circle cx="255" cy="201" r="16" fill="#fff3c4" stroke="#e8cf8a" stroke-width="1.5"/>';
+    if (!mod) s += '<circle cx="255" cy="182" r="6.5" fill="#e53935"/><path d="M255 176 q3 -7 10 -9" stroke="#388e3c" stroke-width="2" fill="none"/>';
+    // bong bien (khac biet 5: doi mau soc chinh)
+    s += '<circle cx="180" cy="262" r="17" fill="#ffffff"/><path d="M163 262 A17 17 0 0 1 197 262 Z" fill="' + (mod ? '#43a047' : '#ef5350') + '"/><path d="M180 245 L180 279" stroke="#42a5f5" stroke-width="5"/>';
+    // sao bien (khac biet 4: bien mat)
+    if (!mod) s += star(332, 264, 15, '#fb8c00');
+    s += '<circle cx="352" cy="238" r="5" fill="#f06292"/><circle cx="30" cy="238" r="4" fill="#9575cd"/>';
+    return s + '</svg>';
+  }
+
+  function scene3(uid, mod){
+    var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+    s += skyG(uid, '#8ed8ff', '#eafaf1');
+    s += sun(52, 44, 22, true);
+    s += cloud(300, 46, 1.0);
+    s += '<rect y="238" width="400" height="62" fill="#7cb342"/><rect y="238" width="400" height="5" fill="#689f38"/>';
+    // cay co trai (khac biet 2: mat trai)
+    s += tree(82, 244, 1.15, mod ? null : '#e53935', 5);
+    s += tree(352, 246, 0.8, '#fb8c00', 3);
+    // den cong vien (khac biet 1: tat den)
+    s += '<rect x="327" y="140" width="5" height="100" fill="#455a64"/><circle cx="329.5" cy="130" r="11" fill="' + (mod ? '#b0bec5' : '#ffd93b') + '" stroke="#455a64" stroke-width="3"/>';
+    if (!mod) s += '<circle cx="329.5" cy="130" r="22" fill="rgba(255,217,59,.30)"/>';
+    s += '<path d="M322 116 L337 116 L329.5 106 Z" fill="#455a64"/>';
+    // ghe da
+    s += '<rect x="168" y="216" width="86" height="8" rx="3" fill="#8a5423"/><rect x="168" y="200" width="86" height="7" rx="3" fill="#a5672f"/><rect x="174" y="224" width="8" height="16" fill="#6d4c41"/><rect x="240" y="224" width="8" height="16" fill="#6d4c41"/><rect x="174" y="192" width="8" height="14" fill="#6d4c41"/><rect x="240" y="192" width="8" height="14" fill="#6d4c41"/>';
+    // bong bay (khac biet 4: bien mat)
+    if (!mod) s += balloon(272, 118, '#ef5350');
+    // buom (khac biet 5: bien mat)
+    if (!mod) s += butterfly(150, 118, '#ab47bc');
+    // hang hoa duoi (khac biet 3: doi mau hoa giua)
+    s += flower(60, 268, 1, '#f06292'); s += flower(120, 276, 0.9, '#ffd93b'); s += flower(200, 270, 1.05, mod ? '#ab47bc' : '#f06292'); s += flower(282, 276, 0.9, '#4fc3f7'); s += flower(345, 268, 1, '#ff8a65');
+    return s + '</svg>';
+  }
+
+  function scene4(uid, mod){
+    var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+    s += skyG(uid, '#ffe4ec', '#fff3e0');
+    s += '<rect y="248" width="400" height="52" fill="#d7a1a1"/>';
+    // day co treo (khac biet 1: doi mau 1 la co)
+    s += '<path d="M6 26 Q200 62 394 26" stroke="#8a5423" stroke-width="2.5" fill="none"/>';
+    var cols = ['#ef5350', '#ffd93b', '#43a047', '#42a5f5', '#f06292', '#ab47bc', '#fb8c00'];
+    for (var i = 0; i < 7; i++){
+      var bx = 34 + i * 55, by = 34 + Math.sin(i / 6 * Math.PI) * 14;
+      var c = cols[i]; if (mod && i === 3) c = '#7cb342';
+      s += '<path d="M' + bx + ' ' + by + ' L' + (bx + 26) + ' ' + (by + 2) + ' L' + (bx + 13) + ' ' + (by + 24) + ' Z" fill="' + c + '"/>';
+    }
+    // banh sinh nhat 2 tang
+    s += '<rect x="146" y="204" width="108" height="40" rx="6" fill="#f48fb1"/><rect x="146" y="204" width="108" height="10" rx="5" fill="#f8bbd0"/>';
+    s += '<rect x="164" y="170" width="72" height="36" rx="6" fill="#90caf9"/><rect x="164" y="170" width="72" height="9" rx="4" fill="#bbdefb"/>';
+    s += '<ellipse cx="200" cy="248" rx="72" ry="8" fill="#bcaaa4"/>';
+    // 3 cay nen (khac biet 2: tat lua nen giua)
+    [178, 200, 222].forEach(function(cx, idx){
+      s += '<rect x="' + (cx - 2.5) + '" y="146" width="5" height="24" rx="2" fill="' + ['#ef5350', '#ffd93b', '#43a047'][idx] + '"/>';
+      if (!(mod && idx === 1)) s += '<ellipse cx="' + cx + '" cy="139" rx="4.5" ry="7" fill="#ff9800"/><ellipse cx="' + cx + '" cy="141" rx="2" ry="3.4" fill="#ffe082"/>';
+    });
+    // hop qua trai (khac biet 3: doi mau ruy bang)
+    s += '<rect x="52" y="216" width="54" height="34" rx="4" fill="#4db6ac"/><rect x="74" y="216" width="10" height="34" fill="' + (mod ? '#ef5350' : '#ffd93b') + '"/><rect x="52" y="228" width="54" height="9" fill="' + (mod ? '#ef5350' : '#ffd93b') + '"/><path d="M79 216 c-12 -14 -26 -2 -14 6 c6 4 14 -2 14 -6 c0 4 8 10 14 6 c12 -8 -2 -20 -14 -6z" fill="' + (mod ? '#ef5350' : '#ffd93b') + '"/>';
+    // hop qua phai
+    s += '<rect x="296" y="222" width="46" height="28" rx="4" fill="#ba68c8"/><rect x="314" y="222" width="9" height="28" fill="#ffe082"/><rect x="296" y="232" width="46" height="8" fill="#ffe082"/>';
+    // bong bay (khac biet 4: mat bong xanh)
+    s += balloon(46, 108, '#ef5350');
+    if (!mod) s += balloon(352, 100, '#42a5f5');
+    s += balloon(322, 128, '#ffd93b');
+    // cupcake (khac biet 5: doi mau kem)
+    s += '<path d="M116 234 L144 234 L139 252 L121 252 Z" fill="#a5672f"/><circle cx="130" cy="228" r="12" fill="' + (mod ? '#a5d6a7' : '#f48fb1') + '"/><circle cx="130" cy="215" r="4" fill="#e53935"/>';
+    return s + '</svg>';
+  }
+
+  function scene5(uid, mod){
+    var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+    s += skyG(uid, '#1a237e', '#4a148c');
+    s += moon(54, 52, 27, !mod);
+    var stars = [[120,36],[180,64],[250,30],[300,84],[356,120],[96,110],[210,110]];
+    stars.forEach(function(p, i){ if (mod && i === 3) return; s += star(p[0], p[1], i === 3 ? 13 : 7, '#ffe082'); });
+    // day den le hoi (khac biet 3: doi mau 1 bong)
+    s += '<path d="M0 92 Q200 128 400 84" stroke="#90a4ae" stroke-width="2" fill="none"/>';
+    var bulbCols = ['#ef5350', '#ffd93b', '#43a047', '#42a5f5', '#f06292', '#ffd93b', '#ef5350'];
+    for (var i = 0; i < 7; i++){
+      var t = (i + 0.5) / 7, bxp = 400 * t, byp = (1-t)*(1-t)*92 + 2*(1-t)*t*110 + t*t*84;
+      var bc = bulbCols[i]; if (mod && i === 3) bc = '#ffffff';
+      s += '<circle cx="' + bxp + '" cy="' + (byp + 8) + '" r="6" fill="' + bc + '"/><circle cx="' + bxp + '" cy="' + (byp + 8) + '" r="11" fill="' + bc + '" opacity="0.25"/>';
+    }
+    s += '<rect y="250" width="400" height="50" fill="#263238"/>';
+    // xe kem
+    s += '<rect x="138" y="196" width="124" height="52" rx="8" fill="#eceff1"/><rect x="150" y="208" width="44" height="28" rx="4" fill="#81d4fa"/>';
+    s += '<circle cx="162" cy="250" r="11" fill="#37474f"/><circle cx="238" cy="250" r="11" fill="#37474f"/><circle cx="162" cy="250" r="5" fill="#90a4ae"/><circle cx="238" cy="250" r="5" fill="#90a4ae"/>';
+    // mai xe (khac biet 4: doi mau soc)
+    for (var j = 0; j < 6; j++){
+      var ax = 132 + j * 23;
+      var acol = j % 2 ? '#ffffff' : '#ef5350'; if (mod) acol = j % 2 ? '#ffffff' : '#42a5f5';
+      s += '<path d="M' + ax + ' 178 L' + (ax + 23) + ' 178 L' + (ax + 19) + ' 194 A6 6 0 0 1 ' + (ax + 7) + ' 194 L' + (ax + 3) + ' 178 Z" fill="' + acol + '"/>';
+    }
+    s += '<rect x="196" y="160" width="4" height="20" fill="#90a4ae"/><rect x="228" y="160" width="4" height="20" fill="#90a4ae"/>';
+    // cay kem tren xe (khac biet 5: mat cherry)
+    s += '<path d="M282 208 L306 208 L294 238 Z" fill="#f0be78" stroke="#d99a45" stroke-width="1.5"/><circle cx="294" cy="204" r="13" fill="#f06292"/>';
+    if (!mod) s += '<circle cx="294" cy="188" r="5" fill="#e53935"/>';
+    s += heart(96, 210, 13, '#f06292');
+    s += '<circle cx="330" cy="222" r="3" fill="#ffe082"/><circle cx="60" cy="200" r="2.5" fill="#ffe082"/><circle cx="356" cy="180" r="2.5" fill="#ffe082"/>';
+    return s + '</svg>';
+  }
+
+  function scene6(uid, mod){
+    var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+    s += skyG(uid, '#8ed8ff', '#fffde7');
+    s += sun(342, 46, 23, true);
+    // cau vong (khac biet 1: mat 1 vong)
+    var rb = ['#ef5350', '#fb8c00', '#ffd93b', '#43a047'];
+    rb.forEach(function(c, i){ if (mod && i === 2) return; s += '<path d="M' + (34 + i*11) + ' 190 A' + (86 - i*11) + ' ' + (86 - i*11) + ' 0 0 1 ' + (206 - i*11) + ' 190" stroke="' + c + '" stroke-width="10" fill="none"/>'; });
+    s += cloud(120, 196, 0.8); s += cloud(196, 196, 0.7);
+    if (!mod) s += cloud(238, 52, 1.0);
+    s += tree(336, 252, 0.95, '#e53935', 4);
+    s += '<rect y="240" width="400" height="60" fill="#9ccc65"/><rect y="240" width="400" height="5" fill="#8bc34a"/>';
+    if (!mod) s += butterfly(120, 138, '#f06292');
+    // dai hoa
+    s += flower(40, 262, 1, '#f06292'); s += flower(88, 276, 0.9, '#ffd93b'); s += flower(150, 266, 0.95, '#4fc3f7');
+    s += flower(200, 256, 1.25, mod ? '#f06292' : '#ffffff', '#fb8c00');
+    s += flower(258, 272, 0.9, '#ab47bc'); s += flower(300, 262, 1, '#ff8a65');
+    // cay kem trong hoa (khac biet 5: doi mau vien tren)
+    s += '<path d="M56 218 L84 218 L70 252 Z" fill="#f0be78" stroke="#d99a45" stroke-width="1.5"/>';
+    s += '<circle cx="70" cy="214" r="15" fill="#8d5a33"/><circle cx="70" cy="198" r="12" fill="' + (mod ? '#8d5a33' : '#a5d6a7') + '"/>';
+    return s + '</svg>';
+  }
+
+  function scene7(uid, mod){
+    var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+    s += skyG(uid, '#b3e5fc', '#e1f5fe');
+    s += '<circle cx="52" cy="44" r="20" fill="#fff9c4" stroke="#f9a825" stroke-width="2.5"/>';
+    s += cloud(300, 50, 1.0, '#ffffff');
+    s += '<rect y="238" width="400" height="62" fill="#ffffff"/><rect y="238" width="400" height="5" fill="#cfd8dc"/>';
+    // nguoi tuyet (khac biet 1: doi mau khan — khac biet 2: mat mui ca rot)
+    s += '<circle cx="130" cy="222" r="30" fill="#ffffff" stroke="#b0bec5" stroke-width="2"/><circle cx="130" cy="168" r="21" fill="#ffffff" stroke="#b0bec5" stroke-width="2"/>';
+    s += '<path d="M112 190 L66 168 M148 190 L192 164" stroke="#8a5423" stroke-width="4" stroke-linecap="round"/>';
+    s += '<circle cx="123" cy="163" r="2.6" fill="#37474f"/><circle cx="137" cy="163" r="2.6" fill="#37474f"/>';
+    if (!mod) s += '<path d="M130 170 L146 174 L130 177 Z" fill="#fb8c00"/>';
+    s += '<path d="M118 182 Q130 188 142 182" stroke="#37474f" stroke-width="2" fill="none" stroke-linecap="round"/>';
+    s += '<path d="M110 152 L150 152 L144 138 L116 138 Z" fill="#37474f"/><rect x="106" y="150" width="48" height="5" rx="2" fill="#37474f"/>';
+    s += '<path d="M112 186 Q130 196 148 186 L146 198 Q130 206 114 198 Z" fill="' + (mod ? '#42a5f5' : '#ef5350') + '"/>';
+    s += '<circle cx="130" cy="214" r="3" fill="#37474f"/><circle cx="130" cy="228" r="3" fill="#37474f"/>';
+    // cay thong (khac biet 3: mat ngoi sao dinh)
+    s += '<rect x="294" y="228" width="10" height="16" fill="#8a5423"/>';
+    s += '<path d="M299 128 L332 190 L266 190 Z" fill="#2e7d32"/><path d="M299 158 L326 208 L272 208 Z" fill="#388e3c"/><path d="M299 186 L320 232 L278 232 Z" fill="#43a047"/>';
+    if (!mod) s += star(299, 122, 11, '#ffd93b');
+    s += '<circle cx="288" cy="182" r="4" fill="#ef5350"/><circle cx="310" cy="200" r="4" fill="#42a5f5"/><circle cx="292" cy="216" r="4" fill="#ffd93b"/><circle cx="308" cy="168" r="4" fill="#f06292"/>';
+    // coc ca cao tren goc cay (khac biet 4: mat khoi)
+    s += '<rect x="30" y="238" width="52" height="12" rx="4" fill="#8a5423"/>';
+    s += '<path d="M42 208 L74 208 L71 238 L45 238 Z" fill="#ef5350"/><path d="M74 214 q12 3 0 14" stroke="#ef5350" stroke-width="4" fill="none"/>';
+    s += '<ellipse cx="58" cy="208" rx="16" ry="4" fill="#6d4c41"/>';
+    if (!mod) s += '<path d="M50 196 q4 -7 0 -13 M64 196 q4 -7 0 -13" stroke="#b0bec5" stroke-width="3" fill="none" stroke-linecap="round"/>';
+    // bong tuyet lon (khac biet 5: bien mat)
+    if (!mod) s += '<g stroke="#81d4fa" stroke-width="3" stroke-linecap="round"><path d="M352 52 L352 88 M334 70 L370 70 M341 59 L363 81 M363 59 L341 81"/></g>';
+    s += '<g fill="#ffffff"><circle cx="200" cy="60" r="3"/><circle cx="240" cy="110" r="2.5"/><circle cx="90" cy="96" r="2.5"/><circle cx="180" cy="150" r="2"/><circle cx="336" cy="150" r="2.5"/></g>';
+    return s + '</svg>';
+  }
+
+  function scene8(uid, mod){
+    var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+    s += skyG(uid, '#8ed8ff', '#f1f8e9');
+    s += sun(50, 46, 22, true);
+    s += cloud(320, 44, 0.95);
+    s += '<path d="M150 62 q5 -5 10 0 q5 -5 10 0" stroke="#5b7a99" stroke-width="2" fill="none" stroke-linecap="round"/>';
+    if (!mod) s += '<path d="M196 84 q5 -5 10 0 q5 -5 10 0" stroke="#5b7a99" stroke-width="2" fill="none" stroke-linecap="round"/>';
+    s += '<rect y="238" width="400" height="62" fill="#9ccc65"/><rect y="238" width="400" height="5" fill="#8bc34a"/>';
+    s += tree(64, 246, 1.05, '#e53935', 5);
+    // dieu (khac biet 1: doi mau)
+    s += '<path d="M300 44 L326 74 L300 104 L274 74 Z" fill="' + (mod ? '#fb8c00' : '#ef5350') + '"/><path d="M300 44 L300 104 M274 74 L326 74" stroke="rgba(255,255,255,.65)" stroke-width="2.5"/>';
+    s += '<path d="M300 104 q-6 22 4 40 q8 14 -2 26" stroke="#777" stroke-width="2" fill="none"/><path d="M296 128 l10 4 l-10 4z" fill="#f06292"/><path d="M302 152 l10 4 l-10 4z" fill="#42a5f5"/>';
+    // tham picnic ke o (khac biet 2: doi mau o giua)
+    for (var r = 0; r < 2; r++) for (var c = 0; c < 4; c++){
+      var sq = (r + c) % 2 ? '#ffffff' : '#ef5350';
+      if (mod && r === 0 && c === 2) sq = '#42a5f5';
+      s += '<rect x="' + (118 + c * 42) + '" y="' + (252 + r * 19) + '" width="42" height="19" fill="' + sq + '"/>';
+    }
+    s += '<rect x="118" y="252" width="168" height="38" fill="none" stroke="#c62828" stroke-width="2"/>';
+    // gio picnic
+    s += '<path d="M138 226 h44 l-6 24 h-32 Z" fill="#c08a4a"/><path d="M138 226 h44 l-2 8 h-40 Z" fill="#a5672f"/><path d="M146 226 q14 -16 28 0" stroke="#8a5423" stroke-width="4" fill="none"/>';
+    // qua tao tren tham (khac biet 3: bien mat)
+    if (!mod) s += '<circle cx="248" cy="242" r="9" fill="#e53935"/><path d="M248 233 q2 -6 8 -7" stroke="#388e3c" stroke-width="2.5" fill="none"/><circle cx="245" cy="239" r="2.6" fill="#ff8a80"/>';
+    // hu nuoc chanh (khac biet 4: mat ong hut)
+    s += '<rect x="102" y="222" width="24" height="28" rx="3" fill="#fff9c4" stroke="#e0c97f" stroke-width="1.5"/><rect x="102" y="230" width="24" height="20" fill="#ffee58" opacity="0.75"/>';
+    if (!mod) s += '<path d="M118 204 L114 222" stroke="#ef5350" stroke-width="4" stroke-linecap="round"/>';
+    // cay kem tren tham
+    s += '<path d="M300 224 L322 224 L311 250 Z" fill="#f0be78" stroke="#d99a45" stroke-width="1.5"/><circle cx="311" cy="220" r="12" fill="#9575cd"/>';
+    s += flower(352, 272, 0.9, '#f06292'); s += flower(30, 276, 0.9, '#ffd93b');
+    return s + '</svg>';
+  }
+
+  function scene9(uid, mod){
+    var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+    s += skyG(uid, '#311b92', '#880e4f');
+    s += moon(348, 44, 20, false);
+    s += star(60, 40, 7, '#ffe082'); s += star(130, 70, 5.5, '#ffe082'); s += star(250, 34, 6, '#ffe082');
+    // toa nha
+    s += '<rect x="18" y="96" width="72" height="156" fill="#241a4d"/><rect x="104" y="70" width="62" height="182" fill="#2d2060"/><rect x="300" y="86" width="82" height="166" fill="#241a4d"/>';
+    var wins = [[34,116],[58,116],[34,146],[58,146],[34,176],[58,176],[118,92],[140,92],[118,122],[140,122],[118,152],[140,152],[316,108],[340,108],[316,138],[340,138]];
+    wins.forEach(function(w, i){
+      var lit = i % 3 !== 2;
+      if (mod && i === 0) lit = false;
+      s += '<rect x="' + w[0] + '" y="' + w[1] + '" width="13" height="17" fill="' + (lit ? '#ffd93b' : '#17123a') + '"/>';
+    });
+    // meo tren mai nha (khac biet 5: bien mat)
+    if (!mod) s += '<g fill="#14102e"><ellipse cx="112" cy="92" rx="13" ry="9"/><circle cx="124" cy="84" r="7.5"/><path d="M119 78 L118 70 L124 75 M128 77 L131 70 L133 77 Z"/><path d="M100 94 q-12 2 -13 -8" stroke="#14102e" stroke-width="3.5" fill="none" stroke-linecap="round"/></g>';
+    s += '<rect y="252" width="400" height="48" fill="#1c1440"/>';
+    // cua tiem: mai hien (khac biet 2: doi mau) + bien trai tim/sao (khac biet 3)
+    s += '<rect x="150" y="196" width="110" height="56" fill="#3b2a6d"/>';
+    for (var j = 0; j < 5; j++){
+      var ax2 = 146 + j * 24;
+      s += '<path d="M' + ax2 + ' 186 L' + (ax2 + 24) + ' 186 L' + (ax2 + 20) + ' 200 A7 7 0 0 1 ' + (ax2 + 8) + ' 200 L' + (ax2 + 3) + ' 186 Z" fill="' + (j % 2 ? '#ffffff' : (mod ? '#ef5350' : '#43a047')) + '"/>';
+    }
+    if (mod) s += star(205, 158, 16, '#ffd93b'); else s += heart(205, 152, 17, '#f06292');
+    s += '<rect x="188" y="216" width="34" height="36" fill="#17123a"/><circle cx="216" cy="234" r="2.4" fill="#ffd93b"/>';
+    s += '<rect x="156" y="212" width="24" height="20" fill="#ffd93b" opacity="0.9"/>';
+    // den duong
+    s += '<rect x="38" y="150" width="5" height="102" fill="#0f0b26"/><circle cx="40.5" cy="140" r="10" fill="#ffd93b"/><circle cx="40.5" cy="140" r="20" fill="rgba(255,217,59,.25)"/>';
+    // chum bong o cua tiem (khac biet 4: mat 1 bong)
+    s += balloon(282, 178, '#ef5350'); s += balloon(266, 196, '#ffd93b');
+    if (!mod) s += balloon(300, 162, '#42a5f5');
+    return s + '</svg>';
+  }
+
+  function scene10(uid, mod){
+    var s = '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">';
+    s += skyG(uid, '#8ed8ff', '#f1f8e9');
+    s += sun(52, 46, 23, true);
+    s += cloud(180, 44, 0.9); s += cloud(330, 76, 0.75);
+    s += '<rect y="240" width="400" height="60" fill="#9ccc65"/><rect y="240" width="400" height="5" fill="#8bc34a"/>';
+    s += tree(58, 248, 1.0, mod ? '#fb8c00' : '#e53935', 5);
+    // nha kho (khac biet 1: doi mau mai — khac biet 2: mat dau X cua)
+    s += '<rect x="228" y="156" width="124" height="94" fill="#c62828"/>';
+    s += '<path d="M218 158 L290 116 L362 158 Z" fill="' + (mod ? '#78909c' : '#6d4c41') + '"/>';
+    s += '<rect x="262" y="196" width="56" height="54" fill="#8e1414"/>';
+    if (!mod) s += '<path d="M262 196 L318 250 M318 196 L262 250" stroke="#eceff1" stroke-width="5"/>';
+    s += '<rect x="276" y="132" width="28" height="22" fill="#fff3c4" stroke="#6d4c41" stroke-width="2.5"/><path d="M290 132 L290 154 M276 143 L304 143" stroke="#6d4c41" stroke-width="2"/>';
+    // hang rao (khac biet 3: thieu 1 thanh)
+    for (var i = 0; i < 10; i++){
+      if (mod && i === 3) continue;
+      var fx = 16 + i * 20;
+      s += '<rect x="' + fx + '" y="232" width="9" height="30" rx="2" fill="#eceff1"/>';
+    }
+    s += '<rect x="8" y="240" width="210" height="6" fill="#cfd8dc"/>';
+    // quay kem canh nha kho (khac biet 5: doi mau vien tren)
+    s += '<rect x="140" y="230" width="66" height="10" rx="3" fill="#a5672f"/>';
+    s += '<path d="M158 200 L188 200 L173 232 Z" fill="#f0be78" stroke="#d99a45" stroke-width="1.5"/>';
+    s += '<circle cx="173" cy="196" r="14" fill="#f06292"/><circle cx="173" cy="181" r="11" fill="' + (mod ? '#f06292' : '#fff3c4') + '"' + (mod ? '' : ' stroke="#e8cf8a" stroke-width="1.5"') + '/>';
+    s += flower(238, 272, 0.9, '#f06292'); s += flower(368, 268, 0.9, '#ffd93b'); s += flower(24, 282, 0.85, '#4fc3f7');
+    return s + '</svg>';
+  }
+
+  var SCENES = [
+    { fn: scene1, diffs: [ {x:200,y:56,r:28}, {x:54,y:50,r:32}, {x:200,y:112,r:32}, {x:322,y:54,r:38}, {x:200,y:186,r:26} ] },
+    { fn: scene2, diffs: [ {x:122,y:158,r:36}, {x:348,y:46,r:30}, {x:255,y:186,r:26}, {x:332,y:264,r:22}, {x:180,y:262,r:24} ] },
+    { fn: scene3, diffs: [ {x:330,y:130,r:26}, {x:82,y:188,r:46}, {x:200,y:270,r:20}, {x:272,y:118,r:27}, {x:150,y:118,r:23} ] },
+    { fn: scene4, diffs: [ {x:200,y:44,r:22}, {x:200,y:140,r:17}, {x:79,y:222,r:28}, {x:352,y:100,r:27}, {x:130,y:226,r:19} ] },
+    { fn: scene5, diffs: [ {x:54,y:52,r:33}, {x:300,y:84,r:20}, {x:228,y:104,r:16}, {x:200,y:186,r:32}, {x:294,y:192,r:22} ] },
+    { fn: scene6, diffs: [ {x:120,y:118,r:44}, {x:238,y:52,r:38}, {x:120,y:138,r:23}, {x:200,y:256,r:25}, {x:70,y:198,r:20} ] },
+    { fn: scene7, diffs: [ {x:130,y:192,r:24}, {x:140,y:172,r:17}, {x:299,y:122,r:18}, {x:58,y:196,r:19}, {x:352,y:70,r:22} ] },
+    { fn: scene8, diffs: [ {x:300,y:74,r:30}, {x:202,y:261,r:23}, {x:248,y:242,r:16}, {x:116,y:212,r:15}, {x:206,y:84,r:19} ] },
+    { fn: scene9, diffs: [ {x:40,y:124,r:17}, {x:205,y:193,r:32}, {x:205,y:152,r:24}, {x:300,y:162,r:21}, {x:112,y:88,r:21} ] },
+    { fn: scene10, diffs: [ {x:290,y:140,r:32}, {x:290,y:223,r:28}, {x:76,y:246,r:15}, {x:58,y:190,r:42}, {x:173,y:181,r:19} ] }
+  ];
+
   var panelA = document.getElementById('panelA'), panelB = document.getElementById('panelB');
-  panelA.querySelector('.scenebox').innerHTML = scene(false);
-  panelB.querySelector('.scenebox').innerHTML = scene(true);
-  var dotsEl = document.getElementById('dots'), foundTxt = document.getElementById('foundTxt'),
-      heartsEl = document.getElementById('hearts'), clockEl = document.getElementById('clock'),
+  var roundTxt = document.getElementById('roundTxt'), dotsEl = document.getElementById('dots'),
+      scoreTxt = document.getElementById('scoreTxt'), clockEl = document.getElementById('clock'),
       bigMsg = document.getElementById('bigMsg'), startBtn = document.getElementById('startBtn'),
       hintBtn = document.getElementById('hintBtn');
 
-  function fmtT(sec){ return Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); }
+  function fmtT(sec){ sec = Math.max(0, Math.ceil(sec)); return Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); }
+  function curDiffs(){ return SCENES[round - 1].diffs; }
   function renderStatus(){
+    roundTxt.textContent = 'Vòng ' + round + '/' + ROUNDS;
     var d = ''; for (var i = 0; i < 5; i++) d += found.indexOf(i) >= 0 ? '●' : '○';
     dotsEl.textContent = d;
-    foundTxt.textContent = 'Đã tìm ' + found.length + '/5';
-    var hh = ''; for (var j = 0; j < hearts; j++) hh += '❤️';
-    heartsEl.textContent = hh || '💔';
-    clockEl.textContent = fmtT(seconds);
+    scoreTxt.textContent = 'Tổng: ' + totalScore;
+    clockEl.textContent = '⏱ ' + fmtT(timeLeft);
+    clockEl.style.color = timeLeft <= 20 ? '#c62828' : '';
   }
   function addMarker(panel, diff, cls){
     var m = document.createElement('div');
@@ -265,35 +521,67 @@
   }
   function addFx(panel, x, y){
     var f = document.createElement('div');
-    f.className = 'fx'; f.textContent = '✗';
+    f.className = 'fx'; f.textContent = '✗ −5s';
+    f.style.fontSize = '19px';
     f.style.left = (x / 400 * 100) + '%'; f.style.top = (y / 300 * 100) + '%';
     panel.querySelector('.fxlayer').appendChild(f);
     setTimeout(function(){ f.style.opacity = '0'; }, 60);
     setTimeout(function(){ f.remove(); }, 650);
   }
   function stopTimer(){ if (timer){ clearInterval(timer); timer = null; } }
-  function startGame(){
-    found = []; hearts = 3; seconds = 0; hintUsed = false;
+  function loadRound(){
+    var sc = SCENES[round - 1];
+    panelA.querySelector('.scenebox').innerHTML = sc.fn('A', false);
+    panelB.querySelector('.scenebox').innerHTML = sc.fn('B', true);
     panelA.querySelector('.marks').innerHTML = '';
     panelB.querySelector('.marks').innerHTML = '';
-    bigMsg.style.display = 'none';
-    hideVoucher();
-    state = 'play';
-    startBtn.textContent = '↺ Chơi lại';
+    found = []; timeLeft = ROUND_TIME; hintUsed = false;
     hintBtn.textContent = '💡 Gợi ý';
     renderStatus();
-    stopTimer();
-    timer = setInterval(function(){ seconds++; clockEl.textContent = fmtT(seconds); }, 1000);
   }
-  function endGame(won){
+  function startTimer(){
+    stopTimer();
+    timer = setInterval(function(){
+      if (state !== 'play') return;
+      timeLeft -= 0.1;
+      if (timeLeft <= 0){ timeLeft = 0; renderStatus(); endGame(false, 'time'); return; }
+      renderStatus();
+    }, 100);
+  }
+  function startRun(){
+    round = 1; totalScore = 0;
+    bigMsg.style.display = 'none';
+    hideVoucher();
+    loadRound();
+    state = 'play';
+    startBtn.textContent = '↺ Chơi lại';
+    startTimer();
+  }
+  function completeRound(){
+    var pts = Math.ceil(timeLeft) * SCORE_MULT;
+    totalScore += pts;
+    state = 'splash'; stopTimer();
+    SFX.good();
+    bigMsg.innerHTML = '🎉 Vòng ' + round + ' xong! +' + pts + ' điểm (còn ' + Math.ceil(timeLeft) + ' giây)<br/>Tổng: ' + totalScore + ' / ' + TARGET + ' điểm';
+    bigMsg.style.display = 'block';
+    setTimeout(function(){
+      bigMsg.style.display = 'none';
+      if (round >= ROUNDS){ endGame(totalScore >= TARGET, 'done'); }
+      else { round++; loadRound(); state = 'play'; startTimer(); }
+    }, 1700);
+  }
+  function endGame(won, reason){
     state = 'over'; stopTimer();
+    startBtn.textContent = '▶ Chơi lại';
     if (won){
       var rec = '';
-      if (!bestTime || seconds < bestTime){ bestTime = seconds; localStorage.setItem('spotKemBestTime', bestTime); rec = ' · Kỷ lục mới! 🏆'; }
-      bigMsg.innerHTML = '🎉 TÌM ĐỦ 5 ĐIỂM trong ' + fmtT(seconds) + '!' + rec + '<br/>Mã VOUCHER $10 hiện ngay bên dưới game 👇';
+      if (totalScore > bestScore){ bestScore = totalScore; localStorage.setItem('spotKemBestScore', bestScore); rec = ' · Kỷ lục mới! 🏆'; }
+      bigMsg.innerHTML = '🏆 THẮNG RỒI! Tổng ' + totalScore + ' điểm' + rec + '<br/>Mã VOUCHER $10 hiện ngay bên dưới game 👇';
       claimVoucher('spot');
+    } else if (reason === 'time'){
+      bigMsg.innerHTML = '⏰ Hết giờ ở vòng ' + round + '! Tổng: ' + totalScore + ' điểm.<br/>Đủ ' + TARGET + ' điểm trong ' + ROUNDS + ' vòng mới thắng — thử lại nhé!';
     } else {
-      bigMsg.innerHTML = '💔 Hết tim rồi! Bạn tìm được ' + found.length + '/5 điểm.<br/>Bấm Chơi lại thử lần nữa nhé!';
+      bigMsg.innerHTML = '💔 Hết ' + ROUNDS + ' vòng — tổng ' + totalScore + ' điểm, chưa đủ ' + TARGET + '.<br/>Tìm nhanh hơn nữa là thắng!';
     }
     bigMsg.style.display = 'block';
     showInterstitial(won);
@@ -305,38 +593,41 @@
     var r = svg.getBoundingClientRect();
     var x = (e.clientX - r.left) * (400 / r.width);
     var y = (e.clientY - r.top) * (300 / r.height);
-    for (var i = 0; i < DIFFS.length; i++){
+    var diffs = curDiffs();
+    for (var i = 0; i < diffs.length; i++){
       if (found.indexOf(i) >= 0) continue;
-      var d = DIFFS[i], dx = x - d.x, dy = y - d.y;
+      var d = diffs[i], dx = x - d.x, dy = y - d.y;
       if (dx * dx + dy * dy <= d.r * d.r){
         found.push(i);
         addMarker(panelA, d); addMarker(panelB, d);
         SFX.good(); renderStatus();
-        if (found.length >= 5) endGame(true);
+        if (found.length >= 5) completeRound();
         return;
       }
     }
-    hearts--; SFX.bad(); addFx(panel, x, y); renderStatus();
-    if (hearts <= 0) endGame(false);
+    timeLeft = Math.max(0, timeLeft - 5);
+    SFX.bad(); addFx(panel, x, y); renderStatus();
+    if (timeLeft <= 0) endGame(false, 'time');
   }
   panelA.addEventListener('pointerdown', function(e){ tapOn(panelA, e); });
   panelB.addEventListener('pointerdown', function(e){ tapOn(panelB, e); });
   startBtn.addEventListener('click', function(){
     SFX.unlock();
     if (adShowing) return;
-    if (state === 'play'){ startGame(); return; }
-    if (gatePlay()) startGame();
+    if (state === 'play' || state === 'splash'){ startRun(); return; }
+    if (gatePlay()) startRun();
   });
   hintBtn.addEventListener('click', function(){
     if (state !== 'play' || hintUsed) return;
-    var rest = DIFFS.filter(function(d, i){ return found.indexOf(i) < 0; });
+    var diffs = curDiffs();
+    var rest = diffs.filter(function(d, i){ return found.indexOf(i) < 0; });
     if (!rest.length) return;
     hintUsed = true; hintBtn.textContent = '💡 Đã dùng';
     var d = rest[Math.floor(Math.random() * rest.length)];
     var m1 = addMarker(panelA, d, 'hintmk'), m2 = addMarker(panelB, d, 'hintmk');
     setTimeout(function(){ m1.remove(); m2.remove(); }, 1300);
   });
-  renderStatus();
+  loadRound();
 
   /* ===== VOUCHER $10 KHI THANG ===== */
   var SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
@@ -422,7 +713,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-2155";
+window.__BUILD__ = "20261117-2205";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
