@@ -46,6 +46,7 @@
     <h1>🐒 Monkey Catch Kem</h1>
     <p>Di chuyển khỉ hứng viên kem rơi · Đạt 1.000 điểm nhận quà!</p>
   </div>
+  <span id="tokenChip" style="font-size:13px;font-weight:700;color:#8d6e00;background:#fff8e1;border:1.5px solid #ffe082;border-radius:999px;padding:6px 10px;">🪙 …</span>
   <button id="soundBtn" type="button" aria-label="Bật/tắt âm thanh"
     style="font-size:22px;background:#fff;border:1.5px solid #f3c6d3;border-radius:999px;padding:6px 12px;cursor:pointer">🔊</button>
 </header>
@@ -64,9 +65,9 @@
 <div id="limitBox" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(20,8,12,.92);flex-direction:column;align-items:center;justify-content:center;padding:22px;">
   <div style="background:#fff;border-radius:20px;padding:26px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 10px 34px rgba(0,0,0,.45);">
     <div style="font-size:40px;">🎮</div>
-    <h2 style="font-size:20px;color:#c62828;margin:8px 0;">Bạn đã chơi hết 10 lượt miễn phí</h2>
-    <p style="font-size:14.5px;color:#555;line-height:1.55;">Tạo tài khoản miễn phí để chơi tiếp không giới hạn — thắng game còn nhận voucher $10 nữa nhé!</p>
-    <a href="../dat-com/" style="display:inline-block;margin-top:16px;background:#c62828;color:#fff;font-weight:800;padding:13px 28px;border-radius:999px;text-decoration:none;font-size:16px;">Đăng ký / Đăng nhập →</a>
+    <h2 id="limitTitle" style="font-size:20px;color:#c62828;margin:8px 0;">Bạn đã chơi hết 10 lượt miễn phí</h2>
+    <p id="limitText" style="font-size:14.5px;color:#555;line-height:1.55;">Đăng nhập để chơi tiếp bằng token — tài khoản mới được tặng ngay 10 token!</p>
+    <a id="limitCta" href="../dat-com/?login=1" style="display:inline-block;margin-top:16px;background:#c62828;color:#fff;font-weight:800;padding:13px 28px;border-radius:999px;text-decoration:none;font-size:16px;">Đăng ký / Đăng nhập →</a>
     <div><button id="limitClose" type="button" style="margin-top:12px;background:none;border:none;color:#999;font-size:14px;cursor:pointer;">Để sau</button></div>
   </div>
 </div>
@@ -345,23 +346,64 @@
   });
 
 
-  /* ===== GIOI HAN GUEST: 10 LUOT CHOI, DANG NHAP = KHONG GIOI HAN ===== */
+  /* ===== TOKEN: guest 10 luot free, dang nhap tru 1 token/luot ===== */
   var PLAY_KEY = 'guestPlaysV1', PLAY_LIMIT = 10;
-  function isLoggedIn(){ try { var s = JSON.parse(localStorage.getItem('te_account_session') || 'null'); return !!(s && s.access_token && (!s.expires_at || s.expires_at > Date.now())); } catch(e){ return false; } }
+  var tokenBalance = null;
+  function teSession(){ try { return JSON.parse(localStorage.getItem('te_account_session') || 'null'); } catch(e){ return null; } }
+  function isLoggedIn(){ var s = teSession(); return !!(s && s.access_token && (!s.expires_at || s.expires_at > Date.now())); }
   function guestPlays(){ try { return +(localStorage.getItem(PLAY_KEY) || 0); } catch(e){ return 0; } }
-  function canPlay(){ return isLoggedIn() || guestPlays() < PLAY_LIMIT; }
-  function registerPlay(){ if (!isLoggedIn()){ try { localStorage.setItem(PLAY_KEY, guestPlays() + 1); } catch(e){} } }
-  function showLimit(){ var b = document.getElementById('limitBox'); if (b) b.style.display = 'flex'; }
-  function gatePlay(){ if (canPlay()){ registerPlay(); return true; } showLimit(); return false; }
+  function registerPlay(){ try { localStorage.setItem(PLAY_KEY, guestPlays() + 1); } catch(e){} }
+  function rpcAuth(fn, body){
+    var s = teSession();
+    return fetch('https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/rpc/' + fn, {
+      method: 'POST',
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + (s && s.access_token ? s.access_token : SB_ANON), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    }).then(function(r){ return r.json(); });
+  }
+  function updateChip(){
+    var c = document.getElementById('tokenChip'); if (!c) return;
+    if (isLoggedIn()) c.textContent = '🪙 ' + (tokenBalance == null ? '…' : tokenBalance);
+    else c.textContent = '🪙 Free: ' + Math.max(0, PLAY_LIMIT - guestPlays());
+  }
+  function refreshBalance(){
+    if (!isLoggedIn()){ updateChip(); return; }
+    rpcAuth('get_token_balance', {}).then(function(b){ if (typeof b === 'number') tokenBalance = b; updateChip(); }).catch(function(){ updateChip(); });
+  }
+  function showLimit(mode){
+    var t = document.getElementById('limitTitle'), x = document.getElementById('limitText'), a = document.getElementById('limitCta');
+    if (mode === 'token'){
+      t.textContent = 'Bạn đã hết token';
+      x.textContent = 'Mỗi lượt chơi 1 token (2 cent). Mua thêm token để chơi tiếp nhé!';
+      a.textContent = '🪙 Mua token →'; a.href = '../mua-token/';
+    } else {
+      t.textContent = 'Bạn đã chơi hết 10 lượt miễn phí';
+      x.textContent = 'Đăng nhập để chơi tiếp bằng token — tài khoản mới được tặng ngay 10 token!';
+      a.textContent = 'Đăng nhập / Đăng ký →'; a.href = '../dat-com/?login=1';
+    }
+    document.getElementById('limitBox').style.display = 'flex';
+  }
+  function gatePlay(){
+    if (!isLoggedIn()){
+      if (guestPlays() < PLAY_LIMIT){ registerPlay(); updateChip(); return true; }
+      showLimit('guest'); return false;
+    }
+    if (tokenBalance == null){ refreshBalance(); return true; }
+    if (tokenBalance <= 0){ showLimit('token'); return false; }
+    tokenBalance--; updateChip();
+    rpcAuth('spend_token', { p_game: 'monkey' }).then(function(r){ if (r && typeof r.balance === 'number'){ tokenBalance = r.balance; updateChip(); } }).catch(function(){});
+    return true;
+  }
   document.getElementById('limitClose').addEventListener('click', function(){ document.getElementById('limitBox').style.display = 'none'; });
 
   var ads = [document.getElementById('ad1'), document.getElementById('ad2')], ai = 0;
   setInterval(function(){ ads[ai].classList.remove('show'); ai = (ai + 1) % ads.length; ads[ai].classList.add('show'); }, 8000);
+  refreshBalance();
 })();
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-2018";
+window.__BUILD__ = "20261117-2045";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {

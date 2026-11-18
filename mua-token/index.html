@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mua Token — Tasty Express</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system, "Segoe UI", Roboto, sans-serif; background:#fff5f7; color:#333;
+         display:flex; flex-direction:column; align-items:center; min-height:100vh; }
+  header { width:100%; max-width:430px; padding:14px 16px 4px; display:flex; align-items:center; gap:10px; }
+  header a.back { text-decoration:none; font-size:22px; color:#c62828; }
+  header h1 { font-size:21px; color:#c62828; }
+  header p { font-size:12.5px; color:#888; }
+  main { width:100%; max-width:430px; padding:10px 14px 24px; }
+  .bal { background:linear-gradient(135deg,#fff8e1,#ffecb3); border:2px solid #ffe082; border-radius:16px;
+         padding:16px; text-align:center; margin-bottom:14px; }
+  .bal .n { font-size:32px; font-weight:900; color:#c62828; }
+  .bal .l { font-size:13px; color:#6d4c00; }
+  .pack { background:#fff; border:1.5px solid #f3c6d3; border-radius:16px; padding:16px;
+          display:flex; align-items:center; gap:12px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+  .pack .tk { font-size:22px; font-weight:900; color:#333; }
+  .pack .pr { font-size:14px; color:#888; }
+  .pack button { margin-left:auto; background:#c62828; color:#fff; border:none; font-weight:800;
+                 font-size:15px; padding:12px 22px; border-radius:999px; cursor:pointer; }
+  .pack button:disabled { opacity:.55; }
+  .pack.hot { border-color:#e0a800; background:linear-gradient(135deg,#fffde7,#fff8e1); }
+  .tag { font-size:10.5px; font-weight:800; color:#e0a800; letter-spacing:.5px; }
+  .note { font-size:13px; color:#777; text-align:center; line-height:1.6; margin-top:6px; }
+  #msg { display:none; border-radius:14px; padding:13px 15px; font-size:14.5px; text-align:center; margin-bottom:14px; line-height:1.5; }
+  #msg.ok { display:block; background:#e8f5e9; color:#2e7d32; border:1.5px solid #a5d6a7; }
+  #msg.err { display:block; background:#ffebee; color:#c62828; border:1.5px solid #ef9a9a; }
+  .login-box { background:#fff; border:1.5px solid #f3c6d3; border-radius:16px; padding:20px 16px; text-align:center; }
+  .login-box a { display:inline-block; margin-top:12px; background:#c62828; color:#fff; font-weight:800;
+                 padding:13px 28px; border-radius:999px; text-decoration:none; font-size:16px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../game/">‹</a>
+  <div>
+    <h1>🪙 Mua Token</h1>
+    <p>1 token = 1 lượt chơi game · 1 token = 2 cent</p>
+  </div>
+</header>
+
+<main>
+  <div id="msg"></div>
+
+  <div class="bal">
+    <div class="l">Số token của bạn</div>
+    <div class="n" id="balNum">…</div>
+    <div class="l" id="balEmail"></div>
+  </div>
+
+  <div id="packs">
+    <div class="pack">
+      <div><div class="tk">50 token</div><div class="pr">$1.00</div></div>
+      <button type="button" data-pack="p50">Mua</button>
+    </div>
+    <div class="pack hot">
+      <div><div class="tag">★ PHỔ BIẾN</div><div class="tk">250 token</div><div class="pr">$5.00</div></div>
+      <button type="button" data-pack="p250">Mua</button>
+    </div>
+    <div class="pack">
+      <div><div class="tk">500 token</div><div class="pr">$10.00</div></div>
+      <button type="button" data-pack="p500">Mua</button>
+    </div>
+  </div>
+
+  <div id="loginBox" class="login-box" style="display:none;">
+    <div style="font-size:32px;">🔐</div>
+    <p style="font-size:15px;color:#555;line-height:1.55;margin-top:6px;">Bạn cần đăng nhập để mua token — token gắn với tài khoản của bạn, chơi game trên máy nào cũng dùng được.</p>
+    <a href="../dat-com/?login=1">Đăng nhập / Đăng ký →</a>
+  </div>
+
+  <p class="note">Thanh toán an toàn bằng thẻ qua Stripe.<br/>Token cộng vào tài khoản ngay sau khi thanh toán xong.<br/>Thắng game nhận voucher $10 — nhập mã khi thanh toán trên app!</p>
+</main>
+
+<script>
+(function(){
+  var SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+  var RPC = "https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/rpc/";
+  var CHECKOUT_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/functions/v1/create-checkout";
+  var RECEIPT_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/functions/v1/order-receipt";
+  var PAGE = "https://tastyexpress-ca.github.io/tuyen-giao/mua-token/";
+  var msg = document.getElementById('msg');
+
+  function session(){ try { return JSON.parse(localStorage.getItem('te_account_session') || 'null'); } catch(e){ return null; } }
+  function loggedIn(){ var s = session(); return !!(s && s.access_token && (!s.expires_at || s.expires_at > Date.now())); }
+  function rpc(fn, body){
+    var s = session();
+    return fetch(RPC + fn, { method: 'POST',
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + (s ? s.access_token : SB_ANON), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}) }).then(function(r){ return r.json(); });
+  }
+  function showMsg(kind, text){ msg.className = kind; msg.textContent = text; }
+  function refreshBalance(){
+    if (!loggedIn()) return;
+    rpc('get_token_balance', {}).then(function(b){
+      if (typeof b === 'number') document.getElementById('balNum').textContent = b;
+    }).catch(function(){});
+  }
+
+  var s = session();
+  if (!loggedIn()){
+    document.getElementById('packs').style.display = 'none';
+    document.getElementById('loginBox').style.display = 'block';
+    document.getElementById('balNum').textContent = '—';
+  } else {
+    if (s.email) document.getElementById('balEmail').textContent = s.email;
+    refreshBalance();
+  }
+
+  document.getElementById('packs').addEventListener('click', function(e){
+    var btn = e.target.closest ? e.target.closest('button[data-pack]') : null;
+    if (!btn || btn.disabled) return;
+    var pack = btn.getAttribute('data-pack');
+    btn.disabled = true; btn.textContent = 'Đang mở…';
+    rpc('create_token_purchase', { p_pack: pack }).then(function(r){
+      if (!r || !r.ok) throw new Error('purchase');
+      return fetch(CHECKOUT_URL, { method: 'POST',
+        headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: null,
+          amount_cents: r.amount_cents,
+          phone: '',
+          shop: 'thinks-kitchen',
+          tax_cents: 0,
+          description: 'Tasty Express — Mua ' + r.tokens + ' token chơi game',
+          success_url: PAGE + '?paid=1&tp=' + r.id,
+          cancel_url: PAGE
+        }) }).then(function(res){ return res.json(); }).then(function(d){
+          if (d && d.url){ window.location.href = d.url; return; }
+          throw new Error('checkout');
+        });
+    }).catch(function(){
+      btn.disabled = false; btn.textContent = 'Mua';
+      showMsg('err', '❌ Chưa mở được trang thanh toán, bạn thử lại nhé.');
+    });
+  });
+
+  /* Sau khi tra tien xong quay lai: cong token */
+  var qs = new URLSearchParams(window.location.search);
+  var tp = qs.get('tp'), sid = qs.get('session_id');
+  if (qs.get('paid') === '1' && tp && loggedIn()){
+    var flag = 'token_credited_' + tp;
+    if (!sessionStorage.getItem(flag)){
+      sessionStorage.setItem(flag, '1');
+      showMsg('ok', '⏳ Đang cộng token vào tài khoản của bạn…');
+      var credit = function(){
+        rpc('credit_token_purchase', { p_purchase_id: +tp, p_session_id: sid || '' }).then(function(r){
+          if (r && r.ok){
+            showMsg('ok', '🎉 Đã cộng ' + r.tokens + ' token! Số dư của bạn: ' + r.balance + ' token. Chúc bạn chơi vui!');
+            document.getElementById('balNum').textContent = r.balance;
+          } else {
+            showMsg('err', '❌ Chưa cộng được token. Bạn chụp màn hình thanh toán gửi tiệm qua Messenger, tiệm cộng tay cho bạn nhé.');
+          }
+        }).catch(function(){
+          showMsg('err', '❌ Chưa cộng được token. Bạn chụp màn hình thanh toán gửi tiệm qua Messenger, tiệm cộng tay cho bạn nhé.');
+        });
+      };
+      if (sid){
+        fetch(RECEIPT_URL, { method: 'POST',
+          headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sid }) }).then(function(){ credit(); }).catch(function(){ credit(); });
+      } else credit();
+    }
+  }
+})();
+</script>
+<script>
+/* Tu dong cap nhat ban moi (Chris 2026-10-26) */
+window.__BUILD__ = "20261117-2045";
+(function () {
+  var KEY = "build-reloaded-for";
+  function check() {
+    fetch("/tuyen-giao/version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.build) return;
+        if (j.build === window.__BUILD__) {
+          try { sessionStorage.removeItem(KEY); } catch (e) {}
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(KEY) === j.build) return;
+          sessionStorage.setItem(KEY, j.build);
+        } catch (e) {}
+        location.reload();
+      })
+      .catch(function () {});
+  }
+  check();
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) check();
+  });
+  setInterval(check, 300000);
+})();
+</script>
+</body>
+</html>
