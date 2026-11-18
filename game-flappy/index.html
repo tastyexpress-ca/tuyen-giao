@@ -33,7 +33,7 @@
   <a class="back" href="../home/">‹</a>
   <div>
     <h1>🍦 Flappy Kem</h1>
-    <p>Chạm màn hình để bay · Đạt 200 điểm nhận quà kem!</p>
+    <p>Chạm màn hình để bay · Đạt 150 điểm nhận quà kem!</p>
   </div>
 </header>
 
@@ -159,7 +159,7 @@
       ctx.font = '17px -apple-system, sans-serif';
       ctx.fillText('Chạm màn hình để bắt đầu', W/2, H/2 - 26);
       ctx.fillText('Bay qua các cột chocolate 🍫', W/2, H/2 + 2);
-      ctx.fillText('Đạt 200 điểm = có quà kem 🎁', W/2, H/2 + 30);
+      ctx.fillText('Đạt 150 điểm = có quà kem 🎁', W/2, H/2 + 30);
     }
     if (state === 'over'){
       ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 0, W, H);
@@ -170,7 +170,7 @@
       ctx.fillText('Điểm: ' + score, W/2, H/2 - 56);
       ctx.font = '16px -apple-system, sans-serif';
       ctx.fillText('Kỷ lục: ' + best, W/2, H/2 - 28);
-      if (score >= 200){
+      if (score >= 150){
         ctx.fillStyle = '#ffe082';
         ctx.font = 'bold 16px -apple-system, sans-serif';
         ctx.fillText('🎁 ĐẠT ' + score + ' ĐIỂM — CÓ QUÀ!', W/2, H/2 + 8);
@@ -225,7 +225,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-1730";
+window.__BUILD__ = "20261117-1735";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
