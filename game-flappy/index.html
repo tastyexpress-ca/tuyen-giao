@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Flappy Kem — Tasty Express</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system, "Segoe UI", Roboto, sans-serif; background:#fff5f7; color:#333;
+         display:flex; flex-direction:column; align-items:center; min-height:100vh; }
+  header { width:100%; max-width:430px; padding:12px 16px 4px; display:flex; align-items:center; gap:10px; }
+  header a.back { text-decoration:none; font-size:22px; color:#c62828; }
+  header h1 { font-size:20px; color:#c62828; }
+  header p { font-size:12px; color:#888; }
+  #wrap { width:100%; max-width:430px; padding:6px 12px 0; }
+  canvas { width:100%; display:block; border-radius:16px; box-shadow:0 4px 18px rgba(0,0,0,.15);
+           touch-action:none; background:#aee7ff; }
+  .hint { text-align:center; font-size:13px; color:#777; padding:8px 0 2px; }
+  /* ===== O QUANG CAO (house ads — sau nay thay bang mang quang cao game) ===== */
+  #adslot { width:100%; max-width:430px; padding:10px 12px 18px; }
+  .ad-label { font-size:10px; letter-spacing:1px; color:#bbb; text-align:center; margin-bottom:4px; }
+  .ad-card { display:none; border-radius:14px; padding:14px 16px; text-decoration:none; color:#fff;
+             box-shadow:0 3px 10px rgba(0,0,0,.15); }
+  .ad-card.show { display:block; }
+  .ad-card h3 { font-size:17px; margin-bottom:3px; }
+  .ad-card p { font-size:13px; opacity:.92; }
+  .ad-party { background:linear-gradient(135deg,#ec407a,#c62828); }
+  .ad-comthang { background:linear-gradient(135deg,#43a047,#2e7d32); }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../home/">‹</a>
+  <div>
+    <h1>🍦 Flappy Kem</h1>
+    <p>Chạm màn hình để bay · Đạt 20 điểm nhận quà kem!</p>
+  </div>
+</header>
+
+<div id="wrap"><canvas id="game" width="400" height="560"></canvas></div>
+<p class="hint">Chạm / click / phím cách để vỗ cánh 🪽</p>
+
+<!-- ===== O QUANG CAO ===== -->
+<div id="adslot">
+  <div class="ad-label">QUẢNG CÁO</div>
+  <a class="ad-card ad-party show" id="ad1" href="../dat-kem/">
+    <h3>🎉 Ice Cream Party Bar — từ $135</h3>
+    <p>Đặt tiệc kem cho sinh nhật, sự kiện · Ăn thoải mái 2 giờ · Bấm để xem các gói tiệc</p>
+  </a>
+  <a class="ad-card ad-comthang" id="ad2" href="../dat-com/">
+    <h3>🍱 Cơm tháng chỉ $9.50/phần</h3>
+    <p>Đăng ký cơm tháng cho gia đình &amp; văn phòng · Bấm để đặt ngay</p>
+  </a>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('game'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height, GROUND = 64;
+  var state = 'ready'; // ready | play | over
+  var bird, pipes, score, best = +(localStorage.getItem('flappyKemBest')||0), frame, gamesPlayed = 0;
+  var GRAV = 0.42, FLAP = -7.6, SPEED = 2.4, GAP = 158, PW = 68;
+
+  function reset(){
+    bird = { x: 96, y: H/2 - 40, v: 0, r: 17 };
+    pipes = []; score = 0; frame = 0;
+  }
+  reset();
+
+  function spawnPipe(){
+    var top = 60 + Math.random() * (H - GROUND - GAP - 140);
+    pipes.push({ x: W + 20, top: top, passed: false });
+  }
+
+  function flap(){
+    if (state === 'ready'){ state = 'play'; bird.v = FLAP; }
+    else if (state === 'play'){ bird.v = FLAP; }
+    else if (state === 'over' && frame > 25){ reset(); state = 'ready'; }
+  }
+  cv.addEventListener('pointerdown', function(e){ e.preventDefault(); flap(); });
+  document.addEventListener('keydown', function(e){ if (e.code === 'Space'){ e.preventDefault(); flap(); } });
+
+  function drawBird(){
+    ctx.save();
+    ctx.translate(bird.x, bird.y);
+    var tilt = Math.max(-0.45, Math.min(0.9, bird.v * 0.07));
+    ctx.rotate(tilt);
+    // canh
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.ellipse(-14, 2, 12, 6, -0.5, 0, Math.PI*2); ctx.fill();
+    // oc que (than)
+    ctx.fillStyle = '#e0a458';
+    ctx.beginPath(); ctx.moveTo(-9, 6); ctx.lineTo(9, 6); ctx.lineTo(0, 26); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#b97e35'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(-6, 12); ctx.lineTo(5, 12); ctx.moveTo(-4, 18); ctx.lineTo(3, 18); ctx.stroke();
+    // vien kem
+    ctx.fillStyle = '#ff8fab';
+    ctx.beginPath(); ctx.arc(0, -2, 16, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#ffc2d4';
+    ctx.beginPath(); ctx.arc(-5, -8, 9, 0, Math.PI*2); ctx.fill();
+    // cherry
+    ctx.fillStyle = '#d90429';
+    ctx.beginPath(); ctx.arc(3, -17, 4.5, 0, Math.PI*2); ctx.fill();
+    // mat + ma hong
+    ctx.fillStyle = '#222';
+    ctx.beginPath(); ctx.arc(7, -3, 2.4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,90,120,.55)';
+    ctx.beginPath(); ctx.arc(11, 2, 3.4, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPipe(x, y, h, isTop){
+    var g = ctx.createLinearGradient(x, 0, x + PW, 0);
+    g.addColorStop(0, '#7b4a21'); g.addColorStop(0.5, '#a9713a'); g.addColorStop(1, '#7b4a21');
+    ctx.fillStyle = g;
+    ctx.fillRect(x, y, PW, h);
+    ctx.fillStyle = '#5d3715';
+    var rimY = isTop ? y + h - 22 : y;
+    ctx.fillRect(x - 4, rimY, PW + 8, 22);
+    ctx.fillStyle = 'rgba(255,255,255,.16)';
+    for (var i = 0; i < h; i += 26) ctx.fillRect(x + 8, y + i + 4, 5, 14);
+  }
+
+  function draw(){
+    // troi
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#8ed8ff'); sky.addColorStop(1, '#e8f9ff');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    // may
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    [[60,70,26],[210,44,18],[320,96,22],[130,150,15]].forEach(function(c){
+      var cx = ((c[0] - frame*0.3) % (W+80) + W+80) % (W+80) - 40;
+      ctx.beginPath(); ctx.arc(cx, c[1], c[2], 0, Math.PI*2);
+      ctx.arc(cx + c[2]*0.9, c[1] + 4, c[2]*0.7, 0, Math.PI*2); ctx.fill();
+    });
+    // ong
+    pipes.forEach(function(p){
+      drawPipe(p.x, 0, p.top, true);
+      drawPipe(p.x, p.top + GAP, H - GROUND - (p.top + GAP), false);
+    });
+    // dat banh waffle
+    ctx.fillStyle = '#f2c879'; ctx.fillRect(0, H - GROUND, W, GROUND);
+    ctx.strokeStyle = 'rgba(160,105,40,.5)'; ctx.lineWidth = 2;
+    for (var x = -((frame*SPEED) % 28); x < W; x += 28){
+      ctx.beginPath(); ctx.moveTo(x, H - GROUND); ctx.lineTo(x + 28, H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + 28, H - GROUND); ctx.lineTo(x, H); ctx.stroke();
+    }
+    ctx.fillStyle = '#c62828'; ctx.fillRect(0, H - GROUND, W, 4);
+    drawBird();
+    // diem
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 5;
+    ctx.font = 'bold 44px -apple-system, sans-serif'; ctx.textAlign = 'center';
+    if (state !== 'ready'){ ctx.strokeText(score, W/2, 72); ctx.fillText(score, W/2, 72); }
+
+    if (state === 'ready'){
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 30px -apple-system, sans-serif';
+      ctx.fillText('FLAPPY KEM', W/2, H/2 - 60);
+      ctx.font = '17px -apple-system, sans-serif';
+      ctx.fillText('Chạm màn hình để bắt đầu', W/2, H/2 - 26);
+      ctx.fillText('Bay qua các cột chocolate 🍫', W/2, H/2 + 2);
+      ctx.fillText('Đạt 20 điểm = có quà kem 🎁', W/2, H/2 + 30);
+    }
+    if (state === 'over'){
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 30px -apple-system, sans-serif';
+      ctx.fillText('THUA RỒI! 😆', W/2, H/2 - 96);
+      ctx.font = 'bold 22px -apple-system, sans-serif';
+      ctx.fillText('Điểm: ' + score, W/2, H/2 - 56);
+      ctx.font = '16px -apple-system, sans-serif';
+      ctx.fillText('Kỷ lục: ' + best, W/2, H/2 - 28);
+      if (score >= 20){
+        ctx.fillStyle = '#ffe082';
+        ctx.font = 'bold 16px -apple-system, sans-serif';
+        ctx.fillText('🎁 ĐẠT ' + score + ' ĐIỂM — CÓ QUÀ!', W/2, H/2 + 8);
+        ctx.fillStyle = '#fff'; ctx.font = '14px -apple-system, sans-serif';
+        ctx.fillText('Chụp màn hình này gửi tiệm qua', W/2, H/2 + 32);
+        ctx.fillText('Messenger để nhận quà kem nhé!', W/2, H/2 + 52);
+      }
+      ctx.font = '15px -apple-system, sans-serif';
+      ctx.fillText('Chạm để chơi lại', W/2, H/2 + 88);
+    }
+    ctx.textAlign = 'left';
+  }
+
+  function step(){
+    frame++;
+    if (state === 'play'){
+      bird.v += GRAV; bird.y += bird.v;
+      if (frame % 105 === 0) spawnPipe();
+      for (var i = pipes.length - 1; i >= 0; i--){
+        var p = pipes[i];
+        p.x -= SPEED;
+        if (!p.passed && p.x + PW < bird.x){ p.passed = true; score++; }
+        if (p.x + PW < -10) pipes.splice(i, 1);
+        // va cham
+        if (bird.x + bird.r - 3 > p.x && bird.x - bird.r + 3 < p.x + PW &&
+            (bird.y - bird.r + 3 < p.top || bird.y + bird.r - 3 > p.top + GAP)){
+          state = 'over';
+        }
+      }
+      if (bird.y + bird.r > H - GROUND || bird.y - bird.r < 0){
+        bird.y = Math.min(bird.y, H - GROUND - bird.r);
+        state = 'over';
+      }
+      if (state === 'over'){
+        gamesPlayed++;
+        if (score > best){ best = score; localStorage.setItem('flappyKemBest', best); }
+      }
+    } else if (state === 'ready'){
+      bird.y = H/2 - 40 + Math.sin(frame * 0.06) * 7;
+    }
+    draw();
+    requestAnimationFrame(step);
+  }
+  step();
+
+  // Xoay vong quang cao nha moi 8 giay
+  var ads = [document.getElementById('ad1'), document.getElementById('ad2')], ai = 0;
+  setInterval(function(){
+    ads[ai].classList.remove('show'); ai = (ai + 1) % ads.length; ads[ai].classList.add('show');
+  }, 8000);
+})();
+</script>
+<script>
+/* Tu dong cap nhat ban moi (Chris 2026-10-26) */
+window.__BUILD__ = "20261117-1725";
+(function () {
+  var KEY = "build-reloaded-for";
+  function check() {
+    fetch("/tuyen-giao/version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.build) return;
+        if (j.build === window.__BUILD__) {
+          try { sessionStorage.removeItem(KEY); } catch (e) {}
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(KEY) === j.build) return;
+          sessionStorage.setItem(KEY, j.build);
+        } catch (e) {}
+        location.reload();
+      })
+      .catch(function () {});
+  }
+  check();
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) check();
+  });
+  setInterval(check, 300000);
+})();
+</script>
+</body>
+</html>
