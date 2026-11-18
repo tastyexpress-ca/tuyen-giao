@@ -85,6 +85,16 @@
     <button id="replayBtn" type="button">Chơi lại</button>
   </div>
 </div>
+
+<div id="voucherBox" style="display:none;width:100%;max-width:430px;padding:0 12px;margin-top:10px;">
+  <div style="background:linear-gradient(135deg,#fff8e1,#ffecb3);border:2px dashed #e0a800;border-radius:16px;padding:14px 16px;text-align:center;">
+    <div style="font-size:14px;font-weight:700;color:#6d4c00;">🎁 VOUCHER $10 CỦA BẠN</div>
+    <div id="voucherCode" style="font-size:27px;font-weight:900;letter-spacing:2px;color:#c62828;margin:6px 0;">…</div>
+    <div style="font-size:12.5px;color:#6d4c00;line-height:1.5;">Nhập mã này khi thanh toán trên app để được giảm $10<br/>Mỗi mã chỉ dùng được 1 lần — nhớ lưu lại mã nhé!</div>
+    <button id="voucherCopy" type="button" style="margin-top:9px;background:#c62828;color:#fff;border:none;font-weight:700;font-size:14px;padding:9px 20px;border-radius:999px;cursor:pointer;">📋 Copy mã</button>
+  </div>
+</div>
+
 <p class="hint">Chạm 1 ô rồi chạm ô kề bên để đổi chỗ — ghép từ 3 ô giống nhau trở lên để ghi điểm. Ghép càng dài, điểm càng cao!</p>
 <button id="shuffleBtn" type="button">🔀 Trộn lại bàn</button>
 
@@ -290,8 +300,9 @@
     SFX.end();
     if (score > best){ best = score; localStorage.setItem('match3KemBest', best); bestEl.textContent = best; }
     var won = score >= PRIZE;
+    if (won) claimVoucher('match3');
     ovText.innerHTML = 'Bạn được <b>' + score + '</b> điểm · Kỷ lục: ' + best +
-      (won ? '<br><span class="prize">🎁 ĐẠT ' + score + ' ĐIỂM — CÓ QUÀ!<br>Chụp màn hình này gửi tiệm qua Messenger để nhận quà kem nhé!</span>' : '');
+      (won ? '<br><span class="prize">🎁 ĐẠT ' + score + ' ĐIỂM — CÓ QUÀ!<br>Bạn được tặng 1 VOUCHER $10!<br>Mã voucher hiện ngay bên dưới game — nhập mã khi thanh toán trên app để giảm $10.</span>' : '');
     replayBtn.disabled = true;
     replayBtn.textContent = 'Đang quảng cáo…';
     overlay.classList.add('show');
@@ -303,6 +314,7 @@
   }
 
   function startGame(){
+    hideVoucher();
     newBoard(); score = 0; timeLeft = TIME0; sel = null; busy = false; playing = true;
     scoreEl.textContent = '0'; timeEl.textContent = timeLeft;
     overlay.classList.remove('show');
@@ -321,13 +333,35 @@
   ovText.innerHTML = 'Ghép 3 vị kem giống nhau để ghi điểm trong ' + TIME0 + ' giây.<br>Đạt <b>' + PRIZE + '</b> điểm = nhận quà kem 🎁';
   replayBtn.textContent = 'Bắt đầu chơi';
 
+
+  /* ===== VOUCHER $10 KHI THANG ===== */
+  var SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+  function claimVoucher(game){
+    fetch('https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/rpc/claim_game_voucher', {
+      method: 'POST',
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_game: game })
+    }).then(function(r){ return r.json(); }).then(function(code){
+      if (code) {
+        document.getElementById('voucherCode').textContent = code;
+        document.getElementById('voucherBox').style.display = 'block';
+      }
+    }).catch(function(){});
+  }
+  function hideVoucher(){ var b = document.getElementById('voucherBox'); if (b) b.style.display = 'none'; }
+  document.getElementById('voucherCopy').addEventListener('click', function(){
+    var code = document.getElementById('voucherCode').textContent;
+    var btn = this;
+    if (navigator.clipboard) navigator.clipboard.writeText(code).then(function(){ btn.textContent = '✅ Đã copy!'; setTimeout(function(){ btn.textContent = '📋 Copy mã'; }, 2000); });
+  });
+
   var ads = [document.getElementById('ad1'), document.getElementById('ad2')], ai = 0;
   setInterval(function(){ ads[ai].classList.remove('show'); ai = (ai + 1) % ads.length; ads[ai].classList.add('show'); }, 8000);
 })();
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-1950";
+window.__BUILD__ = "20261117-2005";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {

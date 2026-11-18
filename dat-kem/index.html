@@ -478,6 +478,15 @@
               </div>
 
               <div class="field">
+                <label for="inVoucher">🎁 Mã voucher (nếu có)</label>
+                <div style="display:flex;gap:8px;">
+                  <input type="text" id="inVoucher" placeholder="Ví dụ: ACE-XXXXXX" style="flex:1;text-transform:uppercase;" />
+                  <button type="button" id="voucherBtn" style="background:#c62828;color:#fff;border:none;border-radius:10px;padding:0 18px;font-weight:700;cursor:pointer;">Áp dụng</button>
+                </div>
+                <div id="voucherMsg" style="font-size:13px;margin-top:5px;"></div>
+              </div>
+
+              <div class="field">
                 <label for="inNote">Ghi chú (không bắt buộc)</label>
                 <textarea id="inNote" placeholder="Ví dụ: giao giờ chiều, gọi trước khi giao…"></textarea>
               </div>
@@ -516,6 +525,15 @@
       var PRODUCTS_URL = SUPABASE_URL.replace(/\/web_orders$/, "/shop_products") + "?shop=eq.ace-creamery&available=eq.true&order=sort.asc,created_at.asc";
       var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
       var CHECKOUT_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/functions/v1/create-checkout";
+      var RPC_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/rpc/";
+      var voucherApplied = null;
+      function rpcCall(fn, body) {
+        return fetch(RPC_URL + fn, {
+          method: "POST",
+          headers: { "apikey": SUPABASE_ANON, "Authorization": "Bearer " + SUPABASE_ANON, "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        }).then(function (r) { return r.json(); });
+      }
       var RECEIPT_URL = "https://kxfvxtsoncpjleoiupwf.supabase.co/functions/v1/order-receipt";
       var CHECKOUT_SUCCESS_URL = "https://tastyexpress-ca.github.io/tuyen-giao/dat-kem/?paid=1";
       var CHECKOUT_CANCEL_URL = "https://tastyexpress-ca.github.io/tuyen-giao/dat-kem/?paid=0";
@@ -944,7 +962,9 @@
         // Đơn có Combo 18 ly = FREE giao (Chris 2026-11-01), giao 9AM–11AM hằng ngày
         var fee = (method === "delivery" && !cartHasCombo() && feeStatus === "ok" && deliveryFee != null) ? deliveryFee : 0;
         var tax = round2((sub + fee) * TAX_RATE);
-        return { sub: sub, fee: fee, tax: tax, total: round2(sub + fee + tax) };
+        var gross = round2(sub + fee + tax);
+        var disc = voucherApplied ? Math.min(10, gross) : 0;
+        return { sub: sub, fee: fee, tax: tax, disc: disc, total: round2(gross - disc) };
       }
 
       function renderTotals() {
@@ -962,12 +982,36 @@
             feeRow = '<div class="t-row"><span>Phí giao hàng</span><span>Tiệm gọi xác nhận</span></div>';
           }
         }
+        var tt = totals();
         $("totalsBox").innerHTML =
-          '<div class="t-row"><span>Tạm tính</span><span>' + money(totals().sub) + '</span></div>' +
+          '<div class="t-row"><span>Tạm tính</span><span>' + money(tt.sub) + '</span></div>' +
           feeRow +
-          '<div class="t-row"><span>Thuế 8.75%</span><span>' + money(totals().tax) + '</span></div>' +
-          '<div class="t-row grand"><span>Tổng cộng</span><span>' + money(totals().total) + '</span></div>';
+          '<div class="t-row"><span>Thuế 8.75%</span><span>' + money(tt.tax) + '</span></div>' +
+          (tt.disc > 0 ? '<div class="t-row"><span>Voucher ' + voucherApplied + '</span><span>−' + money(tt.disc) + '</span></div>' : '') +
+          '<div class="t-row grand"><span>Tổng cộng</span><span>' + money(tt.total) + '</span></div>';
       }
+
+      $("voucherBtn").addEventListener("click", function () {
+        var code = $("inVoucher").value.trim().toUpperCase();
+        var msg = $("voucherMsg");
+        if (!code) { msg.textContent = ""; return; }
+        msg.style.color = "#888"; msg.textContent = "Đang kiểm tra mã…";
+        rpcCall("check_game_voucher", { p_code: code }).then(function (r) {
+          if (r && r.valid) {
+            voucherApplied = code;
+            msg.style.color = "#2e7d32"; msg.textContent = "✅ Mã hợp lệ — bạn được giảm $10!";
+          } else {
+            voucherApplied = null;
+            msg.style.color = "#c62828"; msg.textContent = "❌ Mã không đúng hoặc đã được sử dụng.";
+          }
+          renderTotals();
+        }).catch(function () {
+          msg.style.color = "#c62828"; msg.textContent = "❌ Không kiểm tra được mã, bạn thử lại nhé.";
+        });
+      });
+      $("inVoucher").addEventListener("input", function () {
+        if (voucherApplied && this.value.trim().toUpperCase() !== voucherApplied) { voucherApplied = null; $("voucherMsg").textContent = ""; renderTotals(); }
+      });
 
       function setMethod(m) {
         method = m;
@@ -1001,6 +1045,7 @@
         var phone = $("inPhone").value.trim();
         var note = $("inNote").value.trim();
         var pay = document.querySelector("input[name=pay]:checked").value;
+        if (voucherApplied) note = (note ? note + " · " : "") + "Voucher " + voucherApplied + " −$" + t.disc;
         var items = cart.map(function (l) {
           return { name: l.name, detail: l.detail || "", qty: l.qty, price: l.price };
         });
@@ -1034,7 +1079,9 @@
           tax: t.tax,
           total: t.total,
           payment_method: pay,
-          note: note || null
+          note: note || null,
+          voucher: voucherApplied,
+          voucher_disc: t.disc
         };
       }
 
@@ -1068,6 +1115,9 @@
           html += '<div class="s-line"><span>Phí giao hàng</span><span>' + money(order.delivery_fee) + '</span></div>';
         }
         html += '<div class="s-line"><span>Thuế 8.75%</span><span>' + money(order.tax) + '</span></div>';
+        if (order.voucher_disc) {
+          html += '<div class="s-line"><span>Voucher ' + esc(order.voucher || "") + '</span><span>−' + money(order.voucher_disc) + '</span></div>';
+        }
         html += '<div class="s-total"><span>Tổng cộng</span><span>' + money(order.total) + '</span></div></div>';
         html += '<div class="summary-box"><h4>Thông tin của bạn</h4>';
         html += '<div class="s-meta"><b>' + esc(order.customer_name) + '</b> · ' + esc(order.phone) + '</div>';
@@ -1208,9 +1258,10 @@
             "Content-Type": "application/json",
             "Prefer": "return=minimal"
           },
-          body: JSON.stringify(order)
+          body: JSON.stringify((function () { var p = Object.assign({}, order); delete p.voucher; delete p.voucher_disc; return p; })())
         }).then(function (res) {
           if (!res.ok) throw new Error("insert failed");
+          if (voucherApplied) rpcCall("use_game_voucher", { p_code: voucherApplied, p_phone: order.phone || "" }).catch(function () {});
           saveOrderSummary(order);
           btn.textContent = "Đang mở trang thanh toán…";
           return requestCheckout(null, order).catch(function () {
@@ -1400,7 +1451,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261117-1950";
+window.__BUILD__ = "20261117-2005";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
