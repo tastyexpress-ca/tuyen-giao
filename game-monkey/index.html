@@ -44,7 +44,7 @@
   <a class="back" href="../game/">‹</a>
   <div style="flex:1">
     <h1>🐒 Monkey Catch Kem</h1>
-    <p>Di chuyển khỉ hứng viên kem rơi · Đạt 500 điểm nhận quà!</p>
+    <p>Di chuyển khỉ hứng viên kem rơi · Đạt 1.000 điểm nhận quà!</p>
   </div>
   <button id="soundBtn" type="button" aria-label="Bật/tắt âm thanh"
     style="font-size:22px;background:#fff;border:1.5px solid #f3c6d3;border-radius:999px;padding:6px 12px;cursor:pointer">🔊</button>
@@ -78,7 +78,7 @@
 <script>
 (function(){
   var cv = document.getElementById('game'), ctx = cv.getContext('2d');
-  var W = cv.width, H = cv.height, PRIZE = 500, GROUND = 46;
+  var W = cv.width, H = cv.height, PRIZE = 1000, GROUND = 46;
   var SCOOPS = ['#f06292','#7cb342','#6d4c41','#9575cd','#ffb300','#f2e3b3','#fb8c00','#8ed8ff'];
   var state = 'ready'; // ready | play | over
   var monkeyX = W/2, targetX = W/2, items = [], score = 0, lives = 3, frame = 0, spawnT = 0, elapsed = 0;
@@ -306,7 +306,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261117-1945";
+window.__BUILD__ = "20261117-1950";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
