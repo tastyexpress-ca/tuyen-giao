@@ -164,6 +164,7 @@
       .tag-pill{ display:inline-block; font-size:13px; font-weight:900; letter-spacing:.03em; padding:5px 11px; border-radius:999px; border:1.5px solid transparent; margin-bottom:10px; }
       .tag-sang{ background:var(--accent-soft); color:var(--accent-strong); border-color:var(--line); }
       .tag-pickup{ background:var(--paid-bg); color:var(--paid-ink); border-color:var(--paid-line); }
+      .tag-ship{ background:#f3e5fd; color:#6d28a8; border-color:#b78fe8; }
       .customer{ font-size:21px; font-weight:800; line-height:1.25; -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
       .sdt-line{ margin-top:2px; font-size:16.5px; font-weight:700; color:var(--muted); letter-spacing:.02em; -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
       .k-card .place{ margin-top:5px; font-size:16.5px; font-weight:700; color:var(--ink); overflow-wrap:anywhere; }
@@ -1413,12 +1414,13 @@
           var isDone = s === "done";
           var isRecv = s === "in_kitchen" || isDone;
           var isDelivery = o.method === "delivery";
+          var isShip = !isDelivery && o.method !== "pickup";
           var paidPill = o.paid === true ? '<span class="pill ok">Đã thanh toán</span>' : '<span class="pill no">Chưa thanh toán</span>';
           var html = '<article class="k-card' + (isDone ? " done" : "") + (isRecv && !isDone ? " received" : "") + '" data-search="' + esc(((o.customer_name || "") + " " + (o.phone || "")).toLowerCase()) + '">';
-          html += '<div class="k-card-top"><span class="tag-pill ' + (isDelivery ? "tag-sang" : "tag-pickup") + '">' + (isDelivery ? "GIAO HÀNG" : "PICK UP") + "</span>" + paidPill + "</div>";
+          html += '<div class="k-card-top"><span class="tag-pill ' + (isShip ? "tag-ship" : isDelivery ? "tag-sang" : "tag-pickup") + '">' + (isShip ? "📦 SHIP" : isDelivery ? "GIAO HÀNG" : "PICK UP") + "</span>" + paidPill + "</div>";
           html += '<div class="customer">' + esc(o.customer_name || "Khách") + "</div>";
           if (o.phone) html += '<div class="sdt-line">' + esc(o.phone) + "</div>";
-          if (isDelivery && o.address) html += '<div class="place">' + esc(o.address) + "</div>";
+          if ((isDelivery || isShip) && o.address) html += '<div class="place">' + esc(o.address) + "</div>";
           var items = parseItems(o);
           if (items.length) {
             html += '<div class="dishes">' + items.map(function (it) {
@@ -1488,10 +1490,17 @@
           var label = dayLabel(kitchenDay, dayOrders);
           currentKitchenDayLabel = label;
           var counts = dayCounts(dayOrders);
-          var news = dayOrders.filter(function (o) { return orderStatus(o) === "new"; });
-          var doing = dayOrders.filter(function (o) { return orderStatus(o) === "in_kitchen"; });
-          var done = dayOrders.filter(function (o) { return orderStatus(o) === "done"; });
-          currentKitchenPrintOrders = news.concat(doing, done);
+          // 3 muc (Chris 2026-11-20): PICK UP / GIAO HÀNG / SHIP — within
+          // each group, new orders first, then in_kitchen, then done.
+          var statusRank = { "new": 0, "in_kitchen": 1, "done": 2 };
+          var byStatus = function (a, b) {
+            var d = (statusRank[orderStatus(a)] || 0) - (statusRank[orderStatus(b)] || 0);
+            return d !== 0 ? d : String(a.created_at || "").localeCompare(String(b.created_at || ""));
+          };
+          var pickups = dayOrders.filter(function (o) { return o.method === "pickup"; }).sort(byStatus);
+          var deliveries = dayOrders.filter(function (o) { return o.method === "delivery"; }).sort(byStatus);
+          var ships = dayOrders.filter(function (o) { return o.method !== "pickup" && o.method !== "delivery"; }).sort(byStatus);
+          currentKitchenPrintOrders = pickups.concat(deliveries, ships);
           if (screen === "kitchenDay") {
             $("screenTitle").textContent = label;
             var chips = $("hdrChips");
@@ -1507,9 +1516,9 @@
             bar.setAttribute("aria-valuemax", String(counts.total));
           }
           var specs = [
-            { list: news, heading: "🌐 ĐƠN ONLINE", divider: false },
-            { list: doing, heading: "ĐANG LÀM", divider: false },
-            { list: done, heading: "ĐÃ XONG", divider: true }
+            { list: pickups, heading: "🧺 PICK UP", divider: false },
+            { list: deliveries, heading: "🚗 GIAO HÀNG", divider: false },
+            { list: ships, heading: "📦 SHIP", divider: false }
           ];
           var html = "";
           specs.forEach(function (sp) {
@@ -1737,10 +1746,10 @@
           label.appendChild(head);
           var bodyBox = el("div", "pl-body");
           var tagRow = el("div", null);
-          tagRow.appendChild(el("span", "pl-tag", o.method === "delivery" ? "GIAO HÀNG" : "PICK UP"));
+          tagRow.appendChild(el("span", "pl-tag", o.method === "delivery" ? "GIAO HÀNG" : o.method === "pickup" ? "PICK UP" : "SHIP"));
           bodyBox.appendChild(tagRow);
           bodyBox.appendChild(el("div", "pl-name", o.customer_name || "Khách"));
-          if (o.method === "delivery" && o.address) bodyBox.appendChild(el("div", "pl-place", o.address));
+          if (o.method !== "pickup" && o.address) bodyBox.appendChild(el("div", "pl-place", o.address));
           bodyBox.appendChild(el("div", "pl-phone", "SĐT: " + (o.phone ? o.phone : "chưa có")));
           var items = parseItems(o);
           if (items.length) {
@@ -2104,7 +2113,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261118-1250";
+window.__BUILD__ = "20261120-1212";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -2131,7 +2140,7 @@ window.__BUILD__ = "20261118-1250";
   setInterval(check, 300000);
 })();
 </script>
-<script src="../assets/i18n.js?v=20261026-2115"></script>
+<script src="../assets/i18n.js?v=20261120-1212"></script>
 <script>
 /* ===== Push notifications for new orders (Web Push, partner back office) =====
    Self-contained: reads the saved shop session (te_shop_session) from
