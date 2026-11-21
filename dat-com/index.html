@@ -750,7 +750,7 @@
     <script>
       "use strict";
 
-      /* ================= DATA — menu tuần 9/11 – 14/11/2026 ================= */
+      /* ================= DATA — menu tuần 23/11 – 28/11/2026 ================= */
       var STANDING = [
         { name: "Mì xào bò", price: 10 },
         { name: "Nui xào bò", price: 10 },
@@ -759,14 +759,14 @@
       ];
       var DAYS = [
         {
-          date: "2026-11-16", wd: "Thứ 2", dm: "16/11",
+          date: "2026-11-23", wd: "Thứ 2", dm: "23/11",
           man: ["Trứng chiên thịt bằm", "Cá kho tộ", "Đùi gà, cánh gà chiên nước mắm tỏi", "Thịt kho trứng", "Gà kho gừng"],
           xao: ["Su su xào", "Bắp cải xào"],
           canh: ["Canh cà rốt, khoai tây", "Canh cải bẹ xanh"],
           specials: []
         },
         {
-          date: "2026-11-17", wd: "Thứ 3", dm: "17/11",
+          date: "2026-11-24", wd: "Thứ 3", dm: "24/11",
           man: ["Tôm kho tàu", "Gà kho sả", "Trứng chiên thịt bằm", "Cánh gà, đùi gà chiên nước mắm", "Cá nục kho thơm", "Mắm chưng"],
           xao: ["Giá hẹ xào", "Bông cải xào"],
           canh: ["Canh khổ qua dồi thịt", "Canh cải thảo"],
@@ -776,28 +776,28 @@
           ]
         },
         {
-          date: "2026-11-18", wd: "Thứ 4", dm: "18/11",
-          man: ["Trứng chiên thịt bằm", "Đùi gà, cánh gà chiên nước mắm", "Cá đù muối sả ớt chiên", "Gà kho gừng"],
-          xao: ["Đậu hủ dồn thịt", "Bắp cải xào"],
+          date: "2026-11-25", wd: "Thứ 4", dm: "25/11",
+          man: ["Trứng chiên thịt bằm", "Đùi gà, cánh gà chiên nước mắm", "Cá đù muối sả ớt chiên", "Cá chim chiên", "Cá lưỡi trâu chiên", "Gà kho gừng", "Đậu hủ dồn thịt"],
+          xao: ["Đậu cove xào", "Bắp cải xào"],
           canh: ["Canh bầu nấu tôm", "Canh cải chua sườn non"],
           specials: []
         },
         {
-          date: "2026-11-19", wd: "Thứ 5", dm: "19/11",
-          man: ["Đùi gà, cánh gà chiên nước mắm", "Tôm rim thịt ba rọi", "Cá kèo kho rau răm", "Gà kho sả", "Kho quẹt chấm rau luộc"],
+          date: "2026-11-26", wd: "Thứ 5", dm: "26/11",
+          man: ["Đùi gà, cánh gà chiên nước mắm", "Tôm rim thịt ba rọi", "Cá kèo kho rau răm", "Gà kho sả", "Trứng chưng thịt bằm"],
           xao: ["Mực xào", "Su su xào"],
           canh: ["Canh khoai mỡ", "Canh mồng tơi mướp"],
           specials: [{ name: "Bún bò Huế", price: 12 }]
         },
         {
-          date: "2026-11-20", wd: "Thứ 6", dm: "20/11",
+          date: "2026-11-27", wd: "Thứ 6", dm: "27/11",
           man: ["Sườn kho tiêu", "Gà rô ti", "Cá kho tộ", "Đùi gà, cánh gà chiên nước mắm", "Trứng chiên thịt bằm", "Thịt ba rọi xào mắm ruốc"],
           xao: ["Bắp cải xào", "Khổ qua xào trứng"],
           canh: ["Canh củ cải hầm", "Canh chua tôm"],
           specials: [{ name: "Bún bò Huế", price: 12 }]
         },
         {
-          date: "2026-11-21", wd: "Thứ 7", dm: "21/11", tray: true,
+          date: "2026-11-28", wd: "Thứ 7", dm: "28/11", tray: true,
           trays: [
             { name: "Chả giò", price: 30 },
             { name: "Gỏi cuốn tôm thịt", price: 30 },
@@ -870,6 +870,10 @@
         "Tôm kho tàu": "tom-kho-tau",
         "Gà kho sả": "ga-kho-sa",
         "Cá chim, cá lưỡi trâu chiên": "ca-chien",
+        "Cá chim chiên": "ca-chim-chien",
+        "Cá lưỡi trâu chiên": "ca-luoi-trau-chien",
+        "Đậu cove xào": "dau-cove-xao",
+        "Trứng chưng thịt bằm": "trung-chien-thit-bam",
         "Mắm chưng": "mam-chung",
         "Đậu hủ dồn thịt": "dau-hu-doi-thit", "Mực xào": "muc-xao-chua-ngot", "Thịt ba rọi xào mắm ruốc": "thit-ba-roi-kho-mam-ruoc",
         "Sườn non nướng": "suon-non-nuong",
@@ -2725,7 +2729,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261120-1212";
+window.__BUILD__ = "20261121-1205";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
@@ -2753,7 +2757,7 @@ window.__BUILD__ = "20261120-1212";
   setInterval(check, 300000);
 })();
 </script>
-<script src="../assets/i18n.js?v=20261120-1212"></script>
+<script src="../assets/i18n.js?v=20261121-1205"></script>
 <!-- TEIP: install + notify + promo popup -->
 <style>
 #teip{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fff;color:#26221a;border-radius:16px;box-shadow:0 12px 34px rgba(0,0,0,.28);padding:16px 16px 13px;font-family:inherit;border:1px solid #e7ddca}
