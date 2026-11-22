@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gà Qua Đường — Tasty Express</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system, "Segoe UI", Roboto, sans-serif; background:#fff8e1; color:#333;
+         display:flex; flex-direction:column; align-items:center; min-height:100vh; }
+  header { width:100%; max-width:430px; padding:12px 16px 4px; display:flex; align-items:center; gap:10px; }
+  header a.back { text-decoration:none; font-size:22px; color:#c62828; }
+  header h1 { font-size:20px; color:#c62828; }
+  header p { font-size:12px; color:#888; }
+  #wrap { width:100%; max-width:560px; padding:6px 0 0; }
+  canvas { width:100%; display:block; border-radius:12px; box-shadow:0 4px 18px rgba(0,0,0,.15);
+           touch-action:none; background:#81c784; }
+  .hint { text-align:center; font-size:13px; color:#777; padding:8px 0 2px; }
+  /* ===== O QUANG CAO (house ads) ===== */
+  #adslot { width:100%; max-width:430px; padding:10px 12px 18px; }
+  .ad-label { font-size:10px; letter-spacing:1px; color:#bbb; text-align:center; margin-bottom:4px; }
+  .ad-card { display:none; border-radius:14px; padding:14px 16px; text-decoration:none; color:#fff;
+             box-shadow:0 3px 10px rgba(0,0,0,.15); }
+  .ad-card.show { display:block; }
+  .ad-card h3 { font-size:17px; margin-bottom:3px; }
+  .ad-card p { font-size:13px; opacity:.92; }
+  .ad-party { background:linear-gradient(135deg,#ec407a,#c62828); }
+  .ad-comthang { background:linear-gradient(135deg,#43a047,#2e7d32); }
+  /* ===== QUANG CAO TOAN MAN HINH KHI THUA (interstitial 5 giay) ===== */
+  #interstitial { display:none; position:fixed; inset:0; z-index:999; background:rgba(20,8,12,.92);
+                  flex-direction:column; align-items:center; justify-content:center; padding:22px; }
+  #interstitial.show { display:flex; }
+  #interstitial .ad-label { color:#ffb3c1; margin-bottom:10px; }
+  #interstitial .ad-big { width:100%; max-width:400px; border-radius:20px; padding:30px 24px; color:#fff;
+                          text-decoration:none; text-align:center; box-shadow:0 10px 34px rgba(0,0,0,.45); }
+  #interstitial .ad-big h2 { font-size:26px; margin-bottom:10px; }
+  #interstitial .ad-big p { font-size:16px; line-height:1.5; opacity:.95; }
+  #interstitial .ad-big .cta { display:inline-block; margin-top:18px; background:#fff; color:#c62828;
+                               font-weight:800; padding:12px 26px; border-radius:999px; font-size:16px; }
+  #interstitial .count { margin-top:20px; color:#ffd9e1; font-size:14px; }
+  #interstitial .count b { font-size:17px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../game/">‹</a>
+  <div style="flex:1">
+    <h1>🐔 Gà Qua Đường</h1>
+    <p>Băng qua đường né xe, nhảy bè qua sông · Đạt 500 điểm được ngay 1 voucher $10!</p>
+  </div>
+  <span id="tokenChip" style="font-size:13px;font-weight:700;color:#8d6e00;background:#fff8e1;border:1.5px solid #ffe082;border-radius:999px;padding:6px 10px;">🪙 …</span>
+</header>
+
+<div id="wrap"><canvas id="game" width="400" height="520"></canvas></div>
+<div id="voucherBox" style="display:none;width:100%;max-width:430px;padding:0 12px;margin-top:10px;">
+  <div style="background:linear-gradient(135deg,#fff8e1,#ffecb3);border:2px dashed #e0a800;border-radius:16px;padding:14px 16px;text-align:center;">
+    <div style="font-size:14px;font-weight:700;color:#6d4c00;">🎁 VOUCHER $10 CỦA BẠN</div>
+    <div id="voucherCode" style="font-size:27px;font-weight:900;letter-spacing:2px;color:#c62828;margin:6px 0;">…</div>
+    <div style="font-size:12.5px;color:#6d4c00;line-height:1.5;">Nhập mã này khi thanh toán trên app để được giảm $10<br/>Mỗi mã chỉ dùng được 1 lần — nhớ lưu lại mã nhé!</div>
+    <button id="voucherCopy" type="button" style="margin-top:9px;background:#c62828;color:#fff;border:none;font-weight:700;font-size:14px;padding:9px 20px;border-radius:999px;cursor:pointer;">📋 Copy mã</button>
+  </div>
+</div>
+
+<div id="limitBox" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(20,8,12,.92);flex-direction:column;align-items:center;justify-content:center;padding:22px;">
+  <div style="background:#fff;border-radius:20px;padding:26px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 10px 34px rgba(0,0,0,.45);">
+    <div style="font-size:40px;">🎮</div>
+    <h2 id="limitTitle" style="font-size:20px;color:#c62828;margin:8px 0;">Bạn đã chơi hết 10 lượt miễn phí</h2>
+    <p id="limitText" style="font-size:14.5px;color:#555;line-height:1.55;">Đăng nhập để chơi tiếp bằng token — tài khoản mới được tặng ngay 10 token!</p>
+    <a id="limitCta" href="../dat-com/?login=1" style="display:inline-block;margin-top:16px;background:#c62828;color:#fff;font-weight:800;padding:13px 28px;border-radius:999px;text-decoration:none;font-size:16px;">Đăng ký / Đăng nhập →</a>
+    <div><button id="limitClose" type="button" style="margin-top:12px;background:none;border:none;color:#999;font-size:14px;cursor:pointer;">Để sau</button></div>
+  </div>
+</div>
+
+<p class="hint">Chạm để nhảy lên · Vuốt để nhảy các hướng 🐔</p>
+
+<!-- ===== QUANG CAO TOAN MAN HINH KHI THUA (5 giay) ===== -->
+<div id="interstitial">
+  <div class="ad-label">QUẢNG CÁO</div>
+  <a class="ad-big ad-party" id="interAd" href="../dat-kem/">
+    <h2 id="interTitle">🎉 Ice Cream Party Bar</h2>
+    <p id="interBody">Tiệc kem trọn gói từ $135 · Ăn thoải mái 2 giờ · Có xe kem đến tận nơi cho sinh nhật &amp; sự kiện!</p>
+    <span class="cta" id="interCta">Xem các gói tiệc →</span>
+  </a>
+  <p class="count">Chơi tiếp sau <b id="interCount">5</b> giây…</p>
+</div>
+
+<!-- ===== O QUANG CAO ===== -->
+<div id="adslot">
+  <div class="ad-label">QUẢNG CÁO</div>
+  <a class="ad-card ad-party show" id="ad1" href="../dat-kem/">
+    <h3>🎉 Ice Cream Party Bar — từ $135</h3>
+    <p>Đặt tiệc kem cho sinh nhật, sự kiện · Ăn thoải mái 2 giờ · Bấm để xem các gói tiệc</p>
+  </a>
+  <a class="ad-card ad-comthang" id="ad2" href="../dat-com/">
+    <h3>🍱 Cơm tháng chỉ $9.50/phần</h3>
+    <p>Đăng ký cơm tháng cho gia đình &amp; văn phòng · Bấm để đặt ngay</p>
+  </a>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('game'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height, CELL = 40, COLS = 10, ROWS_VIS = 13;
+  var WIN_SCORE = 500;
+  var state = 'ready'; // ready | play | over
+  var lanes = {};       // row -> lane
+  var player, camRow, maxRow, score, best = +(localStorage.getItem('chickenBest')||0);
+  var hop = null, claimed, adShowing = false, lastTime = 0, deathMsg = '';
+
+  var CARS = ['🚗','🚕','🚙','🚌','🚚'];
+  function makeLane(row){
+    if (row <= 2) return { type:'grass', trees:{} };
+    var r = Math.random();
+    if (r < 0.42){
+      var dir = Math.random() < 0.5 ? 1 : -1;
+      var speed = (55 + Math.random()*85 + Math.min(60, row*1.2)) * dir;
+      var cars = [], n = 2 + (Math.random()*2|0);
+      for (var i = 0; i < n; i++)
+        cars.push({ x: Math.random()*W, w: 52 + Math.random()*30, e: CARS[(Math.random()*CARS.length)|0] });
+      return { type:'road', dir:dir, speed:speed, cars:cars };
+    } else if (r < 0.66){
+      var dir2 = Math.random() < 0.5 ? 1 : -1;
+      var speed2 = (34 + Math.random()*36) * dir2;
+      var logs = [], n2 = 2 + (Math.random()*2|0);
+      for (var j = 0; j < n2; j++)
+        logs.push({ x: Math.random()*W, w: 96 + Math.random()*60 });
+      return { type:'river', dir:dir2, speed:speed2, logs:logs };
+    }
+    var trees = {};
+    var nt = Math.random()*3.2|0;
+    for (var k = 0; k < nt; k++) trees[(Math.random()*COLS)|0] = true;
+    return { type:'grass', trees:trees };
+  }
+  function laneAt(row){
+    if (!lanes[row]) lanes[row] = makeLane(row);
+    return lanes[row];
+  }
+  function reset(){
+    lanes = {};
+    player = { col: 4, row: 0, xoff: 0 }; // xoff: pixel offset khi dang dung tren be
+    camRow = 0; maxRow = 0; score = 0; claimed = false; hop = null; deathMsg = '';
+    for (var r = -2; r < ROWS_VIS + 4; r++) laneAt(r);
+  }
+  function startGame(){
+    if (adShowing) return;
+    if (!gatePlay()) { state = 'ready'; draw(0); return; }
+    hideVoucher();
+    reset();
+    state = 'play';
+  }
+  function gameOver(msg){
+    if (state !== 'play') return;
+    state = 'over'; deathMsg = msg || '';
+    if (score > best){ best = score; localStorage.setItem('chickenBest', best); }
+    if (score >= WIN_SCORE && !claimed){ claimed = true; claimVoucher('chicken'); }
+    showInterstitial(score >= WIN_SCORE);
+  }
+  function tryHop(dx, dy){
+    if (state !== 'play' || hop) return;
+    var nc = player.col + dx, nr = player.row + dy;
+    if (nc < 0 || nc >= COLS || nr < 0) return;
+    var ln = laneAt(nr);
+    if (ln.type === 'grass' && ln.trees[nc]) return;
+    hop = { fc: player.col, fr: player.row, tc: nc, tr: nr, fx: player.xoff, t: 0 };
+    player.col = nc; player.row = nr; player.xoff = 0;
+    if (nr > maxRow){ maxRow = nr; score = maxRow * 10; }
+  }
+  function update(dt){
+    // xe + be troi
+    for (var key in lanes){
+      var ln = lanes[key];
+      if (ln.type === 'road') ln.cars.forEach(function(c){
+        c.x += ln.speed * dt;
+        if (ln.speed > 0 && c.x > W + 10) c.x = -c.w - 10;
+        if (ln.speed < 0 && c.x + c.w < -10) c.x = W + 10;
+      });
+      if (ln.type === 'river') ln.logs.forEach(function(l){
+        l.x += ln.speed * dt;
+        if (ln.speed > 0 && l.x > W + 10) l.x = -l.w - 10;
+        if (ln.speed < 0 && l.x + l.w < -10) l.x = W + 10;
+      });
+    }
+    if (state !== 'play') return;
+    // camera tu truot cham + bam theo ga
+    var target = player.row - 4;
+    if (target > camRow) camRow = Math.min(target, camRow + dt * 2.2);
+    if (maxRow >= 3) camRow += dt * 0.22; // ap luc truot xuong (chi khi da di xa)
+    // nhay
+    if (hop){
+      hop.t += dt / 0.09;
+      if (hop.t >= 1) hop = null;
+    }
+    // dung tren be -> troi theo be
+    var pl = laneAt(player.row);
+    if (!hop && pl.type === 'river'){
+      var px = player.col * CELL + CELL/2 + player.xoff;
+      var onLog = null;
+      pl.logs.forEach(function(l){ if (px > l.x + 4 && px < l.x + l.w - 4) onLog = l; });
+      if (onLog) {
+        player.xoff += pl.speed * dt;
+        if (player.col * CELL + player.xoff < -CELL || player.col * CELL + player.xoff > W) gameOver('Cuốn trôi rồi! 🌊');
+      } else gameOver('Rớt sông rồi! 🌊');
+    }
+    if (state !== 'play') return;
+    // xe dung
+    if (pl.type === 'road' && !hop){
+      var pcx = player.col * CELL + CELL/2 + player.xoff;
+      for (var i = 0; i < pl.cars.length; i++){
+        var c = pl.cars[i];
+        if (pcx > c.x + 5 && pcx < c.x + c.w - 5){ gameOver('Xe tông rồi! 🚗'); break; }
+      }
+    }
+    // roi khoi man hinh duoi
+    if (player.row - camRow < -0.6) gameOver('Chậm quá, bị bỏ lại! 🦅');
+  }
+  function rowToY(row){ return H - (row - camRow + 1) * CELL; }
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+    var baseRow = Math.floor(camRow);
+    for (var i = -1; i < ROWS_VIS + 1; i++){
+      var row = baseRow + i, ln = laneAt(row), y = rowToY(row);
+      if (ln.type === 'grass'){
+        ctx.fillStyle = (row % 2) ? '#81c784' : '#74b877';
+        ctx.fillRect(0, y, W, CELL);
+        ctx.font = '26px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        for (var t in ln.trees) ctx.fillText('🌳', (+t)*CELL + CELL/2, y + CELL/2 + 1);
+      } else if (ln.type === 'road'){
+        ctx.fillStyle = '#455a64'; ctx.fillRect(0, y, W, CELL);
+        ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.setLineDash([14, 12]); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, y + CELL - 1); ctx.lineTo(W, y + CELL - 1); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font = '30px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ln.cars.forEach(function(c){ ctx.fillText(c.e, c.x + c.w/2, y + CELL/2 + 2); });
+      } else {
+        ctx.fillStyle = '#29b6f6'; ctx.fillRect(0, y, W, CELL);
+        ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(0, y + 6, W, 3); ctx.fillRect(0, y + 26, W, 3);
+        ln.logs.forEach(function(l){
+          ctx.fillStyle = '#8d6e63';
+          ctx.beginPath(); ctx.roundRect(l.x, y + 6, l.w, CELL - 12, 9); ctx.fill();
+          ctx.fillStyle = '#6d4c41';
+          ctx.beginPath(); ctx.arc(l.x + 12, y + CELL/2, 5, 0, Math.PI*2); ctx.arc(l.x + l.w - 12, y + CELL/2, 5, 0, Math.PI*2); ctx.fill();
+        });
+      }
+    }
+    // ga
+    var gx, gy, lift = 0;
+    if (hop){
+      var t = Math.min(1, hop.t);
+      gx = (hop.fc + (hop.tc - hop.fc) * t) * CELL + CELL/2 + hop.fx * (1 - t);
+      gy = rowToY(hop.fr + (hop.tr - hop.fr) * t) + CELL/2;
+      lift = Math.sin(t * Math.PI) * 12;
+    } else {
+      gx = player.col * CELL + CELL/2 + player.xoff;
+      gy = rowToY(player.row) + CELL/2;
+    }
+    ctx.font = '32px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('🐔', gx, gy - lift);
+    // thanh diem
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(0, 0, W, 34);
+    ctx.fillStyle = '#fff'; ctx.font = '700 17px -apple-system, sans-serif'; ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left'; ctx.fillText('Điểm: ' + score + ' / ' + WIN_SCORE, 12, 23);
+    ctx.textAlign = 'right'; ctx.fillText('🏆 ' + best, W - 12, 23);
+    if (state === 'ready'){
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+      ctx.font = '900 32px -apple-system, sans-serif';
+      ctx.fillText('🐔 GÀ QUA ĐƯỜNG', W/2, H/2 - 24);
+      ctx.font = '600 17px -apple-system, sans-serif';
+      ctx.fillText('Chạm để bắt đầu', W/2, H/2 + 10);
+      ctx.font = '500 14px -apple-system, sans-serif';
+      ctx.fillText('Đạt ' + WIN_SCORE + ' điểm = voucher $10 🎁', W/2, H/2 + 36);
+    } else if (state === 'over'){
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+      ctx.font = '900 30px -apple-system, sans-serif';
+      ctx.fillText(score >= WIN_SCORE ? '🎉 THẮNG RỒI!' : '💥 THUA RỒI!', W/2, H/2 - 40);
+      if (deathMsg){ ctx.font = '600 16px -apple-system, sans-serif'; ctx.fillText(deathMsg, W/2, H/2 - 12); }
+      ctx.font = '600 17px -apple-system, sans-serif';
+      ctx.fillText('Điểm: ' + score + ' · Kỷ lục: ' + best, W/2, H/2 + 16);
+      ctx.font = '500 14px -apple-system, sans-serif';
+      ctx.fillText('Chạm để chơi lại', W/2, H/2 + 42);
+    }
+  }
+  function loop(ts){
+    var dt = Math.min(0.05, (ts - lastTime) / 1000 || 0);
+    lastTime = ts;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // dieu khien: cham = nhay len, vuot = nhay theo huong
+  var tsStart = null, tsMoved = false;
+  cv.addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    if (state !== 'play'){ startGame(); return; }
+    tsStart = { x: e.clientX, y: e.clientY }; tsMoved = false;
+  });
+  cv.addEventListener('pointermove', function(e){
+    if (!tsStart || state !== 'play') return;
+    var dx = e.clientX - tsStart.x, dy = e.clientY - tsStart.y;
+    if (Math.abs(dx) < 26 && Math.abs(dy) < 26) return;
+    if (Math.abs(dx) > Math.abs(dy)) tryHop(dx > 0 ? 1 : -1, 0); else tryHop(0, dy > 0 ? -1 : 1);
+    tsStart = { x: e.clientX, y: e.clientY }; tsMoved = true;
+  });
+  cv.addEventListener('pointerup', function(e){
+    if (state === 'play' && tsStart && !tsMoved) tryHop(0, 1);
+    tsStart = null;
+  });
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowUp' || k === 'w') tryHop(0, 1);
+    else if (k === 'ArrowDown' || k === 's') tryHop(0, -1);
+    else if (k === 'ArrowLeft' || k === 'a') tryHop(-1, 0);
+    else if (k === 'ArrowRight' || k === 'd') tryHop(1, 0);
+    else if ((k === ' ' || k === 'Enter') && state !== 'play'){ startGame(); return; }
+    else return;
+    e.preventDefault();
+  });
+
+  reset();
+  draw();
+  requestAnimationFrame(loop);
+
+  // Quang cao toan man hinh 5 giay moi khi thua
+  var INTER_ADS = [
+    { cls: 'ad-big ad-party', href: '../dat-kem/', title: '🎉 Ice Cream Party Bar',
+      body: 'Tiệc kem trọn gói từ $135 · Ăn thoải mái 2 giờ · Có xe kem đến tận nơi cho sinh nhật & sự kiện!',
+      cta: 'Xem các gói tiệc →' },
+    { cls: 'ad-big ad-comthang', href: '../dat-com/', title: '🍱 Cơm tháng $9.50/phần',
+      body: 'Cơm nhà nấu mỗi ngày, giao tận nơi hoặc pick up tại Westminster · Đăng ký cơm tháng cho gia đình & văn phòng!',
+      cta: 'Đặt cơm ngay →' }
+  ], interIdx = 0;
+  var interEl = document.getElementById('interstitial'),
+      interAd = document.getElementById('interAd'),
+      interCount = document.getElementById('interCount');
+  function showInterstitial(wonPrize){
+    var ad = INTER_ADS[interIdx % INTER_ADS.length]; interIdx++;
+    interAd.className = ad.cls; interAd.href = ad.href;
+    document.getElementById('interTitle').textContent = ad.title;
+    document.getElementById('interBody').textContent = ad.body;
+    document.getElementById('interCta').textContent = ad.cta;
+    adShowing = true;
+    interEl.classList.add('show');
+    var left = 5;
+    interCount.textContent = left;
+    var iv = setInterval(function(){
+      left--;
+      if (left <= 0){
+        clearInterval(iv);
+        interEl.classList.remove('show');
+        adShowing = false;
+      } else {
+        interCount.textContent = left;
+      }
+    }, 1000);
+  }
+
+  /* ===== VOUCHER $10 KHI THANG ===== */
+  var SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZnZ4dHNvbmNwamxlb2l1cHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI2NzcsImV4cCI6MjEwODMwODY3N30.AlvMWiIxOjFzn7J9IIAG_5siqlyQU5nFARzQo8BFWpM";
+  function claimVoucher(game){
+    if (!isLoggedIn()) { showVoucherLogin(); return; }
+    var s = teSession();
+    fetch('https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/rpc/claim_game_voucher', {
+      method: 'POST',
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + (s && s.access_token ? s.access_token : SB_ANON), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_game: game })
+    }).then(function(r){ return r.json(); }).then(function(code){
+      if (code === 'LOGIN_REQUIRED') { showVoucherLogin(); return; }
+      if (code && code !== 'HET_MA') {
+        document.getElementById('voucherCode').textContent = code;
+        document.getElementById('voucherBox').style.display = 'block';
+        cooldownUntil = Date.now() + 7 * 24 * 3600 * 1000;
+      }
+    }).catch(function(){});
+  }
+  function showVoucherLogin(){
+    var b = document.getElementById('voucherBox'); if (!b) return;
+    b.innerHTML = '🎉 Bạn đã thắng! <b>Voucher $10 chỉ dành cho khách có tài khoản</b> — đăng nhập / đăng ký miễn phí để nhận mã của bạn &nbsp;<a href="../dat-com/?login=1" style="background:#fff;color:#c62828;font-weight:800;border-radius:999px;padding:7px 16px;text-decoration:none;white-space:nowrap">Đăng nhập</a>';
+    b.style.display = 'block';
+  }
+  function hideVoucher(){ var b = document.getElementById('voucherBox'); if (b) b.style.display = 'none'; }
+  document.getElementById('voucherCopy').addEventListener('click', function(){
+    var code = document.getElementById('voucherCode').textContent;
+    var btn = this;
+    if (navigator.clipboard) navigator.clipboard.writeText(code).then(function(){ btn.textContent = '✅ Đã copy!'; setTimeout(function(){ btn.textContent = '📋 Copy mã'; }, 2000); });
+  });
+
+  /* ===== TOKEN: guest 10 luot free, dang nhap tru 1 token/luot ===== */
+  var PLAY_KEY = 'guestPlaysV1', PLAY_LIMIT = 10;
+  var tokenBalance = null;
+  function teSession(){ try { return JSON.parse(localStorage.getItem('te_account_session') || 'null'); } catch(e){ return null; } }
+  function isLoggedIn(){ var s = teSession(); return !!(s && s.access_token && (!s.expires_at || s.expires_at > Date.now())); }
+  function guestPlays(){ try { return +(localStorage.getItem(PLAY_KEY) || 0); } catch(e){ return 0; } }
+  function registerPlay(){ try { localStorage.setItem(PLAY_KEY, guestPlays() + 1); } catch(e){} }
+  function rpcAuth(fn, body){
+    var s = teSession();
+    return fetch('https://kxfvxtsoncpjleoiupwf.supabase.co/rest/v1/rpc/' + fn, {
+      method: 'POST',
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + (s && s.access_token ? s.access_token : SB_ANON), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    }).then(function(r){ return r.json(); });
+  }
+  function updateChip(){
+    var c = document.getElementById('tokenChip'); if (!c) return;
+    if (isLoggedIn()) c.textContent = '🪙 ' + (tokenBalance == null ? '…' : tokenBalance);
+    else c.textContent = '🪙 Free ∞';
+  }
+  function refreshBalance(){
+    if (!isLoggedIn()){ updateChip(); return; }
+    rpcAuth('get_token_balance', {}).then(function(b){ if (typeof b === 'number') tokenBalance = b; updateChip(); }).catch(function(){ updateChip(); });
+  }
+  var cooldownUntil = 0;
+  function refreshCooldown(){
+    if (!isLoggedIn()) return;
+    rpcAuth('get_game_cooldown', { p_game: 'chicken' }).then(function(sec){ if (typeof sec === 'number' && sec > 0) cooldownUntil = Date.now() + sec * 1000; }).catch(function(){});
+  }
+  function showLimit(mode){
+    var t = document.getElementById('limitTitle'), x = document.getElementById('limitText'), a = document.getElementById('limitCta');
+    if (mode === 'token'){
+      t.textContent = 'Bạn đã hết token';
+      x.textContent = 'Mỗi lượt chơi 1 token. Mua thêm token để chơi tiếp nhé!';
+      a.textContent = '🪙 Mua token →'; a.href = '../mua-token/';
+    } else if (mode === 'cooldown'){
+      t.textContent = '🏆 Bạn vừa thắng voucher trò này!';
+      x.textContent = 'Thắng voucher xong phải chờ 1 tuần mới chơi lại trò này được nhé — qua game khác chơi tiếp nè!';
+      a.textContent = '🎮 Chơi game khác →'; a.href = '../game/';
+    } else {
+      t.textContent = 'Bạn đã chơi hết 10 lượt miễn phí';
+      x.textContent = 'Đăng nhập để chơi tiếp bằng token — tài khoản mới được tặng ngay 10 token!';
+      a.textContent = 'Đăng nhập / Đăng ký →'; a.href = '../dat-com/?login=1';
+    }
+    document.getElementById('limitBox').style.display = 'flex';
+  }
+  function gatePlay(){
+    if (!isLoggedIn()){
+      if (guestPlays() >= PLAY_LIMIT){ showLimit('guest'); return false; }
+      registerPlay();
+      return true;
+    }
+    if (cooldownUntil > Date.now()){ showLimit('cooldown'); return false; }
+    if (tokenBalance == null){ refreshBalance(); return true; }
+    if (tokenBalance <= 0){ showLimit('token'); return false; }
+    tokenBalance--; updateChip();
+    rpcAuth('spend_token', { p_game: 'chicken' }).then(function(r){ if (r && typeof r.balance === 'number'){ tokenBalance = r.balance; updateChip(); } }).catch(function(){});
+    return true;
+  }
+  document.getElementById('limitClose').addEventListener('click', function(){ document.getElementById('limitBox').style.display = 'none'; });
+
+  var ads = [document.getElementById('ad1'), document.getElementById('ad2')], ai = 0;
+  setInterval(function(){
+    ads[ai].classList.remove('show'); ai = (ai + 1) % ads.length; ads[ai].classList.add('show');
+  }, 8000);
+  refreshBalance(); refreshCooldown();
+})();
+</script>
+<script>
+/* Tu dong cap nhat ban moi (Chris 2026-10-26) */
+window.__BUILD__ = "20261121-2015";
+(function () {
+  var KEY = "build-reloaded-for";
+  function check() {
+    fetch("/tuyen-giao/version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.build) return;
+        if (j.build === window.__BUILD__) {
+          try { sessionStorage.removeItem(KEY); } catch (e) {}
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(KEY) === j.build) return;
+          sessionStorage.setItem(KEY, j.build);
+        } catch (e) {}
+        location.reload();
+      })
+      .catch(function () {});
+  }
+  check();
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) check();
+  });
+})();
+</script>
+</body>
+</html>
