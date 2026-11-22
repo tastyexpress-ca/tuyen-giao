@@ -46,7 +46,7 @@
   <a class="back" href="../game/">‹</a>
   <div style="flex:1">
     <h1>🐍 Rắn Ăn Đậu</h1>
-    <p>Ăn đậu cho rắn dài ra, đừng cắn đuôi mình · Đạt 200 điểm được ngay 1 voucher $10!</p>
+    <p>Ăn đậu cho rắn dài ra, đừng cắn đuôi mình · Đạt 888 điểm được ngay 1 voucher $10!</p>
   </div>
   <span id="tokenChip" style="font-size:13px;font-weight:700;color:#8d6e00;background:#fff8e1;border:1.5px solid #ffe082;border-radius:999px;padding:6px 10px;">🪙 …</span>
 </header>
@@ -101,7 +101,7 @@
 (function(){
   var cv = document.getElementById('game'), ctx = cv.getContext('2d');
   var W = cv.width, H = cv.height, CELL = 20, COLS = W / CELL, ROWS = H / CELL;
-  var WIN_SCORE = 200;
+  var WIN_SCORE = 888;
   var state = 'ready'; // ready | play | over
   var snake, dir, nextDir, bean, score, best = +(localStorage.getItem('snakeBest')||0);
   var tickMs, lastTick, claimed, adShowing = false;
@@ -389,7 +389,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261121-2005";
+window.__BUILD__ = "20261121-2010";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
