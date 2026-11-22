@@ -102,6 +102,28 @@
   var cv = document.getElementById('game'), ctx = cv.getContext('2d');
   var W = cv.width, H = cv.height, CELL = 20, COLS = W / CELL, ROWS = H / CELL;
   var WIN_SCORE = 888;
+  /* ===== AM THANH (WebAudio, khong can file) ===== */
+  var AC = null;
+  function beep(freq, dur, type, vol, slideTo, delay){
+    try {
+      if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === 'suspended') AC.resume();
+      var t0 = AC.currentTime + (delay || 0);
+      var o = AC.createOscillator(), g = AC.createGain();
+      o.type = type || 'square'; o.frequency.setValueAtTime(freq, t0);
+      if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+      g.gain.setValueAtTime(vol || 0.12, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(AC.destination);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch(e){}
+  }
+  function sfx(kind){
+    if (kind === 'eat'){ beep(660, 0.07, 'sine', 0.15); beep(880, 0.1, 'sine', 0.15, null, 0.06); }
+    else if (kind === 'die') beep(420, 0.4, 'sawtooth', 0.11, 70);
+    else if (kind === 'win'){ [523,659,784,1046].forEach(function(f,i){ beep(f, 0.15, 'triangle', 0.15, null, i*0.11); }); }
+  }
+
   var state = 'ready'; // ready | play | over
   var snake, dir, nextDir, bean, score, best = +(localStorage.getItem('snakeBest')||0);
   var tickMs, lastTick, claimed, adShowing = false;
@@ -137,6 +159,7 @@
   }
   function gameOver(){
     state = 'over';
+    sfx(score >= WIN_SCORE ? 'win' : 'die');
     if (score > best){ best = score; localStorage.setItem('snakeBest', best); }
     if (score >= WIN_SCORE && !claimed){ claimed = true; claimVoucher('snake'); }
     showInterstitial(score >= WIN_SCORE);
@@ -154,6 +177,7 @@
         if (state === 'play'){
           snake.unshift(head);
           if (head.x === bean.x && head.y === bean.y){
+            sfx('eat');
             score += 10;
             bean = randBean();
             if (tickMs > 75) tickMs -= 3;
@@ -389,7 +413,7 @@
 </script>
 <script>
 /* Tu dong cap nhat ban moi (Chris 2026-10-26) */
-window.__BUILD__ = "20261121-2015";
+window.__BUILD__ = "20261121-2210";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
