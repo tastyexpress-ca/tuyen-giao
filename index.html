@@ -3878,7 +3878,7 @@
              is qty × price; the shop's share is 80% ($4 of $5) and
              the owner's profit share is 20%.
            - a line naming a TRAY (priced or not) settles BY TRAY
-             (Chris 2026-11-07): the shop gets $20 per tray ($25 for
+             (Chris 2026-11-07): the shop gets $23 per tray (flat, Chris 2026-11-21; was $20/$25 for
              a bò kho tray) and the rest of the tray price is the
              owner's profit — never the món lẻ 80% split and never
              price ÷ 10 × $8. An unpriced tray line still counts as
@@ -4041,7 +4041,7 @@
            $20 flat, bò kho tray $25; the rest of the tray price is
            his profit. */
         function trayShopRate(line) {
-          return String(line == null ? "" : line).toLowerCase().indexOf("bò kho") !== -1 ? 25 : 20;
+          return 23;
         }
         /* A web order (web_orders) as a pseudo kitchen order for
            the money views: dishes rebuilt from its items — món lẻ
@@ -4156,7 +4156,7 @@
                 } else if (tray) {
                   /* Priced TRAY line (unit > $10, line carries
                      "tray"): settles BY TRAY (Chris 2026-11-07) —
-                     the shop gets $20 per tray ($25 bò kho) and the
+                     the shop gets $23 per tray (flat, Chris 2026-11-21) and the
                      rest of the price is Chris's profit; never the
                      món lẻ 80% split. */
                   var tq = Math.max(1, Math.round(p.money / p.unit));
@@ -4249,7 +4249,7 @@
             if (gkey === "sang") {
               /* Giao hàng: the owner collected everything himself —
                  he owes the shop portions × $8 + 80% of món lẻ +
-                 $20 per tray; a Saturday note fee goes back too. */
+                 $23 per tray; a Saturday note fee goes back too. */
               anhTra = (portions - unpricedTrays) * 8 + monLe * 0.8 + trayDue + fee;
               if (fee > 0) g.feesReturned += fee;
             } else if (payee === "chris") {
@@ -4595,7 +4595,7 @@
                 hasFood = true;
                 if (p.unit > 10 && isTrayLine(d)) {
                   /* Priced tray: Chris keeps the tray price minus
-                     the $20/tray he pays the shop ($25 bò kho) —
+                     the $23/tray he pays the shop (flat, Chris 2026-11-21) —
                      Chris 2026-11-07 tray formula. */
                   margin += p.money - Math.max(1, Math.round(p.money / p.unit)) * trayShopRate(d);
                 } else {
@@ -7820,7 +7820,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261121-1205";
+window.__BUILD__ = "20261121-1940";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
