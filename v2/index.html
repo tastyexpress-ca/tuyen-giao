@@ -2990,7 +2990,7 @@
             dataGet("/rest/v1/stops?select=*&order=day.desc,seq.asc"),
             dataGet("/rest/v1/kitchen_days?select=*&order=day.desc"),
             dataGet("/rest/v1/kitchen_orders?select=*&order=day.desc,seq.asc"),
-            dataGet("/rest/v1/states?select=*"),
+            dataGet("/rest/v1/states?select=*&day=gte." + localDayStr(new Date(Date.now() - 30 * 864e5)) + "&order=day.desc"),
             /* web_orders (customer ordering app) is read with the same
                signed-in session, but its failure must never break the
                rest of the app: a failed read resolves to null and the
@@ -7820,7 +7820,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261121-2210";
+window.__BUILD__ = "20261125-1916";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
