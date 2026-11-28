@@ -4246,7 +4246,14 @@
             }
             var anhTra = 0;
             var tiemNo = 0;
-            if (gkey === "sang") {
+            if (gkey === "sang" && payee === "shop") {
+              /* Giao sáng paid to the SHOP (Chris 2026-11-27, Eileen
+                 5976): the shop collected everything itself — food
+                 money AND the delivery fee — so Chris owes nothing;
+                 the shop owes him back the per-portion profit, like
+                 a shop-paid pick up. */
+              tiemNo = profit + monLe * 0.2 + (trayMoney - trayDue);
+            } else if (gkey === "sang") {
               /* Giao hàng: the owner collected everything himself —
                  he owes the shop portions × $8 + 80% of món lẻ +
                  $23 per tray; a Saturday note fee goes back too. */
@@ -4279,7 +4286,7 @@
                profit, so their equivalent is profit ÷ 2 ($4 premium
                = 2 phần), and a priced tray's profit-back counts at
                profit ÷ 2 too. */
-            if (gkey === "sang" || payee === "chris") {
+            if ((gkey === "sang" && payee !== "shop") || payee === "chris") {
               g.anhEq += (portions - unpricedTrays) + monLe / 10;
             } else {
               g.shopEq += profit / 2 + monLe / 10 + (trayMoney - trayDue) / 2;
@@ -4325,6 +4332,11 @@
           var showML = g.monLe > 0;
           var showTray = g.trays > 0;
           var showFee = kind !== "pickup" && g.rows.some(function (r) { return (kind === "bep" ? r.fee : r.feeDisp) > 0; });
+          /* A giao sáng table with any shop-paid row needs the
+             pick up money columns (Trả / Anh trả tiệm / Tiệm nợ anh)
+             — the single "Trả tiệm" column cannot show money the
+             shop owes back (Chris 2026-11-27). */
+          var dualCol = kind !== "sang" || g.rows.some(function (r) { return r.payee === "shop"; });
           var table = el("table", "kt-table");
           var thead = el("thead");
           var htr = el("tr");
@@ -4334,7 +4346,7 @@
           if (showTray) head("Tray", true);
           if (showML) head("Món lẻ", true);
           if (showFee) head("Phí giao", true);
-          if (kind !== "sang") {
+          if (dualCol) {
             head("Trả", false);
             head("Anh trả tiệm", true);
             head("Tiệm nợ anh", true);
@@ -4359,7 +4371,7 @@
               }
               tr.appendChild(el("td", "num kt-fee", feeTxt));
             }
-            if (kind !== "sang") {
+            if (dualCol) {
               tr.appendChild(el("td", "", r.payee === "chris" ? "Anh" : "Tiệm"));
               tr.appendChild(el("td", "num", r.payee === "chris" ? fmtMoney(r.anhTra) : "—"));
               tr.appendChild(el("td", "num", r.payee === "shop" ? fmtMoney(r.tiemNo) : "—"));
@@ -4374,13 +4386,13 @@
           ftr.appendChild(el("td", "kt-name", "Tổng · " + g.rows.length + " order"));
           ftr.appendChild(el("td", "num", String(g.portions)));
           if (showTray) ftr.appendChild(el("td", "num", String(g.trays)));
-          if (showML) ftr.appendChild(el("td", "num", kind === "sang" ? fmtMoney(g.monLe) : "—"));
+          if (showML) ftr.appendChild(el("td", "num", dualCol ? "—" : fmtMoney(g.monLe)));
           if (showFee) {
             var feeSum = 0;
             g.rows.forEach(function (r) { feeSum += (kind === "bep" ? r.fee : r.feeDisp) || 0; });
             ftr.appendChild(el("td", "num", feeSum > 0 ? fmtMoney(feeSum) : "—"));
           }
-          if (kind !== "sang") {
+          if (dualCol) {
             ftr.appendChild(el("td", "", ""));
             ftr.appendChild(el("td", "num", fmtMoney(g.anhTra)));
             ftr.appendChild(el("td", "num", fmtMoney(g.tiemNo)));
@@ -4406,9 +4418,9 @@
           ktBody.appendChild(buildSettleTable("Bảng 2 — Pick up", groups.pickup, "pickup"));
           ktBody.appendChild(buildSettleTable("Bảng 3 — Bếp giao", groups.bep, "bep"));
           var a = groups.sang.anhTra + groups.pickup.anhTra + groups.bep.anhTra;
-          var b = groups.pickup.tiemNo + groups.bep.tiemNo;
+          var b = groups.sang.tiemNo + groups.pickup.tiemNo + groups.bep.tiemNo;
           var aEq = groups.sang.anhEq + groups.pickup.anhEq + groups.bep.anhEq;
-          var bEq = groups.pickup.shopEq + groups.bep.shopEq;
+          var bEq = groups.sang.shopEq + groups.pickup.shopEq + groups.bep.shopEq;
           var feesTotal = groups.sang.feesReturned + groups.pickup.feesReturned + groups.bep.feesReturned;
           var traysTotal = groups.sang.trays + groups.pickup.trays + groups.bep.trays;
           var trayDueTotal = groups.sang.trayDue + groups.pickup.trayDue + groups.bep.trayDue;
@@ -4423,7 +4435,7 @@
              above — both get their own visible line so the day card
              never hides them inside the net again. */
           var sangShip = 0;
-          groups.sang.rows.forEach(function (r) { sangShip += r.feeDisp || 0; });
+          groups.sang.rows.forEach(function (r) { if (r.payee !== "shop") sangShip += r.feeDisp || 0; });
           if (sangShip > 0) {
             net.appendChild(el("div", "totals-sub kt-fee-total", "🚚 Tiền ship giao sáng (của anh): " + fmtMoney(sangShip)));
           }
@@ -4630,7 +4642,7 @@
                kitchen (Chris 2026-11-07), so a Saturday fee is
                never the owner's shipping income. */
             var isSat = new Date(dayStr + "T12:00:00").getDay() === 6;
-            var ship = (gkey === "sang" && !isSat) ? fee : 0;
+            var ship = (gkey === "sang" && !isSat && effectivePayee(dayStr, o, gkey) !== "shop") ? fee : 0;
             var wixFee = 0;
             var feeKind = "";
             if (isWebPaidOrder(o)) {
@@ -7820,7 +7832,7 @@
    quay lai app / moi 5 phut, trang tu kiem tra version.json tren
    server — neu server co ban moi hon ban dang chay thi tu load
    lai 1 lan. Dien thoai khong con giu ban cu. */
-window.__BUILD__ = "20261125-1916";
+window.__BUILD__ = "20261127-2245";
 (function () {
   var KEY = "build-reloaded-for";
   function check() {
